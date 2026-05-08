@@ -253,7 +253,7 @@ Link do Projeto: [https://github.com/seu-usuario/marketlist](https://github.com/
 | Android    | 5.0 (API 21)            | ✅     |
 | iOS        | 🚧 (Em desenvolvimento) |        |
 
-## Desenvolvido com ❤️ usando Flutter
+## Desenvolvido com 💙 usando Flutter
 
 ## 📦 Pacotes Necessários (pubspec.yaml)
 
