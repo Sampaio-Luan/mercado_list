@@ -1,6 +1,6 @@
 import 'package:mercado_list/data/constants/enum/prioridade.dart';
 import 'package:mercado_list/data/constants/enum/tipo_medida.dart';
-import 'package:mercado_list/data/constants/schema/tb_item.dart';
+import 'package:mercado_list/data/db/schema/tb_item.dart';
 import 'package:mercado_list/data_recursos.dart';
 
 import 'contrato.module.dart';

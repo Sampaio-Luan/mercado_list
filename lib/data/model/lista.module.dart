@@ -1,6 +1,6 @@
 import 'package:mercado_list/data_recursos.dart';
 
-import '../constants/schema/tb_lista.dart';
+import '../db/schema/tb_lista.dart';
 
 import 'contrato.module.dart';
 

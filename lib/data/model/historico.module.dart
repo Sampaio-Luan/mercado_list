@@ -1,5 +1,5 @@
 import '../../data_recursos.dart';
-import '../constants/schema/tb_historico.dart';
+import '../db/schema/tb_historico.dart';
 
 import 'contrato.module.dart';
 

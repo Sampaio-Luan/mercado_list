@@ -1,7 +1,7 @@
 import 'package:mercado_list/data_recursos.dart';
 
 import '../constants/enum/tipo_medida.dart';
-import '../constants/schema/tb_item_historico.dart';
+import '../db/schema/tb_item_historico.dart';
 
 import 'contrato.module.dart';
 import 'item.module.dart';
