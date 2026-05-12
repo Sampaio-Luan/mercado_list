@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'screens/lista_itens_screen.dart';
+
 class MeuApp extends StatelessWidget {
   const MeuApp({super.key});
 
@@ -13,7 +14,12 @@ class MeuApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.pink),
         useMaterial3: true,
       ),
-      home: const ListaItensScreen(),
+      home: Scaffold(
+        appBar: AppBar(
+          title: const Text('Mercado List'),
+        ),
+        body: const ListaItensScreen(),
+      ),
     );
   }
 }
