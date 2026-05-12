@@ -1,4 +1,4 @@
-import 'package:mercado_list/data/constants/schema/contrato_tb_esquema.dart';
+import 'package:mercado_list/data/db/schema/contrato_tb_esquema.dart';
 
 import 'tb_categoria.dart';
 import 'tb_lista.dart';
@@ -20,8 +20,8 @@ class TbItem implements ContratoTbEsquema {
   static const String colunaDataAlteracao = 'dt_alteracao';
   static const String colunaEstaExcluido = 'esta_excluido';
 
-  @override
-  String criarTabela = '''
+  
+  static const String criarTabela = '''
     CREATE TABLE $nomeTabela (
       $colunaId INTEGER PRIMARY KEY AUTOINCREMENT,
       $colunaIdLista INTEGER NOT NULL,

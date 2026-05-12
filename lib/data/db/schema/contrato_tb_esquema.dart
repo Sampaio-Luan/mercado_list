@@ -1,3 +1,3 @@
 abstract class ContratoTbEsquema {
-   String criarTabela = '';
+   static String criarTabela = '';
 }

@@ -11,8 +11,8 @@ class TbItemRecorrente implements ContratoTbEsquema{
   static const String colunaDataAlteracao = 'dt_alteracao';
   static const String colunaEstaExcluido = 'esta_excluido';
 
-  @override
-  String  criarTabela =  '''
+
+ static const String  criarTabela =  '''
     CREATE TABLE $nomeTabela (
       $colunaId INTEGER PRIMARY KEY AUTOINCREMENT,
       $colunaIdCategoria INTEGER NOT NULL,

@@ -15,8 +15,8 @@ class TbItemHistorico implements ContratoTbEsquema {
   static const String colunaDataAlteracao = 'data_alteracao';
   static const String colunaEstaExcluido = 'esta_excluido';
 
-  @override
-  String criarTabela = '''
+
+ static String criarTabela = '''
     CREATE TABLE $nomeTabela (
       $colunaId INTEGER PRIMARY KEY AUTOINCREMENT,
       $colunaIdHistorico INTEGER NOT NULL,
