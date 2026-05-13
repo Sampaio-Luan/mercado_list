@@ -1,6 +1,6 @@
 import 'package:intl/intl.dart';
 
-class RecursoDeData {
+class DataUtils {
   static DateFormat formatoBrasileiro = DateFormat('dd/MM/yyyy');
   static DateFormat formatoBrasileiroCompleto =
       DateFormat('dd/MM/yyyy HH:mm:ss.SSS');

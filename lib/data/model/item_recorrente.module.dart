@@ -1,4 +1,4 @@
-import '../../data_recursos.dart';
+import '../../utils/data_utils.dart';
 import '../db/schema/tb_item_recorrente.dart';
 
 import 'contrato.module.dart';
@@ -61,8 +61,8 @@ class ItemRecorrente implements ContratoModelo<ItemRecorrente> {
       id: map[TbItemRecorrente.colunaId],
       idCategoria: map[TbItemRecorrente.colunaIdCategoria],
       titulo: map[TbItemRecorrente.colunaTitulo],
-      dataCriacao:  RecursoDeData.strParaData(strData: map[TbItemRecorrente.colunaDataCriacao]),
-      dataAlteracao:  RecursoDeData.strParaData(strData: map[TbItemRecorrente.colunaDataAlteracao]),
+      dataCriacao:  DataUtils.strParaData(strData: map[TbItemRecorrente.colunaDataCriacao]),
+      dataAlteracao:  DataUtils.strParaData(strData: map[TbItemRecorrente.colunaDataAlteracao]),
       estaExcluido: map[TbItemRecorrente.colunaEstaExcluido] == 0 ? false : true,
     );
   }

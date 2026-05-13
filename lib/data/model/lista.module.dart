@@ -1,4 +1,4 @@
-import 'package:mercado_list/data_recursos.dart';
+import 'package:mercado_list/utils/data_utils.dart';
 
 import '../db/schema/tb_lista.dart';
 
@@ -59,8 +59,8 @@ class Lista implements ContratoModelo<Lista> {
       id: map[TbLista.colunaId],
       titulo: map[TbLista.colunaTitulo],
       descricao: map[TbLista.colunaDescricao],
-      dataCriacao: RecursoDeData.strParaData(strData:map[TbLista.colunaDataCriacao]),
-      dataAlteracao: RecursoDeData.strParaData(strData:map[TbLista.colunaDataAlteracao]),
+      dataCriacao: DataUtils.strParaData(strData:map[TbLista.colunaDataCriacao]),
+      dataAlteracao: DataUtils.strParaData(strData:map[TbLista.colunaDataAlteracao]),
       estaExcluido: map[TbLista.colunaEstaExcluido] == 1 ? true : false,
     );
   }

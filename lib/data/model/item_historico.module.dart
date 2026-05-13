@@ -1,4 +1,4 @@
-import 'package:mercado_list/data_recursos.dart';
+import 'package:mercado_list/utils/data_utils.dart';
 
 import '../constants/enum/tipo_medida.dart';
 import '../db/schema/tb_item_historico.dart';
@@ -85,10 +85,10 @@ class ItemHistorico implements ContratoModelo<ItemHistorico> {
         idHistorico: map[TbItemHistorico.colunaIdHistorico],
         tituloCategoria: map[TbItemHistorico.colunaTituloCategoria],
         titulo: map[TbItemHistorico.colunaTitulo],
-        dataCriacao: RecursoDeData.strParaData(
+        dataCriacao: DataUtils.strParaData(
             strData: map[TbItemHistorico.colunaDataCriacao]!),
         dataAlteracao:
-            RecursoDeData.strParaData(strData: map[TbItemHistorico.colunaDataAlteracao]!),
+            DataUtils.strParaData(strData: map[TbItemHistorico.colunaDataAlteracao]!),
         estaExcluido: map[TbItemHistorico.colunaEstaExcluido] == 1 ? true : false,
         unidadeMedida: TipoMedida.obterPorRotulo(
             rotulo: map[TbItemHistorico.colunaUnidadeDeMedida]!),

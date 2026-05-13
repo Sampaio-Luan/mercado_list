@@ -1,7 +1,7 @@
 import 'package:mercado_list/data/constants/enum/prioridade.dart';
 import 'package:mercado_list/data/constants/enum/tipo_medida.dart';
 import 'package:mercado_list/data/db/schema/tb_item.dart';
-import 'package:mercado_list/data_recursos.dart';
+import 'package:mercado_list/utils/data_utils.dart';
 
 import 'contrato.module.dart';
 
@@ -116,9 +116,9 @@ class Item implements ContratoModelo<Item> {
           Prioridade.obterPorRotulo(rotulo: map[TbItem.colunaPrioridade]),
       obtido: map[TbItem.colunaObtido] == 0 ? false : true,
       dataCriacao:
-          RecursoDeData.strParaData(strData: map[TbItem.colunaDataCriacao]),
+          DataUtils.strParaData(strData: map[TbItem.colunaDataCriacao]),
       dataAlteracao:
-          RecursoDeData.strParaData(strData: map[TbItem.colunaDataAlteracao]),
+          DataUtils.strParaData(strData: map[TbItem.colunaDataAlteracao]),
       estaExcluido: map[TbItem.colunaEstaExcluido] == 0 ? false : true,
     );
   }
@@ -144,9 +144,9 @@ class Item implements ContratoModelo<Item> {
           Prioridade.obterPorRotulo(rotulo: map[TbItem.colunaPrioridade]),
       obtido: map[TbItem.colunaObtido] == 0 ? false : true,
       dataCriacao:
-          RecursoDeData.strParaData(strData: map[TbItem.colunaDataCriacao]),
+          DataUtils.strParaData(strData: map[TbItem.colunaDataCriacao]),
       dataAlteracao:
-          RecursoDeData.strParaData(strData: map[TbItem.colunaDataAlteracao]),
+          DataUtils.strParaData(strData: map[TbItem.colunaDataAlteracao]),
       estaExcluido: map[TbItem.colunaEstaExcluido] == 0 ? false : true,
     );
   }

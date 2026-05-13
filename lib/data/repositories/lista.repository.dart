@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:sqflite/sqlite_api.dart';
 
 import '../db/banco_local.dart';
+import '../db/schema/tb_item.dart';
 import '../db/schema/tb_lista.dart';
 import '../model/lista.module.dart';
 
@@ -70,18 +71,29 @@ class ListaRepository extends ChangeNotifier
   @override
   Future excluir(int id) async {
     dbLocal = await BancoLocal.instancia.dataBase;
+    String timesStamp = DateTime.now().toIso8601String();
+
+    await dbLocal.update(
+      TbItem.nomeTabela,
+      {
+        TbItem.colunaEstaExcluido: 1,
+        TbItem.colunaDataAlteracao: timesStamp
+      },
+      where: '${TbItem.colunaIdLista} = ?',
+      whereArgs: [id],
+    );
 
     await dbLocal.update(
       TbLista.nomeTabela,
       {
         TbLista.colunaEstaExcluido: 1,
-        TbLista.colunaDataAlteracao: DateTime.now().toIso8601String()
+        TbLista.colunaDataAlteracao: timesStamp
       },
       where: '${TbLista.colunaId} = ?',
       whereArgs: [id],
     );
     listas.removeWhere((e) => e.id == id);
-    debugPrint('$msgId excluir(): id: $id');
+    debugPrint('$msgId excluir(): id: $id e todos os itens da lista (com soft delete)');
     notifyListeners();
   }
 

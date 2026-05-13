@@ -1,4 +1,4 @@
-import 'package:mercado_list/data_recursos.dart';
+import 'package:mercado_list/utils/data_utils.dart';
 
 import '../db/schema/tb_categoria.dart';
 
@@ -70,9 +70,9 @@ class Categoria implements ContratoModelo<Categoria> {
       cor: map[TbCategoria.colunaCor],
       ordem: map[TbCategoria.colunaOrdem],
       descricao: map[TbCategoria.colunaDescricao],
-      dtCriacao: RecursoDeData.strParaData(
+      dtCriacao: DataUtils.strParaData(
           strData: map[TbCategoria.colunaDataCriacao]),
-      dtEdicao: RecursoDeData.strParaData(
+      dtEdicao: DataUtils.strParaData(
           strData: map[TbCategoria.colunaDataAlteracao]),
       estaExcluido: map[TbCategoria.colunaEstaExcluido] ?? 0,
     );

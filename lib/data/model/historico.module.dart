@@ -1,4 +1,4 @@
-import '../../data_recursos.dart';
+import '../../utils/data_utils.dart';
 import '../db/schema/tb_historico.dart';
 
 import 'contrato.module.dart';
@@ -63,11 +63,11 @@ class Historico implements ContratoModelo<Historico> {
       id: map[TbHistorico.colunaId],
       titulo: map[TbHistorico.colunaTitulo],
       descricao: map[TbHistorico.colunaDescricao],
-      dataCompra: RecursoDeData.strParaData(
+      dataCompra: DataUtils.strParaData(
           strData: map[TbHistorico.colunaDataCompra]!),
-      dataCriacao: RecursoDeData.strParaData(
+      dataCriacao: DataUtils.strParaData(
           strData: map[TbHistorico.colunaDataCriacao]!),
-      dataAlteracao: RecursoDeData.strParaData(
+      dataAlteracao: DataUtils.strParaData(
           strData: map[TbHistorico.colunaDataAlteracao]!),
       estaExcluido: map[TbHistorico.colunaEstaExcluido] == 1 ? true : false,
     );
