@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
-import '../data/constants/enum/tipo_dialogo.dart';
-import '../service/dialogo.service.dart';
+import '../constants/enums/tipo_dialogo.dart';
+import '../services/dialogo.service.dart';
+
+
 
 extension DialogoExtension on BuildContext {
   Future<void> sucesso({required String mensagem, String titulo = 'Sucesso'}) {

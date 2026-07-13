@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
-import '../data/constants/enum/tipo_snackbar.dart';
-import '../service/snackbar.service.dart';
+import '../constants/enums/tipo_snackbar.dart';
+import '../services/snackbar.service.dart';
+
+
 
 
 extension SnackbarExtension on BuildContext {
