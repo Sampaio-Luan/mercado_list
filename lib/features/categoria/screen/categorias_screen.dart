@@ -8,7 +8,7 @@ import '../../../core/constants/enums/tipo_snackbar.dart';
 import '../../../core/services/dialogo_service.dart';
 import '../../../core/services/snackbar_service.dart';
 import '../../../shared/widgets/bottom_sheet_pesquisa/bottom_sheet_pesquisa_generica_exportacoes.dart';
-import '../../itens_recorrentes/model/item_recorrente.module.dart';
+import '../../itens_recorrentes/model/item_recorrente_module.dart';
 import '../model/categoria_model.dart';
 import '../repository/categoria_repository.dart';
 
