@@ -1,4 +1,4 @@
-import 'contrato_tb_esquema.dart';
+import '../../contracts/contrato_tb_esquema.dart';
 import 'tb_categoria.dart';
 import 'tb_lista.dart';
 

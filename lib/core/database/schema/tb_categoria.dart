@@ -1,4 +1,4 @@
-import 'contrato_tb_esquema.dart';
+import '../../contracts/contrato_tb_esquema.dart';
 
 class TbCategoria implements ContratoTbEsquema {
   static const String nomeTabela = 'tb_categoria';
