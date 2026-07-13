@@ -2,6 +2,7 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 
+import '../../shared/widgets/dialogo/dialogo_base.dart';
 import '../constants/enums/tipo_dialogo.dart';
 
 
