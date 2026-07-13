@@ -5,7 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'core/services/preferencias_service.dart';
-import 'features/preferencias_usuario/preferencias_rovider.dart';
+import 'features/preferencias_usuario/preferencias_provider.dart';
 import 'meu_app.dart';
 
 void main() async {

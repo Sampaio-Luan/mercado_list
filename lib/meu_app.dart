@@ -6,7 +6,7 @@ import 'package:provider/provider.dart';
 
 import 'core/constants/enums/tema_app.dart';
 import 'core/theme/app_theme.dart';
-import 'features/preferencias_usuario/preferencias_rovider.dart';
+import 'features/preferencias_usuario/preferencias_provider.dart';
 import 'features/principal_screen.dart';
 
 class MeuApp extends StatelessWidget {
