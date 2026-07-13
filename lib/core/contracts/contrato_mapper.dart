@@ -1,6 +1,9 @@
 abstract interface class ContratoMapper<T> {
-  Map<String, dynamic> paraBd(T objeto);
-  T doBd(Map<String, dynamic> map);
+  T doMapa(Map<String, dynamic> mapa);
+
+  Map<String, dynamic> paraMapa(T objeto);
+
+  T daNuvem(Map<String, dynamic> mapa);
+
   Map<String, dynamic> paraNuvem(T objeto);
-  T daNuvem(Map<String, dynamic> map);
 }
