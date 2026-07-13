@@ -1,0 +1,4 @@
+enum Gatilho {
+  toque,
+  toqueLongo,
+}
