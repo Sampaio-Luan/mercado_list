@@ -8,12 +8,11 @@
 
 ## Commits
 
-- feat
-- fix
-- refactor
-- docs
-- test
-- chore
+- feat: somente quando uma funcionalidade utilizável foi adicionada.
+- fix: somente para corrigir um comportamento incorreto.
+- refactor: somente quando você reorganizar o código sem mudar o funcionamento.
+- docs: exclusivamente para documentação.
+- chore: configuração, dependências, organização e manutenção do projeto.
 
 ## Arquitetura
 
