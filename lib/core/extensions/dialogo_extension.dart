@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../constants/enums/tipo_dialogo.dart';
-import '../services/dialogo.service.dart';
+import '../services/dialogo_service.dart';
 
 
 
