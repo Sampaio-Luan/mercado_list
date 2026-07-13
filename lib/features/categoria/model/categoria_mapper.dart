@@ -12,7 +12,7 @@ class CategoriaMapper implements ContratoMapper<Categoria> {
   }
 
   @override
-  Categoria doBd(Map<String, dynamic> map) {
+  Categoria doMapa(Map<String, dynamic> map) {
     return Categoria(
       id: map[TbCategoria.colunaId],
       titulo: map[TbCategoria.colunaTitulo],
@@ -32,7 +32,7 @@ class CategoriaMapper implements ContratoMapper<Categoria> {
   }
 
   @override
-  Map<String, dynamic> paraBd(Categoria objeto) {
+  Map<String, dynamic> paraMapa(Categoria objeto) {
     return {
       if (objeto.id != null) TbCategoria.colunaId: objeto.id,
       TbCategoria.colunaTitulo: objeto.titulo,
