@@ -31,7 +31,7 @@ class BancoLocal {
 
   Future<Database> _iniciaBancoLocal() async {
     return await openDatabase(
-      join(await getDatabasesPath(), 'mercado_list.db'),
+      join(await getDatabasesPath(), 'mercado_list_local.db'),
       version: 1,
       onCreate: _onCreate,
     );
