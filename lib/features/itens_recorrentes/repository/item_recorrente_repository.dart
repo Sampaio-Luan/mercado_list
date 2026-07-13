@@ -2,11 +2,11 @@ import 'dart:developer';
 
 import 'package:sqflite/sqflite.dart';
 
-import '../../../core/contracts/contrato.repository.dart';
+import '../../../core/contracts/contrato_repository.dart';
 import '../../../core/database/banco_local.dart';
 import '../../../core/database/schema/tb_item_recorrente.dart';
 import '../mapper/item_recorrente_mapper.dart';
-import '../model/item_recorrente.module.dart';
+import '../model/item_recorrente_module.dart';
 
 class ItemRecorrenteRepository implements ContratoRepository<ItemRecorrente> {
   final BancoLocal bancoLocal;
