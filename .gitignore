@@ -1,4 +1,6 @@
-# Miscellaneous
+# --------------------------------
+# Miscellaneous 
+# --------------------------------
 *.class
 *.log
 *.pyc
@@ -12,34 +14,225 @@
 .swiftpm/
 migrate_working_dir/
 
-# IntelliJ related
+# --------------------------------
+# IntelliJ related 
+# --------------------------------
 *.iml
 *.ipr
 *.iws
 .idea/
 
-# The .vscode folder contains launch configuration and tasks you configure in
-# VS Code which you may wish to be included in version control, so this line
-# is commented out by default.
-#.vscode/
+# --------------------------------
+# VS Code
+# --------------------------------
+.vscode/
+.vscode/settings.json
+.vscode/launch.json
+.vscode/tasks.json
 
+# --------------------------------
 # Flutter/Dart/Pub related
+# --------------------------------
 **/doc/api/
 **/ios/Flutter/.last_build_id
 .dart_tool/
+.flutter-plugins
 .flutter-plugins-dependencies
+.flutter-version
 .pub-cache/
 .pub/
 /build/
 /coverage/
 
+# --------------------------------
 # Symbolication related
+# --------------------------------
 app.*.symbols
 
+# --------------------------------
 # Obfuscation related
+# --------------------------------
 app.*.map.json
 
-# Android Studio will place build artifacts here
+# --------------------------------
+# Android Studio
+# --------------------------------
 /android/app/debug
 /android/app/profile
 /android/app/release
+/android/.gradle/
+/android/app/build/
+/android/build/
+/android/local.properties
+/android/*.iml
+/android/.project
+/android/.classpath
+/android/.settings/
+/android/captures/
+/android/externalNativeBuild/
+/android/gradle/wrapper/gradle-wrapper.jar
+/android/gradlew
+/android/gradlew.bat
+/android/keystore.properties
+/android/key.properties
+
+# --------------------------------
+# iOS
+# --------------------------------
+ios/**/*.hmap
+ios/**/*.pbxuser
+ios/**/*.mode1v3
+ios/**/*.mode2v3
+ios/**/*.perspectivev3
+ios/**/*.xcuserstate
+ios/**/*.xcuserdatad
+ios/**/.symlinks/
+ios/**/Pods/
+ios/**/Podfile.lock
+ios/**/.generated/
+ios/**/Flutter/App.framework
+ios/**/Flutter/Flutter.framework
+ios/**/Flutter/Flutter.podspec
+ios/**/Flutter/Generated.xcconfig
+ios/**/Flutter/ephemeral/
+ios/**/Flutter/flutter_export_environment.sh
+ios/Runner.xcodeproj/project.pbxproj
+ios/Runner.xcodeproj/xcshareddata/
+ios/Runner.xcodeproj/xcuserdata/
+ios/Runner.xcworkspace/xcshareddata/
+ios/Runner.xcworkspace/xcuserdata/
+ios/Podfile.lock
+ios/Pods/
+
+# --------------------------------
+# Arquivos de chave/certificados
+# --------------------------------
+*.keystore
+*.jks
+*.p12
+*.pem
+*.key
+*.crt
+*.csr
+*.cer
+*.mobileprovision
+*.provisionprofile
+**/exportOptions.plist
+**/GoogleService-Info.plist
+**/google-services.json
+
+# --------------------------------
+# Arquivos de configuração sensíveis
+# --------------------------------
+.env
+.env.local
+.env.*.local
+*.local
+config.local.yaml
+config.local.json
+firebase.json
+.firebase/
+
+# --------------------------------
+# Arquivos do sistema
+# --------------------------------
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+.fseventsd
+.directory
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+.SystemVolumeInfo
+.com.apple.timemachine.supported
+
+# --------------------------------
+# Arquivos do projeto
+# --------------------------------
+pubspec.lock
+*.iml
+mercado_list.iml
+*.iws
+*.ipr
+
+# --------------------------------
+# Logs e temporários
+# --------------------------------
+logs/
+*.log
+tmp/
+temp/
+*.tmp
+*.temp
+*.cache
+*.bak
+*.backup
+*.old
+*.orig
+*.rej
+*.patch
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# --------------------------------
+# Banco de dados
+# --------------------------------
+*.db
+*.sqlite
+*.sqlite3
+*.db-shm
+*.db-wal
+*.sql
+*.sqlite-journal
+
+# --------------------------------
+# Builds e distribuição
+# --------------------------------
+*.apk
+*.aab
+*.ipa
+*.dSYM.zip
+*.symbols.zip
+*.bundle
+*.snapshot
+*.pkg
+*.dmg
+*.deb
+*.rpm
+
+# --------------------------------
+# Arquivos de teste
+# --------------------------------
+test/.test_coverage.dart
+*.lcov
+*.gcov
+*.gcda
+*.gcno
+
+# --------------------------------
+# Outros
+# --------------------------------
+node_modules/
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+.github/workflows/
+.mergify.yml
+.remarkrc
+.remarkignore
+.editorconfig
+.prettierrc
+.prettierignore
+.eslintignore
+.eslintrc
+.stylelintrc
+.stylelintignore
+.husky/
+.lintstagedrc
