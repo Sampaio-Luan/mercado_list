@@ -236,3 +236,5 @@ pnpm-lock.yaml
 .stylelintignore
 .husky/
 .lintstagedrc
+
+TODO.md
