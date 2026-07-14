@@ -10,11 +10,13 @@ class ListaItensScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final listaRepository = context.watch<ListaRepository>();
+    //final listaRepository = context.watch<ListaRepository>();
 
-    return listaRepository.listas.isEmpty
-        ? const ListaVazia()
-        : const ListaDeItens();
+    return const ListaVazia();
+    
+    // listaRepository.listas.isEmpty
+    //     ? const ListaVazia()
+    //     : const ListaDeItens();
   }
 }
 

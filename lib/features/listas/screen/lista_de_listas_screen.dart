@@ -343,8 +343,6 @@ class _ListaDeListasScreenState extends State<ListaDeListasScreen> {
               Navigator.of(context).push(
                 MaterialPageRoute(
                   builder: (context) => CategoriasScreen(
-                   categorias: [],
-                    repository: context.read<CategoriaRepository>(),
                   ), //CategoriasScreen(),
                 ),
               );
