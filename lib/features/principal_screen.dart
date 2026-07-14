@@ -13,10 +13,12 @@ class PrincipalScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final preferencias = context.watch<PreferenciasProvider>();
-    final listaProvider = context.read<ListaRepository>();
-    String titulo = preferencias.preferencias.ultimaListaAberta != null
-        ? listaProvider.titulobyid(preferencias.preferencias.ultimaListaAberta!)
-        : 'Mercado List';
+   // final listaProvider = context.read<ListaRepository>();
+    // String titulo = preferencias.preferencias.ultimaListaAberta != null
+    //     ? listaProvider.titulobyid(preferencias.preferencias.ultimaListaAberta!)
+    //     : 'Mercado List';
+
+    String titulo = 'Mercado List';
     return Scaffold(
       drawer: ListaDeListasScreen(),
       appBar: AppBar(
