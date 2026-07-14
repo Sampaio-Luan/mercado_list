@@ -7,23 +7,18 @@ import '../../../core/constants/enums/tipo_dialogo.dart';
 import '../../../core/constants/enums/tipo_snackbar.dart';
 import '../../../core/services/dialogo_service.dart';
 import '../../../core/services/snackbar_service.dart';
-import '../../../shared/widgets/bottom_sheet_pesquisa/bottom_sheet_pesquisa_generica_exportacoes.dart';
 import '../../itens_recorrentes/model/item_recorrente_module.dart';
+import '../controller/categorias_controller.dart';
+import '../form/categoria_formulario.dart';
 import '../model/categoria_model.dart';
-import '../repository/categoria_repository.dart';
-
-import 'categoria.form.dart';
+import '../widget/categoria_com_itens_recorrentes_widget.dart';
 
 
 
 class CategoriasScreen extends StatefulWidget {
-  final List<Categoria> categorias;
-  final CategoriaRepository repository;
 
   const CategoriasScreen({
-    super.key,
-    required this.categorias,
-    required this.repository,
+    super.key
   });
 
   @override
@@ -40,8 +35,6 @@ class _OrdenarCategoriasScreenState extends State<CategoriasScreen> {
   void initState() {
     super.initState();
 
-    _categorias = [...widget.categorias]
-      ..sort((a, b) => a.ordem.compareTo(b.ordem));
   }
 
   Future<void> _salvar() async {
@@ -118,8 +111,6 @@ class _OrdenarCategoriasScreenState extends State<CategoriasScreen> {
   @override
   Widget build(BuildContext context) {
     final tema = Theme.of(context);
-    //final itensRecorrentesR = context.watch<ItemRecorrenteRepository>();
-    final List<ItemRecorrente> itensSelecionados = [];
 
     return PopScope(
       canPop: !_houveAlteracao,
@@ -175,134 +166,20 @@ class _OrdenarCategoriasScreenState extends State<CategoriasScreen> {
               ),
             ),
 
-            Consumer<CategoriaRepository>(
+            Consumer<CategoriasController>(
               builder: (context, ref, _) {
                 return Expanded(
                   child: ReorderableListView.builder(
                     padding: const EdgeInsets.all(5),
                     buildDefaultDragHandles: true,
-                    itemCount: 18,
+                    itemCount: ref.categoriasService.categoriasComItensRecorrentes.length,
                     onReorderItem: _reordenar,
                     itemBuilder: (context, index) {
-                      final categoria = _categorias[index];
 
-                      return InkWell(
-                        key: ValueKey(categoria.id),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            vertical: 10,
-                            horizontal: 10,
-                          ),
-                          margin: const EdgeInsets.symmetric(
-                            vertical: 2,
-                            horizontal: 10,
-                          ),
-                          decoration: BoxDecoration(
-                            color: categoria.cor.withAlpha(15),
-                            borderRadius: BorderRadius.circular(5),
-                          ),
-
-                          child: Row(
-                            spacing: 15,
-                            children: [
-                              Text(
-                                '${index + 1}°',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: categoria.cor,
-                                  fontSize: Theme.of(
-                                    context,
-                                  ).textTheme.titleLarge!.fontSize,
-                                ),
-                              ),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      categoria.titulo,
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.w500,
-                                        color: Theme.of(
-                                          context,
-                                        ).colorScheme.onSurface.withAlpha(200),
-                                      ),
-                                    ),
-                                    // Text(
-                                    //   '${itensRecorrentesR.itensRecorrentesPorCategoria[categoria.id]!.isEmpty ? "Sem itens" : itensRecorrentesR.itensRecorrentesPorCategoria[categoria.id]!.length == 1 ? "${itensRecorrentesR.itensRecorrentesPorCategoria[categoria.id]!.length} item" : "${itensRecorrentesR.itensRecorrentesPorCategoria[categoria.id]!.length} itens"} • Ordem: ${categoria.ordem} • id: ${categoria.id}',
-                                    // ),
-                                    Text(' • Ordem: ${categoria.ordem} • id: ${categoria.id}')
-                                  ],
-                                ),
-                              ),
-                              IconButton(
-                                style: IconButton.styleFrom(
-                                  backgroundColor: categoria.cor.withAlpha(150),
-                                ),
-                                icon: Icon(
-                                  PhosphorIcons.pencilLine,
-                                  size: 25,
-                                  color: Colors.white,
-                                ),
-                                onPressed: () async {
-                                  showModalBottomSheet(
-                                    isScrollControlled: true,
-                                    context: context,
-                                    builder: (context) => Padding(
-                                      padding: EdgeInsets.only(
-                                        bottom: MediaQuery.of(context)
-                                            .viewInsets
-                                            .bottom, // 2. Empurra o conteúdo para cima do teclado
-                                      ),
-                                      child: SingleChildScrollView(
-                                        child: CategoriaForm(
-                                          categoria: categoria,
-                                        ),
-                                      ),
-                                    ),
-                                  );
-                                },
-                              ),
-                            ],
-                          ),
-                        ),
-
-                        onTap: () {
-                          BottomSheetPesquisaGenerica.exibir<ItemRecorrente>(
-                            context: context,
-                            itens: itensRecorrentes,
-                            obterTextoExibicao: (item) => item.titulo,
-                            obterTextoSubtitulo: (item) =>
-                                '${item.idCategoria} • ${item.tipoMedida.name}',
-                            modoSelecao: ModoSelecao.multipla,
-                            itensSelecionadosInicialmente: itensSelecionados,
-                            titulo: categoria.titulo,
-                            textoPlaceholderPesquisa:
-                                'Buscar por itens de ${categoria.titulo}...',
-                            textoBotaoConfirmar: 'Confirmar seleção',
-                            // construirIconeLideranca: (item) => CircleAvatar(
-                            //   radius: 16,
-                            //   child: Text(
-                            //     item.titulo,
-                            //     style: const TextStyle(
-                            //       fontSize: 11,
-                            //       fontWeight: FontWeight.bold,
-                            //     ),
-                            //   ),
-                            // ),
-                            estilo: EstiloBottomSheetPesquisa(
-                              corIconeSelecionado: categoria.cor,
-                              corItemSelecionado: categoria.cor.withAlpha(20),
-                              estiloTextoItemDestacado: TextStyle(
-                                color: categoria.cor,
-                                fontSize: Theme.of(
-                                  context,
-                                ).textTheme.bodyLarge?.fontSize,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          );
-                        },
+                      return CategoriaComItensRecorrentesWidget(
+                        key: ValueKey(ref.categoriasService.categoriasComItensRecorrentes[index].categoria.id),
+                        categoriaComItensRecorrentes:
+                           ref.categoriasService.categoriasComItensRecorrentes[index],
                       );
                     },
                   ),
@@ -355,7 +232,7 @@ class _OrdenarCategoriasScreenState extends State<CategoriasScreen> {
                                     .bottom, // 2. Empurra o conteúdo para cima do teclado
                               ),
                               child: SingleChildScrollView(
-                                child: CategoriaForm(),
+                                child: CategoriaFormulario(),
                               ),
                             ),
                           );

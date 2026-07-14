@@ -13,16 +13,16 @@ import '../repository/categoria_repository.dart';
 
 
 
-class CategoriaForm extends StatefulWidget {
+class CategoriaFormulario extends StatefulWidget {
   final Categoria? categoria;
 
-  const CategoriaForm({super.key, this.categoria});
+  const CategoriaFormulario({super.key, this.categoria});
 
   @override
-  State<CategoriaForm> createState() => _CategoriaFormState();
+  State<CategoriaFormulario> createState() => _CategoriaFormState();
 }
 
-class _CategoriaFormState extends State<CategoriaForm> with ValidacoesMixin {
+class _CategoriaFormState extends State<CategoriaFormulario> with ValidacoesMixin {
   final _formKeyCategoria = GlobalKey<FormState>();
 
   String titulo = '';
@@ -42,7 +42,7 @@ class _CategoriaFormState extends State<CategoriaForm> with ValidacoesMixin {
 
   @override
   Widget build(BuildContext context) {
-    final categoriaR = context.read<CategoriaRepository>();
+    final categoriaR = context.read<CategoriasRepository>();
 
     return Padding(
       padding: const EdgeInsets.all(10.0),

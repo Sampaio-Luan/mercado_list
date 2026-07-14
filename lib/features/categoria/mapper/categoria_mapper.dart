@@ -3,7 +3,7 @@ import '../../../core/contracts/contrato_mapper.dart';
 import '../../../core/database/schema/tb_categoria.dart';
 import '../../../core/utils/data_utils.dart';
 
-import 'categoria_model.dart';
+import '../model/categoria_model.dart';
 
 class CategoriaMapper implements ContratoMapper<Categoria> {
   @override

@@ -5,16 +5,16 @@ import 'package:sqflite/sqflite.dart';
 import '../../../core/contracts/contrato_repository.dart';
 import '../../../core/database/banco_local.dart';
 import '../../../core/database/schema/tb_categoria.dart';
-import '../model/categoria_mapper.dart';
+import '../mapper/categoria_mapper.dart';
 import '../model/categoria_model.dart';
 
-class CategoriaRepository implements ContratoRepository<Categoria> {
+class CategoriasRepository implements ContratoRepository<Categoria> {
   final BancoLocal bancoLocal;
   final CategoriaMapper categoriaMapper;
 
   static const _log = '🏷️ CategoriaRepository';
 
-  CategoriaRepository({
+  CategoriasRepository({
     required this.bancoLocal,
     required this.categoriaMapper,
   });
