@@ -47,7 +47,7 @@ void main() async {
         ),
         ChangeNotifierProvider(
           create: (context) =>
-              CategoriasController(categoriasService: categoriasService),
+              CategoriasController(categoriasService: categoriasService)..carregar(),
         ),
       ],
       child: const MeuApp(),
