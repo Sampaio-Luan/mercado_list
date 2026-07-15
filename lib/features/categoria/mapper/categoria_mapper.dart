@@ -33,6 +33,7 @@ class CategoriaMapper implements ContratoMapper<Categoria> {
 
   @override
   Map<String, dynamic> paraMapa(Categoria objeto) {
+
     return {
       if (objeto.id != null) TbCategoria.colunaId: objeto.id,
       TbCategoria.colunaTitulo: objeto.titulo,

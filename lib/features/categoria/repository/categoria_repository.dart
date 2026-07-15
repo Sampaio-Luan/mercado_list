@@ -2,6 +2,7 @@ import 'dart:developer';
 
 import 'package:sqflite/sqflite.dart';
 
+import '../../../core/constants/logs/logs.dart';
 import '../../../core/contracts/contrato_repository.dart';
 import '../../../core/database/banco_local.dart';
 import '../../../core/database/schema/tb_categoria.dart';
@@ -11,8 +12,6 @@ import '../model/categoria_model.dart';
 class CategoriasRepository implements ContratoRepository<Categoria> {
   final BancoLocal bancoLocal;
   final CategoriaMapper categoriaMapper;
-
-  static const _log = '🏷️ CategoriaRepository';
 
   CategoriasRepository({
     required this.bancoLocal,
@@ -28,7 +27,10 @@ class CategoriasRepository implements ContratoRepository<Categoria> {
       TbCategoria.nomeTabela,
       categoriaMapper.paraMapa(objeto),
     );
-    log(name: _log, 'criar(): criado com sucesso ! id: $id');
+    log(
+      name: LogId.categoriaRepository,
+      'criar(): criado com sucesso ! id: $id',
+    );
     return recuperar(id);
   }
 
@@ -46,7 +48,7 @@ class CategoriasRepository implements ContratoRepository<Categoria> {
       throw Exception('Categoria ${objeto.id} nao encontrada.');
     }
     log(
-      name: _log,
+      name: LogId.categoriaRepository,
       'editar(): ${objeto.titulo} editado com sucesso ! id: ${objeto.id}',
     );
 
@@ -69,7 +71,7 @@ class CategoriasRepository implements ContratoRepository<Categoria> {
     }
 
     log(
-      name: _log,
+      name: LogId.categoriaRepository,
       'excluir(): Categoria id: $id excluido do banco de dados local com sucesso',
     );
 
@@ -91,7 +93,7 @@ class CategoriasRepository implements ContratoRepository<Categoria> {
     }
     Categoria categoria = categoriaMapper.doMapa(resultado.first);
 
-    log(name: _log, ' recuperar(): $categoria');
+    log(name: LogId.categoriaRepository, ' recuperar(): $categoria');
     return categoria;
   }
 
@@ -108,9 +110,24 @@ class CategoriasRepository implements ContratoRepository<Categoria> {
     List<Categoria> categorias = resultado.map(categoriaMapper.doMapa).toList();
 
     log(
-      name: _log,
+      name: LogId.categoriaRepository,
       ' recuperarTodos(): depois - ${categorias.length} categorias',
     );
     return categorias;
+  }
+
+  Future<void> atualizarOrdens(List<Categoria> categorias) async {
+    final db = await _db;
+    Batch batch = db.batch();
+    for (int i = 0; i < categorias.length; i++) {
+      batch.update(
+        TbCategoria.nomeTabela,
+        {TbCategoria.colunaOrdem: i, TbCategoria.colunaDataAlteracao: DateTime.now().toIso8601String()},
+        where: '${TbCategoria.colunaId} = ?',
+        whereArgs: [categorias[i].id],
+      );
+    }
+    await batch.commit();
+    log(name: LogId.categoriaRepository, 'atualizarOrdens() ${categorias.length} categorias atualizadas com sucesso');
   }
 }
