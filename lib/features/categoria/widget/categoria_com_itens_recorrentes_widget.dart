@@ -21,7 +21,6 @@ class CategoriaComItensRecorrentesWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return InkWell(
-      key: ValueKey(categoria.id),
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 10),
         margin: const EdgeInsets.symmetric(vertical: 2, horizontal: 10),
@@ -34,7 +33,7 @@ class CategoriaComItensRecorrentesWidget extends StatelessWidget {
           spacing: 15,
           children: [
             Text(
-              '${categoria.ordem + 1}°',
+              '${categoria.ordem}°',
               style: TextStyle(
                 fontWeight: FontWeight.bold,
                 color: categoria.cor,
