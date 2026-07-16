@@ -35,8 +35,11 @@ class CategoriasRepository implements ContratoRepository<Categoria> {
   }
 
   @override
-  Future<Categoria> editar(Categoria objeto) async {
-    final db = await _db;
+  Future<Categoria> editar(
+    Categoria objeto, {
+    DatabaseExecutor? databaseExecutor,
+  }) async {
+    final db = databaseExecutor ?? await _db;
     final linhasAfetadas = await db.update(
       TbCategoria.nomeTabela,
       categoriaMapper.paraMapa(objeto),
@@ -56,8 +59,8 @@ class CategoriasRepository implements ContratoRepository<Categoria> {
   }
 
   @override
-  Future<bool> excluir(int id) async {
-    final db = await _db;
+  Future<bool> excluir(int id, {DatabaseExecutor? databaseExecutor}) async {
+    final db = databaseExecutor ?? await _db;
 
     final linhasAfetadas = await db.update(
       TbCategoria.nomeTabela,
@@ -116,18 +119,27 @@ class CategoriasRepository implements ContratoRepository<Categoria> {
     return categorias;
   }
 
-  Future<void> atualizarOrdens(List<Categoria> categorias) async {
-    final db = await _db;
+  Future<void> atualizarOrdens(
+    List<Categoria> categorias, {
+    DatabaseExecutor? databaseExecutor,
+  }) async {
+    final db = databaseExecutor ?? await _db;
     Batch batch = db.batch();
     for (int i = 0; i < categorias.length; i++) {
       batch.update(
         TbCategoria.nomeTabela,
-        {TbCategoria.colunaOrdem: i, TbCategoria.colunaDataAlteracao: DateTime.now().toIso8601String()},
+        {
+          TbCategoria.colunaOrdem: i,
+          TbCategoria.colunaDataAlteracao: DateTime.now().toIso8601String(),
+        },
         where: '${TbCategoria.colunaId} = ?',
         whereArgs: [categorias[i].id],
       );
     }
     await batch.commit();
-    log(name: LogId.categoriaRepository, 'atualizarOrdens() ${categorias.length} categorias atualizadas com sucesso');
+    log(
+      name: LogId.categoriaRepository,
+      'atualizarOrdens() ${categorias.length} categorias atualizadas com sucesso',
+    );
   }
 }

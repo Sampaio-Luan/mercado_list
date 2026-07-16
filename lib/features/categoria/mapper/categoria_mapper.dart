@@ -2,7 +2,6 @@ import '../../../core/constants/enums/cores.dart';
 import '../../../core/contracts/contrato_mapper.dart';
 import '../../../core/database/schema/tb_categoria.dart';
 import '../../../core/utils/data_utils.dart';
-
 import '../model/categoria_model.dart';
 
 class CategoriaMapper implements ContratoMapper<Categoria> {
@@ -27,13 +26,13 @@ class CategoriaMapper implements ContratoMapper<Categoria> {
       dtEdicao: DataUtils.strParaData(
         strData: map[TbCategoria.colunaDataAlteracao],
       ),
-      estaExcluido: map[TbCategoria.colunaEstaExcluido] == 1 ? true : false,
+      estaExcluido: map[TbCategoria.colunaEstaExcluido] == 1,
+      categoriaPadrao: map[TbCategoria.colunaCategoriaPadrao] == 1,
     );
   }
 
   @override
   Map<String, dynamic> paraMapa(Categoria objeto) {
-
     return {
       if (objeto.id != null) TbCategoria.colunaId: objeto.id,
       TbCategoria.colunaTitulo: objeto.titulo,
@@ -46,6 +45,7 @@ class CategoriaMapper implements ContratoMapper<Categoria> {
       if (objeto.dtEdicao != null)
         TbCategoria.colunaDataAlteracao: objeto.dtEdicao!.toIso8601String(),
       TbCategoria.colunaEstaExcluido: objeto.estaExcluido ? 1 : 0,
+      TbCategoria.colunaCategoriaPadrao: objeto.categoriaPadrao ? 1 : 0,
     };
   }
 

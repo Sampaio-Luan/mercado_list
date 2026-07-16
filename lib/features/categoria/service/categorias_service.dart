@@ -1,15 +1,22 @@
 import 'dart:developer';
 
 import '../../../core/constants/logs/logs.dart';
+import '../../../core/database/banco_local.dart';
+import '../../itens/service/itens_service.dart';
 import '../../itens_recorrentes/model/item_recorrente_module.dart';
 import '../../itens_recorrentes/repository/item_recorrente_repository.dart';
+import '../../itens_recorrentes/service/itens_recorrentes_service.dart';
 import '../model/categoria_com_itens_recorrentes_model.dart';
 import '../model/categoria_model.dart';
 import '../repository/categoria_repository.dart';
 
 class CategoriasService {
+  final BancoLocal _bancoLocal;
   final CategoriasRepository _categoriasRepository;
   final ItemRecorrenteRepository _itensRecorrentesRepository;
+  final ItensRecorrentesService _itemRecorrenteService;
+  final ItensService _itemService;
+
   final List<CategoriaComItensRecorrentes> _categoriasComItensRecorrentes = [];
   List<CategoriaComItensRecorrentes> get categoriasComItensRecorrentes =>
       List.unmodifiable(_categoriasComItensRecorrentes);
@@ -17,6 +24,9 @@ class CategoriasService {
   CategoriasService({
     required this._categoriasRepository,
     required this._itensRecorrentesRepository,
+    required this._itemRecorrenteService,
+    required this._itemService,
+    required this._bancoLocal,
   });
 
   Future<void> carregar() async {
@@ -66,4 +76,47 @@ class CategoriasService {
     );
     await _categoriasRepository.atualizarOrdens(categorias);
   }
+
+  Future<void> excluir(Categoria categoria) async {
+    await _bancoLocal.executarEmTransacao((transaction) async {
+      if (categoria.categoriaPadrao) {
+        throw Exception('A categoria padrão não pode ser excluída.');
+      }
+
+      final categoriaPadrao = recuperarCategoriaPadrao();
+
+
+      await _itemRecorrenteService.moverParaCategoria(
+        categoriaOrigem: categoria.id!,
+        categoriaDestino: categoriaPadrao.id!,
+        databaseExecutor: transaction,
+      );
+      await _itemService.moverParaCategoria(
+        categoriaOrigem: categoria.id!,
+        categoriaDestino: categoriaPadrao.id!,
+        databaseExecutor: transaction,
+      );
+      await _categoriasRepository.excluir(
+        categoria.id!,
+        databaseExecutor: transaction,
+      );
+
+      _categoriasComItensRecorrentes.removeWhere(
+        (elemento) => elemento.categoria.id == categoria.id,
+      );
+
+      log(
+        name: LogId.categoriasService,
+        'excluir(): ${categoria.titulo} excluída.',
+      );
+    });
+  }
+
+  Categoria recuperarCategoriaPadrao() {
+    return _categoriasComItensRecorrentes
+        .firstWhere((c) => c.categoria.categoriaPadrao)
+        .categoria;
+  }
+
+
 }

@@ -12,6 +12,7 @@ class Categoria {
   DateTime? dtCriacao;
   DateTime? dtEdicao;
   bool estaExcluido;
+  bool categoriaPadrao;
 
   // #region ======================== Construtores =========================
 
@@ -24,6 +25,7 @@ class Categoria {
     this.dtCriacao,
     this.dtEdicao,
     this.estaExcluido = false,
+    this.categoriaPadrao = false,
   });
 
   static Categoria padrao() {
@@ -36,6 +38,7 @@ class Categoria {
       dtCriacao: null,
       dtEdicao: null,
       estaExcluido: false,
+      categoriaPadrao: false,
     );
   }
 
