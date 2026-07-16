@@ -2,15 +2,15 @@ import 'dart:developer';
 
 import 'package:sqflite/sqflite.dart';
 
+import '../../../core/constants/logs/logs.dart';
 import '../../../core/contracts/contrato_repository.dart';
 import '../model/lista_model.dart';
 import '../screen/lista_ui.dart';
-class ListaRepository
-    implements ContratoRepository<Lista> {
-  static const String msgId = '🗒️ListaR';
+
+class ListaRepository implements ContratoRepository<Lista> {
   late Database dbLocal;
   List<Lista> listas = [];
- final List<ListaUi> listasTeste = [
+  final List<ListaUi> listasTeste = [
     ListaUi(
       lista: Lista(
         id: 1,
@@ -186,44 +186,42 @@ class ListaRepository
   void _iniciarRepositorio() async {
     if (listas.isEmpty) {
       await recuperarTodos();
-      log(name: msgId,
-          '_iniciarRepositorio(): precisou iniciar o repositorio ');
+      log(
+        name: LogId.listaRepository,
+        '_iniciarRepositorio(): precisou iniciar o repositorio ',
+      );
     }
   }
 
-
-
   String titulobyid(int id) {
-    return listasTeste.firstWhere((element) => element.lista.id == id).lista.titulo;
+    return listasTeste
+        .firstWhere((element) => element.lista.id == id)
+        .lista
+        .titulo;
   }
-  
+
   @override
   Future<Lista> criar(Lista objeto) {
-    // TODO: implement criar
     throw UnimplementedError();
   }
-  
+
   @override
   Future<Lista> editar(Lista objeto) {
-    // TODO: implement editar
     throw UnimplementedError();
   }
-  
+
   @override
   Future<bool> excluir(int id) {
-    // TODO: implement excluir
     throw UnimplementedError();
   }
-  
+
   @override
   Future<Lista> recuperar(int id) {
-    // TODO: implement recuperar
     throw UnimplementedError();
   }
-  
+
   @override
   Future<List<Lista>> recuperarTodos() {
-    // TODO: implement recuperarTodos
     throw UnimplementedError();
   }
 }

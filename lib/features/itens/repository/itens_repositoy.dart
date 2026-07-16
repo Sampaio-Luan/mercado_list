@@ -3,7 +3,6 @@ import 'dart:developer';
 import 'package:sqflite/sqflite.dart';
 
 import '../../../core/constants/logs/logs.dart';
-import '../../../core/database/schema/tb_item.dart';
 
 class ItensRepository {
 Future<int> moverParaCategoria({
