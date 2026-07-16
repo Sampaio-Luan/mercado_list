@@ -9,7 +9,6 @@ import '../../../core/constants/enums/tema_app.dart';
 import '../../../shared/widgets/menu_contexto/acao_menu_de_contexto.dart';
 import '../../../shared/widgets/menu_contexto/menu_de_contexto.dart';
 import '../../../shared/widgets/menu_contexto/tema_menu_de_contexto.dart';
-import '../../categoria/repository/categoria_repository.dart';
 import '../../categoria/screen/categorias_screen.dart';
 import '../../preferencias_usuario/preferencias_provider.dart';
 import '../model/lista_model.dart';

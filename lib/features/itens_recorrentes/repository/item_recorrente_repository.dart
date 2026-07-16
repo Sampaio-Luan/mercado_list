@@ -2,6 +2,7 @@ import 'dart:developer';
 
 import 'package:sqflite/sqflite.dart';
 
+import '../../../core/constants/logs/logs.dart';
 import '../../../core/contracts/contrato_repository.dart';
 import '../../../core/database/banco_local.dart';
 import '../../../core/database/schema/tb_item_recorrente.dart';
@@ -11,8 +12,6 @@ import '../model/item_recorrente_module.dart';
 class ItemRecorrenteRepository implements ContratoRepository<ItemRecorrente> {
   final BancoLocal bancoLocal;
   final ItemRecorrenteMapper itemRecorrenteMapper;
-
-  static const _log = '⌚ItemRecorrenteRepository';
 
   ItemRecorrenteRepository({
     required this.bancoLocal,
@@ -30,7 +29,10 @@ class ItemRecorrenteRepository implements ContratoRepository<ItemRecorrente> {
       itemRecorrenteMapper.paraMapa(objeto),
     );
 
-    log(name: _log, 'criar(): criado com sucesso ! id: $id');
+    log(
+      name: LogId.itensRecorrentesRepository,
+      'criar(): criado com sucesso ! id: $id',
+    );
     return recuperar(id);
   }
 
@@ -49,7 +51,7 @@ class ItemRecorrenteRepository implements ContratoRepository<ItemRecorrente> {
       throw Exception('ItemRecorrente ${objeto.id} nao encontrada.');
     }
     log(
-      name: _log,
+      name: LogId.itensRecorrentesRepository,
       'editar(): ${objeto.titulo} editado com sucesso ! id: ${objeto.id}',
     );
 
@@ -70,7 +72,7 @@ class ItemRecorrenteRepository implements ContratoRepository<ItemRecorrente> {
       throw Exception('ItemRecorrente $id nao encontrada.');
     }
     log(
-      name: _log,
+      name: LogId.itensRecorrentesRepository,
       'excluir(): ItemRecorrente id: $id excluido do banco de dados local com sucesso',
     );
 
@@ -94,7 +96,10 @@ class ItemRecorrenteRepository implements ContratoRepository<ItemRecorrente> {
       resultado.first,
     );
 
-    log(name: _log, ' recuperar(): $itemRecorrente');
+    log(
+      name: LogId.itensRecorrentesRepository,
+      ' recuperar(): $itemRecorrente',
+    );
     return itemRecorrente;
   }
 
@@ -112,8 +117,35 @@ class ItemRecorrenteRepository implements ContratoRepository<ItemRecorrente> {
         .map(itemRecorrenteMapper.doMapa)
         .toList();
 
-    log(name: _log, ' recuperarTodos(): vazio');
+    log(name: LogId.itensRecorrentesRepository, ' recuperarTodos(): vazio');
 
     return itens;
+  }
+
+  Future<int> moverParaCategoria({
+    required int categoriaOrigem,
+    required int categoriaDestino,
+    DatabaseExecutor ? databaseExecutor
+  }) async {
+    final dbLocal =  databaseExecutor ?? await _db;
+    final linhasAfetadas = await dbLocal.update(
+  TbItemRecorrente.nomeTabela,
+  {
+    TbItemRecorrente.colunaIdCategoria: categoriaDestino,
+  },
+  where:
+      '${TbItemRecorrente.colunaIdCategoria} = ? AND '
+      '${TbItemRecorrente.colunaEstaExcluido} = ?',
+  whereArgs: [
+    categoriaOrigem,
+    0,
+  ],
+);
+    log(
+  name: LogId.itensRecorrentesRepository,
+  'moverParaCategoria(): $linhasAfetadas itens recorrentes movidos '
+  'da categoria $categoriaOrigem para $categoriaDestino',
+);
+    return linhasAfetadas;
   }
 }

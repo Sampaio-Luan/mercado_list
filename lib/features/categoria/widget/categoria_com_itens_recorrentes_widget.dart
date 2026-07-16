@@ -58,7 +58,7 @@ class CategoriaComItensRecorrentesWidget extends StatelessWidget {
                         ? "Sem itens"
                         : itensRecorrentes.length == 1
                         ? "${itensRecorrentes.length} item"
-                        : "${itensRecorrentes.length} itens"} • Ordem: ${categoria.ordem} • id: ${categoria.id}',
+                        : "${itensRecorrentes.length} itens"} • Ordem: ${categoria.ordem} • id: ${categoria.id} •  ${categoria.categoriaPadrao ? '🔴' : '🟢'}',
                   ),
                   //Text(' • Ordem: ${categoria.ordem} • id: ${categoria.id}'),
                 ],

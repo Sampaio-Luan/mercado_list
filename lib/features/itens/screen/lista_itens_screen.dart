@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:lottie/lottie.dart';
-import 'package:provider/provider.dart';
 
-import '../../listas/repository/lista_repository.dart';
 
 class ListaItensScreen extends StatelessWidget {
   const ListaItensScreen({super.key});

@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'itens/screen/lista_itens_screen.dart';
-import 'listas/repository/lista_repository.dart';
 import 'listas/screen/lista_de_listas_screen.dart';
 import 'preferencias_usuario/preferencias_provider.dart';
 
