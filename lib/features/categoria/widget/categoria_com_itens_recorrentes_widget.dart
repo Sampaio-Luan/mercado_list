@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 
 import '../../../shared/widgets/bottom_sheet_pesquisa/bottom_sheet_pesquisa_generica_exportacoes.dart';
-import '../../itens_recorrentes/model/item_recorrente_module.dart';
+import '../../itens_recorrentes/model/item_recorrente_model.dart';
 import '../form/categoria_formulario.dart';
 import '../model/categoria_com_itens_recorrentes_model.dart';
 import '../model/categoria_model.dart';

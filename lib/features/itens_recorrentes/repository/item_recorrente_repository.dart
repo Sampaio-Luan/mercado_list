@@ -7,7 +7,7 @@ import '../../../core/contracts/contrato_repository.dart';
 import '../../../core/database/banco_local.dart';
 import '../../../core/database/schema/tb_item_recorrente.dart';
 import '../mapper/item_recorrente_mapper.dart';
-import '../model/item_recorrente_module.dart';
+import '../model/item_recorrente_model.dart';
 
 class ItemRecorrenteRepository implements ContratoRepository<ItemRecorrente> {
   final BancoLocal bancoLocal;

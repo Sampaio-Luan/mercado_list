@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 
-import '../../core/constants/enums/cores.dart';
+import '../../core/constants/enums/cor.dart';
 
 
 class SeletorDeCor extends StatelessWidget {

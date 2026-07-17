@@ -3,9 +3,9 @@ import 'dart:developer';
 import '../../../core/constants/logs/logs.dart';
 import '../../../core/database/banco_local.dart';
 import '../../itens/service/itens_service.dart';
-import '../../itens_recorrentes/model/item_recorrente_module.dart';
+import '../../itens_recorrentes/model/item_recorrente_model.dart';
 import '../../itens_recorrentes/repository/item_recorrente_repository.dart';
-import '../../itens_recorrentes/service/itens_recorrentes_service.dart';
+import '../../itens_recorrentes/service/item_recorrente_service.dart';
 import '../model/categoria_com_itens_recorrentes_model.dart';
 import '../model/categoria_model.dart';
 import '../repository/categoria_repository.dart';
@@ -14,7 +14,7 @@ class CategoriasService {
   final BancoLocal _bancoLocal;
   final CategoriasRepository _categoriasRepository;
   final ItemRecorrenteRepository _itensRecorrentesRepository;
-  final ItensRecorrentesService _itemRecorrenteService;
+  final ItemRecorrenteService _itemRecorrenteService;
   final ItensService _itemService;
 
   final List<CategoriaComItensRecorrentes> _categoriasComItensRecorrentes = [];
@@ -31,8 +31,8 @@ class CategoriasService {
 
   Future<void> carregar() async {
     List<Categoria> categorias = await _categoriasRepository.recuperarTodos();
-    List<ItemRecorrente> itensRecorrentes = await _itensRecorrentesRepository
-        .recuperarTodos();
+    List<ItemRecorrente> itensRecorrentes =
+        await _itensRecorrentesRepository.recuperarTodos();
 
     _categoriasComItensRecorrentes
       ..clear()
@@ -67,9 +67,8 @@ class CategoriasService {
       _categoriasComItensRecorrentes[i].categoria.dtEdicao = dataEdicao;
     }
 
-    List<Categoria> categorias = categoriasComItensRecorrentes
-        .map((e) => e.categoria)
-        .toList();
+    List<Categoria> categorias =
+        categoriasComItensRecorrentes.map((e) => e.categoria).toList();
     log(
       name: LogId.categoriasService,
       'reordenar(): ${categorias.length} categorias reordenadas',
@@ -84,7 +83,6 @@ class CategoriasService {
       }
 
       final categoriaPadrao = recuperarCategoriaPadrao();
-
 
       await _itemRecorrenteService.moverParaCategoria(
         categoriaOrigem: categoria.id!,
@@ -117,6 +115,4 @@ class CategoriasService {
         .firstWhere((c) => c.categoria.categoriaPadrao)
         .categoria;
   }
-
-
 }

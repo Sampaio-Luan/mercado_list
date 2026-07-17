@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../core/constants/enums/cores.dart';
+import '../../../core/constants/enums/cor.dart';
 import '../../../core/utils/data_utils.dart';
 
 class Categoria {

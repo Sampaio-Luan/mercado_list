@@ -2,7 +2,7 @@ import 'dart:developer';
 
 import 'package:flutter/material.dart';
 
-import '../../../core/constants/enums/estados_de_tela.dart';
+import '../../../core/constants/enums/estado_de_tela.dart';
 import '../../../core/constants/logs/logs.dart';
 import '../model/categoria_com_itens_recorrentes_model.dart';
 import '../service/categorias_service.dart';

@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 
 import 'package:provider/provider.dart';
 
-import '../../../core/constants/enums/cores.dart';
+import '../../../core/constants/enums/cor.dart';
 import '../../../core/extensions/snackbar_extension.dart';
 import '../../../core/mixins/validacoes_mixin.dart';
 import '../../../shared/widgets/campos_formulario/campo_texto.dart';
-import '../../../shared/widgets/linha_botoes_canc_conf_widget.dart';
+import '../../../shared/widgets/linha_botoes_confirmacao.dart';
 import '../../../shared/widgets/seletor_de_cor.dart';
 import '../model/categoria_model.dart';
 import '../repository/categoria_repository.dart';

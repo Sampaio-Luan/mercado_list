@@ -1,4 +1,4 @@
-import '../../../core/constants/enums/cores.dart';
+import '../../../core/constants/enums/cor.dart';
 import '../../../core/contracts/contrato_mapper.dart';
 import '../../../core/database/schema/tb_categoria.dart';
 import '../../../core/utils/data_utils.dart';

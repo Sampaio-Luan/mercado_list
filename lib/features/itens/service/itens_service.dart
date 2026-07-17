@@ -3,7 +3,7 @@ import 'dart:developer';
 import 'package:sqflite/sqflite.dart';
 
 import '../../../core/constants/logs/logs.dart';
-import '../repository/itens_repositoy.dart';
+import '../repository/itens_repository.dart';
 
 class ItensService {
   final ItensRepository _repository;

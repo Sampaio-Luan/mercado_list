@@ -2,7 +2,7 @@ import '../../../core/constants/enums/tipo_medida.dart';
 import '../../../core/contracts/contrato_mapper.dart';
 import '../../../core/database/schema/tb_item_recorrente.dart';
 import '../../../core/utils/data_utils.dart';
-import '../model/item_recorrente_module.dart';
+import '../model/item_recorrente_model.dart';
 
 class ItemRecorrenteMapper implements ContratoMapper<ItemRecorrente> {
   @override
