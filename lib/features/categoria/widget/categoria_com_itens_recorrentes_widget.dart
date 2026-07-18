@@ -1,10 +1,15 @@
 import 'package:flutter/material.dart';
 
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
+import 'package:provider/provider.dart';
 
+import '../../../core/constants/enums/tipo_dialogo.dart';
+import '../../../core/extensions/dialogo_extension.dart';
+import '../../../core/services/carregamento_service.dart';
 import '../../../shared/widgets/bottom_sheet_pesquisa/bottom_sheet_pesquisa_generica_exportacoes.dart';
 import '../../itens_recorrentes/model/item_recorrente_model.dart';
 import '../form/categoria_formulario.dart';
+import '../controller/categorias_controller.dart';
 import '../model/categoria_com_itens_recorrentes_model.dart';
 import '../model/categoria_model.dart';
 
@@ -15,8 +20,8 @@ class CategoriaComItensRecorrentesWidget extends StatelessWidget {
   CategoriaComItensRecorrentesWidget({
     super.key,
     required this.categoriaComItensRecorrentes,
-  }) : categoria = categoriaComItensRecorrentes.categoria,
-       itensRecorrentes = categoriaComItensRecorrentes.itensRecorrentes;
+  })  : categoria = categoriaComItensRecorrentes.categoria,
+        itensRecorrentes = categoriaComItensRecorrentes.itensRecorrentes;
 
   @override
   Widget build(BuildContext context) {
@@ -28,7 +33,6 @@ class CategoriaComItensRecorrentesWidget extends StatelessWidget {
           color: categoria.cor.withAlpha(15),
           borderRadius: BorderRadius.circular(5),
         ),
-
         child: Row(
           spacing: 15,
           children: [
@@ -54,11 +58,7 @@ class CategoriaComItensRecorrentesWidget extends StatelessWidget {
                     ),
                   ),
                   Text(
-                    '${itensRecorrentes.isEmpty
-                        ? "Sem itens"
-                        : itensRecorrentes.length == 1
-                        ? "${itensRecorrentes.length} item"
-                        : "${itensRecorrentes.length} itens"} • Ordem: ${categoria.ordem} • id: ${categoria.id} •  ${categoria.categoriaPadrao ? '🔴' : '🟢'}',
+                    '${itensRecorrentes.isEmpty ? "Sem itens" : itensRecorrentes.length == 1 ? "${itensRecorrentes.length} item" : "${itensRecorrentes.length} itens"} • Ordem: ${categoria.ordem} • id: ${categoria.id} •  ${categoria.categoriaPadrao ? '🔴' : '🟢'}',
                   ),
                   //Text(' • Ordem: ${categoria.ordem} • id: ${categoria.id}'),
                 ],
@@ -90,10 +90,25 @@ class CategoriaComItensRecorrentesWidget extends StatelessWidget {
                 );
               },
             ),
+            IconButton(
+              tooltip: categoria.categoriaPadrao
+                  ? 'A categoria padrão não pode ser excluída'
+                  : 'Excluir categoria',
+              style: IconButton.styleFrom(
+                backgroundColor: Theme.of(context).colorScheme.errorContainer,
+              ),
+              icon: Icon(
+                PhosphorIcons.trash,
+                size: 25,
+                color: Theme.of(context).colorScheme.onErrorContainer,
+              ),
+              onPressed: categoria.categoriaPadrao
+                  ? null
+                  : () => _confirmarExclusao(context),
+            ),
           ],
         ),
       ),
-
       onTap: () {
         BottomSheetPesquisaGenerica.exibir<ItemRecorrente>(
           context: context,
@@ -129,5 +144,36 @@ class CategoriaComItensRecorrentesWidget extends StatelessWidget {
         );
       },
     );
+  }
+
+  Future<void> _confirmarExclusao(BuildContext context) async {
+    final resultado = await context.confirmar(
+      titulo: 'Excluir categoria',
+      mensagem: 'Os itens recorrentes de "${categoria.titulo}" serão movidos '
+          'para a categoria padrão. Deseja continuar?',
+      textoConfirmar: 'Excluir',
+    );
+
+    if (resultado != ResultadoDialogo.confirmar || !context.mounted) {
+      return;
+    }
+
+    final controller = context.read<CategoriasController>();
+
+    try {
+      await CarregamentoService.executar<void>(
+        context: context,
+        titulo: 'Excluindo categoria',
+        mensagemSucesso: 'Categoria excluída com sucesso.',
+        mensagemErro:
+            'Não foi possível excluir a categoria. Nenhuma alteração foi aplicada.',
+        operacao: (atualizar) => controller.excluir(
+          categoria,
+          aoProgredir: atualizar,
+        ),
+      );
+    } catch (_) {
+      // O Controller registra o erro e o card apresenta o feedback ao usuário.
+    }
   }
 }

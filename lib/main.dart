@@ -10,8 +10,6 @@ import 'features/categoria/controller/categorias_controller.dart';
 import 'features/categoria/mapper/categoria_mapper.dart';
 import 'features/categoria/repository/categoria_repository.dart';
 import 'features/categoria/service/categorias_service.dart';
-import 'features/itens/repository/itens_repository.dart';
-import 'features/itens/service/itens_service.dart';
 import 'features/itens_recorrentes/mapper/item_recorrente_mapper.dart';
 import 'features/itens_recorrentes/repository/item_recorrente_repository.dart';
 import 'features/itens_recorrentes/service/item_recorrente_service.dart';
@@ -25,7 +23,7 @@ void main() async {
   final prefs = await SharedPreferences.getInstance();
   final preferenciasService = PreferenciasService(prefs);
 
-  final categoriasRespository = CategoriasRepository(
+  final categoriasRepository = CategoriasRepository(
     bancoLocal: BancoLocal.instancia,
     categoriaMapper: CategoriaMapper(),
   );
@@ -33,16 +31,10 @@ void main() async {
     bancoLocal: BancoLocal.instancia,
     itemRecorrenteMapper: ItemRecorrenteMapper(),
   );
-  final itemService = ItensService(repository: ItensRepository());
   final itemRecorrenteService = ItemRecorrenteService(
-    repository: itemRecorrentesRepository,
+    itemRecorrentesRepository,
   );
-  final categoriasService = CategoriasService(
-      categoriasRepository: categoriasRespository,
-      itensRecorrentesRepository: itemRecorrentesRepository,
-      itemService: itemService,
-      itemRecorrenteService: itemRecorrenteService,
-      bancoLocal: BancoLocal.instancia);
+  final categoriasService = CategoriasService(categoriasRepository);
 
   runApp(
     MultiProvider(
@@ -54,9 +46,11 @@ void main() async {
           lazy: false,
         ),
         ChangeNotifierProvider(
-          create: (context) =>
-              CategoriasController(categoriasService: categoriasService)
-                ..carregar(),
+          create: (context) => CategoriasController(
+            BancoLocal.instancia,
+            categoriasService,
+            itemRecorrenteService,
+          )..carregar(),
         ),
       ],
       child: const MeuApp(),

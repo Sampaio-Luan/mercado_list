@@ -37,7 +37,6 @@ class MeuApp extends StatelessWidget {
       supportedLocales: const [Locale('pt', 'BR')],
       debugShowCheckedModeBanner: false,
       title: 'Flutter Demo',
-
       theme: tema == TemaApp.sistema
           ? theme.lightHighContrast()
           : (tema == TemaApp.claro ? theme.light() : theme.dark()),

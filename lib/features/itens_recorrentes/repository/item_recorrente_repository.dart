@@ -113,39 +113,49 @@ class ItemRecorrenteRepository implements ContratoRepository<ItemRecorrente> {
       whereArgs: [0],
     );
 
-    List<ItemRecorrente> itens = resultado
-        .map(itemRecorrenteMapper.doMapa)
-        .toList();
+    List<ItemRecorrente> itens =
+        resultado.map(itemRecorrenteMapper.doMapa).toList();
 
     log(name: LogId.itensRecorrentesRepository, ' recuperarTodos(): vazio');
 
     return itens;
   }
 
-  Future<int> moverParaCategoria({
+  Future<List<ItemRecorrente>> buscarPorCategoria(
+    int idCategoria, {
+    DatabaseExecutor? databaseExecutor,
+  }) async {
+    final db = databaseExecutor ?? await _db;
+    final resultado = await db.query(
+      TbItemRecorrente.nomeTabela,
+      where: '${TbItemRecorrente.colunaIdCategoria} = ?',
+      whereArgs: [idCategoria],
+    );
+
+    return resultado.map(itemRecorrenteMapper.doMapa).toList();
+  }
+
+  Future<int> atualizarCategoriaDosItens({
     required int categoriaOrigem,
     required int categoriaDestino,
-    DatabaseExecutor ? databaseExecutor
+    DatabaseExecutor? databaseExecutor,
   }) async {
-    final dbLocal =  databaseExecutor ?? await _db;
-    final linhasAfetadas = await dbLocal.update(
-  TbItemRecorrente.nomeTabela,
-  {
-    TbItemRecorrente.colunaIdCategoria: categoriaDestino,
-  },
-  where:
-      '${TbItemRecorrente.colunaIdCategoria} = ? AND '
-      '${TbItemRecorrente.colunaEstaExcluido} = ?',
-  whereArgs: [
-    categoriaOrigem,
-    0,
-  ],
-);
+    final db = databaseExecutor ?? await _db;
+    final linhasAfetadas = await db.update(
+      TbItemRecorrente.nomeTabela,
+      {
+        TbItemRecorrente.colunaIdCategoria: categoriaDestino,
+        TbItemRecorrente.colunaDataAlteracao: DateTime.now().toIso8601String(),
+      },
+      where: '${TbItemRecorrente.colunaIdCategoria} = ?',
+      whereArgs: [categoriaOrigem],
+    );
+
     log(
-  name: LogId.itensRecorrentesRepository,
-  'moverParaCategoria(): $linhasAfetadas itens recorrentes movidos '
-  'da categoria $categoriaOrigem para $categoriaDestino',
-);
+      name: LogId.itensRecorrentesRepository,
+      'atualizarCategoriaDosItens(): $linhasAfetadas itens movidos '
+      'da categoria $categoriaOrigem para $categoriaDestino',
+    );
     return linhasAfetadas;
   }
 }

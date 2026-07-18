@@ -65,8 +65,9 @@ class CategoriasRepository implements ContratoRepository<Categoria> {
     final linhasAfetadas = await db.update(
       TbCategoria.nomeTabela,
       {TbCategoria.colunaEstaExcluido: 1},
-      where: '${TbCategoria.colunaId} = ?',
-      whereArgs: [id],
+      where: '${TbCategoria.colunaId} = ? AND '
+          '${TbCategoria.colunaCategoriaPadrao} = ?',
+      whereArgs: [id, 0],
     );
 
     if (linhasAfetadas == 0) {
@@ -79,6 +80,27 @@ class CategoriasRepository implements ContratoRepository<Categoria> {
     );
 
     return true;
+  }
+
+  Future<Categoria> buscarCategoriaPadrao({
+    DatabaseExecutor? databaseExecutor,
+  }) async {
+    final db = databaseExecutor ?? await _db;
+    final resultado = await db.query(
+      TbCategoria.nomeTabela,
+      where: '${TbCategoria.colunaCategoriaPadrao} = ? AND '
+          '${TbCategoria.colunaEstaExcluido} = ?',
+      whereArgs: [1, 0],
+    );
+
+    if (resultado.length != 1) {
+      throw StateError(
+        'Era esperada uma categoria padrão ativa, mas foram encontradas '
+        '${resultado.length}.',
+      );
+    }
+
+    return categoriaMapper.doMapa(resultado.single);
   }
 
   @override
