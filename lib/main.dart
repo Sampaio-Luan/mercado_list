@@ -10,6 +10,7 @@ import 'features/categoria/controller/categorias_controller.dart';
 import 'features/categoria/mapper/categoria_mapper.dart';
 import 'features/categoria/repository/categoria_repository.dart';
 import 'features/categoria/service/categorias_service.dart';
+import 'features/categoria/service/excluir_categoria_service.dart';
 import 'features/itens_recorrentes/mapper/item_recorrente_mapper.dart';
 import 'features/itens_recorrentes/repository/item_recorrente_repository.dart';
 import 'features/itens_recorrentes/service/item_recorrente_service.dart';
@@ -35,6 +36,11 @@ void main() async {
     itemRecorrentesRepository,
   );
   final categoriasService = CategoriasService(categoriasRepository);
+  final excluirCategoriaService = ExcluirCategoriaService(
+    BancoLocal.instancia,
+    categoriasService,
+    itemRecorrenteService,
+  );
 
   runApp(
     MultiProvider(
@@ -47,9 +53,9 @@ void main() async {
         ),
         ChangeNotifierProvider(
           create: (context) => CategoriasController(
-            BancoLocal.instancia,
             categoriasService,
             itemRecorrenteService,
+            excluirCategoriaService,
           )..carregar(),
         ),
       ],

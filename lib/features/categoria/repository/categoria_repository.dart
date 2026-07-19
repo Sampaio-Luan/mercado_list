@@ -3,9 +3,11 @@ import 'dart:developer';
 import 'package:sqflite/sqflite.dart';
 
 import '../../../core/constants/logs/logs.dart';
+import '../../../core/constants/enums/cor.dart';
 import '../../../core/contracts/contrato_repository.dart';
 import '../../../core/database/banco_local.dart';
 import '../../../core/database/schema/tb_categoria.dart';
+import '../../../core/utils/data_utils.dart';
 import '../mapper/categoria_mapper.dart';
 import '../model/categoria_model.dart';
 
@@ -23,6 +25,10 @@ class CategoriasRepository implements ContratoRepository<Categoria> {
   @override
   Future<Categoria> criar(Categoria objeto) async {
     final db = await _db;
+    final agora = DataUtils.agoraUtc();
+    objeto
+      ..dataCriacao ??= agora
+      ..dataAlteracao ??= agora;
     int id = await db.insert(
       TbCategoria.nomeTabela,
       categoriaMapper.paraMapa(objeto),
@@ -39,10 +45,26 @@ class CategoriasRepository implements ContratoRepository<Categoria> {
     Categoria objeto, {
     DatabaseExecutor? databaseExecutor,
   }) async {
+    if (objeto.id == null || objeto.id! <= 0) {
+      throw StateError(
+          'A categoria precisa estar persistida para ser editada.');
+    }
     final db = databaseExecutor ?? await _db;
+    final categoriaPersistida = await recuperar(
+      objeto.id!,
+      databaseExecutor: db,
+    );
+    final dataAlteracao = DataUtils.agoraUtc();
     final linhasAfetadas = await db.update(
       TbCategoria.nomeTabela,
-      categoriaMapper.paraMapa(objeto),
+      {
+        if (!categoriaPersistida.categoriaPadrao)
+          TbCategoria.colunaTitulo: objeto.titulo,
+        TbCategoria.colunaCor: Cor.obterPorColor(color: objeto.cor).name,
+        TbCategoria.colunaDescricao: objeto.descricao,
+        TbCategoria.colunaDataAlteracao:
+            DataUtils.paraPersistencia(dataAlteracao),
+      },
       where: '${TbCategoria.colunaId} = ?',
       whereArgs: [objeto.id],
     );
@@ -55,19 +77,29 @@ class CategoriasRepository implements ContratoRepository<Categoria> {
       'editar(): ${objeto.titulo} editado com sucesso ! id: ${objeto.id}',
     );
 
-    return recuperar(objeto.id!);
+    return recuperar(objeto.id!, databaseExecutor: db);
   }
 
   @override
-  Future<bool> excluir(int id, {DatabaseExecutor? databaseExecutor}) async {
+  Future<void> excluir(
+    int id, {
+    DatabaseExecutor? databaseExecutor,
+    DateTime? dataAlteracao,
+  }) async {
     final db = databaseExecutor ?? await _db;
 
     final linhasAfetadas = await db.update(
       TbCategoria.nomeTabela,
-      {TbCategoria.colunaEstaExcluido: 1},
+      {
+        TbCategoria.colunaExcluido: 1,
+        TbCategoria.colunaDataAlteracao: DataUtils.paraPersistencia(
+          dataAlteracao ?? DataUtils.agoraUtc(),
+        ),
+      },
       where: '${TbCategoria.colunaId} = ? AND '
-          '${TbCategoria.colunaCategoriaPadrao} = ?',
-      whereArgs: [id, 0],
+          '${TbCategoria.colunaCategoriaPadrao} = ? AND '
+          '${TbCategoria.colunaExcluido} = ?',
+      whereArgs: [id, 0, 0],
     );
 
     if (linhasAfetadas == 0) {
@@ -78,8 +110,6 @@ class CategoriasRepository implements ContratoRepository<Categoria> {
       name: LogId.categoriaRepository,
       'excluir(): Categoria id: $id excluido do banco de dados local com sucesso',
     );
-
-    return true;
   }
 
   Future<Categoria> buscarCategoriaPadrao({
@@ -89,7 +119,7 @@ class CategoriasRepository implements ContratoRepository<Categoria> {
     final resultado = await db.query(
       TbCategoria.nomeTabela,
       where: '${TbCategoria.colunaCategoriaPadrao} = ? AND '
-          '${TbCategoria.colunaEstaExcluido} = ?',
+          '${TbCategoria.colunaExcluido} = ?',
       whereArgs: [1, 0],
     );
 
@@ -104,13 +134,17 @@ class CategoriasRepository implements ContratoRepository<Categoria> {
   }
 
   @override
-  Future<Categoria> recuperar(int id) async {
-    final db = await _db;
+  Future<Categoria> recuperar(
+    int id, {
+    DatabaseExecutor? databaseExecutor,
+  }) async {
+    final db = databaseExecutor ?? await _db;
 
     final resultado = await db.query(
       TbCategoria.nomeTabela,
-      where: '${TbCategoria.colunaId} = ?',
-      whereArgs: [id],
+      where: '${TbCategoria.colunaId} = ? AND '
+          '${TbCategoria.colunaExcluido} = ?',
+      whereArgs: [id, 0],
     );
 
     if (resultado.isEmpty) {
@@ -127,7 +161,7 @@ class CategoriasRepository implements ContratoRepository<Categoria> {
     final db = await _db;
     final resultado = await db.query(
       TbCategoria.nomeTabela,
-      where: '${TbCategoria.colunaEstaExcluido} = ?',
+      where: '${TbCategoria.colunaExcluido} = ?',
       whereArgs: [0],
       orderBy: TbCategoria.colunaOrdem,
     );
@@ -144,15 +178,19 @@ class CategoriasRepository implements ContratoRepository<Categoria> {
   Future<void> atualizarOrdens(
     List<Categoria> categorias, {
     DatabaseExecutor? databaseExecutor,
+    DateTime? dataAlteracao,
   }) async {
     final db = databaseExecutor ?? await _db;
+    final dataDaOperacao = dataAlteracao ?? DataUtils.agoraUtc();
     Batch batch = db.batch();
     for (int i = 0; i < categorias.length; i++) {
       batch.update(
         TbCategoria.nomeTabela,
         {
-          TbCategoria.colunaOrdem: i,
-          TbCategoria.colunaDataAlteracao: DateTime.now().toIso8601String(),
+          TbCategoria.colunaOrdem: categorias[i].ordem,
+          TbCategoria.colunaDataAlteracao: DataUtils.paraPersistencia(
+            dataDaOperacao,
+          ),
         },
         where: '${TbCategoria.colunaId} = ?',
         whereArgs: [categorias[i].id],
