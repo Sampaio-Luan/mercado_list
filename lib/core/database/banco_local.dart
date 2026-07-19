@@ -4,7 +4,9 @@ import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 
 import '../constants/logs/logs.dart';
+import '../contracts/gerenciador_transacoes.dart';
 
+import 'migrations/migrations.dart';
 import 'schema/tb_categoria.dart';
 import 'schema/tb_historico.dart';
 import 'schema/tb_item.dart';
@@ -12,7 +14,7 @@ import 'schema/tb_item_historico.dart';
 import 'schema/tb_item_recorrente.dart';
 import 'schema/tb_lista.dart';
 
-class BancoLocal {
+class BancoLocal implements GerenciadorTransacoes {
   BancoLocal._();
 
   static final BancoLocal _instancia = BancoLocal._();
@@ -30,20 +32,24 @@ class BancoLocal {
   }
 
   Future<Database> _iniciaBancoLocal() async {
-    return await openDatabase(
+    _dataBase = await openDatabase(
       join(await getDatabasesPath(), 'mercado_list_local.db'),
-      version: 2,
+      version: 5,
+      onConfigure: _onConfigure,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
+    return _dataBase!;
   }
 
-  void _onCreate(Database db, int version) async {
-    const String pragma = 'PRAGMA foreign_keys = ON;';
+  Future<void> _onConfigure(Database db) async {
+    await db.execute('PRAGMA foreign_keys = ON;');
+  }
 
-    await db.execute(pragma); // ✅ Ativa as chaves estrangeiras
+  Future<void> _onCreate(Database db, int version) async {
     await db.execute(TbCategoria.criarTabela);
     await db.execute(TbCategoria.inserirCategorias);
+    await db.execute(TbCategoria.criarIndiceCategoriaPadraoAtiva);
     await db.execute(TbItemRecorrente.criarTabela);
     await db.execute(TbItemRecorrente.inserirItensRecorrentes);
     await db.execute(TbLista.criarTabela);
@@ -58,34 +64,26 @@ class BancoLocal {
   }
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
-    if (oldVersion < 2) {
-      await db.execute('''
-            ALTER TABLE ${TbCategoria.nomeTabela}
-            ADD COLUMN ${TbCategoria.colunaCategoriaPadrao}
-            INTEGER NOT NULL DEFAULT 0
-        ''');
+    await Migrations.executar(
+      db,
+      versaoAnterior: oldVersion,
+      novaVersao: newVersion,
+    );
 
-      await db.update(
-        TbCategoria.nomeTabela,
-        {TbCategoria.colunaCategoriaPadrao: 1},
-        where: '${TbCategoria.colunaTitulo} = ?',
-        whereArgs: ['Outros'],
-      );
-
-      log(
-        name: LogId.bancolocal,
-        '_onUpgrade(): Banco de dados atualizado com sucesso. Versão: $newVersion',
-      );
-    }
+    log(
+      name: LogId.bancolocal,
+      '_onUpgrade(): Banco de dados atualizado com sucesso. Versão: $newVersion',
+    );
   }
 
-  Future<T> executarEmTransacao<T>(
-    Future<T> Function(Transaction transaction) acao,
+  @override
+  Future<T> executar<T>(
+    Future<T> Function(DatabaseExecutor executor) operacao,
   ) async {
     final db = await dataBase;
-    log(name: LogId.bancolocal, 'executarTransacao()');
+    log(name: LogId.bancolocal, 'executar()');
     return await db.transaction((transaction) async {
-      return await acao(transaction);
+      return await operacao(transaction);
     });
   }
 

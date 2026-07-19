@@ -18,7 +18,7 @@ Future<int> moverParaCategoria({
     //   },
     //   where:
     //       '${TbItem.colunaIdCategoria} = ? AND '
-    //       '${TbItem.colunaEstaExcluido} = ?',
+    //       '${TbItem.colunaExcluido} = ?',
     //   whereArgs: [
     //     categoriaOrigem,
     //     0,

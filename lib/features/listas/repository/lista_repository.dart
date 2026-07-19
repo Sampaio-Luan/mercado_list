@@ -211,7 +211,7 @@ class ListaRepository implements ContratoRepository<Lista> {
   }
 
   @override
-  Future<bool> excluir(int id) {
+  Future<void> excluir(int id) {
     throw UnimplementedError();
   }
 

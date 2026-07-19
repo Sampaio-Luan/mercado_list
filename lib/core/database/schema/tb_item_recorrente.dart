@@ -1,4 +1,5 @@
 import '../../contracts/contrato_tb_esquema.dart';
+import 'colunas_entidade.dart';
 import 'tb_categoria.dart';
 
 class TbItemRecorrente implements ContratoTbEsquema {
@@ -6,28 +7,27 @@ class TbItemRecorrente implements ContratoTbEsquema {
 
   static const String colunaId = 'id_item_recorrente';
   static const String colunaIdCategoria = 'id_categoria';
-  static const String colunaTitulo = 'titulo';
+  static const String colunaTitulo = ColunasEntidade.titulo;
   static const String colunaTipoMedida = 'tipo_medida';
-  static const String colunaDataCriacao = 'dt_criacao';
-  static const String colunaDataAlteracao = 'dt_alteracao';
-  static const String colunaEstaExcluido = 'esta_excluido';
+  static const String colunaDataCriacao = ColunasEntidade.dataCriacao;
+  static const String colunaDataAlteracao = ColunasEntidade.dataAlteracao;
+  static const String colunaExcluido = ColunasEntidade.excluido;
 
-  static const String criarTabela =
-      '''
+  static const String criarTabela = '''
     CREATE TABLE $nomeTabela (
       $colunaId INTEGER PRIMARY KEY AUTOINCREMENT,
       $colunaIdCategoria INTEGER NOT NULL,
       $colunaTitulo TEXT NOT NULL,
       $colunaTipoMedida TEXT NOT NULL,
-      $colunaDataCriacao TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      $colunaDataAlteracao TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      $colunaEstaExcluido INTEGER NOT NULL DEFAULT 0,
+      $colunaDataCriacao TIMESTAMP NOT NULL DEFAULT ${ColunasEntidade.dataAtualUtc},
+      $colunaDataAlteracao TIMESTAMP NOT NULL DEFAULT ${ColunasEntidade.dataAtualUtc},
+      $colunaExcluido INTEGER NOT NULL DEFAULT 0,
       FOREIGN KEY ($colunaIdCategoria) REFERENCES ${TbCategoria.nomeTabela}(${TbCategoria.colunaId}) ON UPDATE CASCADE ON DELETE CASCADE
     )
   ''';
 
-
-  static const String recuperarTodos = ''' SELECT * FROM $nomeTabela WHERE $colunaEstaExcluido = 0 ORDER BY $colunaTitulo ASC''';
+  static const String recuperarTodos =
+      ''' SELECT * FROM $nomeTabela WHERE $colunaExcluido = 0 ORDER BY $colunaTitulo ASC''';
 
   static const String inserirItensRecorrentes =
       '''INSERT INTO $nomeTabela ($colunaIdCategoria, $colunaTitulo, $colunaTipoMedida) VALUES
@@ -458,7 +458,7 @@ class TbItemRecorrente implements ContratoTbEsquema {
             (17,'Escorredor','und'),
             (17,'Lixeira','und'),
 
-            -- Outros (18)
+            -- Sem categoria (18)
             (18,'Carvão','und'),
             (18,'Gelo','kg'),
             (18,'Guardanapo','und'),
@@ -480,6 +480,4 @@ class TbItemRecorrente implements ContratoTbEsquema {
             (18,'Grampeador','und'),
             (18,'Elástico','und');
   ''';
-
-
 }

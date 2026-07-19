@@ -1,16 +1,16 @@
 import '../../contracts/contrato_tb_esquema.dart';
+import 'colunas_entidade.dart';
 
 class TbHistorico implements ContratoTbEsquema {
   static const String nomeTabela = 'tb_historico';
 
   static const String colunaId = 'id_historico';
-  static const String colunaTitulo = 'titulo';
+  static const String colunaTitulo = ColunasEntidade.titulo;
   static const String colunaDescricao = 'descricao';
   static const String colunaDataCompra = 'dt_compra';
-  static const String colunaDataCriacao = 'dt_criacao';
-  static const String colunaDataAlteracao = 'dt_alteracao';
-  static const String colunaEstaExcluido = 'esta_excluido';
-
+  static const String colunaDataCriacao = ColunasEntidade.dataCriacao;
+  static const String colunaDataAlteracao = ColunasEntidade.dataAlteracao;
+  static const String colunaExcluido = ColunasEntidade.excluido;
 
   static String criarTabela = '''
     CREATE TABLE $nomeTabela (
@@ -18,9 +18,9 @@ class TbHistorico implements ContratoTbEsquema {
       $colunaTitulo TEXT NOT NULL,
       $colunaDescricao TEXT,
       $colunaDataCompra TIMESTAMP NOT NULL,
-      $colunaDataCriacao TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      $colunaDataAlteracao TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      $colunaEstaExcluido INTEGER NOT NULL DEFAULT 0
+      $colunaDataCriacao TIMESTAMP NOT NULL DEFAULT ${ColunasEntidade.dataAtualUtc},
+      $colunaDataAlteracao TIMESTAMP NOT NULL DEFAULT ${ColunasEntidade.dataAtualUtc},
+      $colunaExcluido INTEGER NOT NULL DEFAULT 0
     )
   ''';
 }

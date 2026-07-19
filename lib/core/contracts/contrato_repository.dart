@@ -3,5 +3,5 @@ abstract interface class ContratoRepository<T> {
   Future<T> editar(T objeto);
   Future<T> recuperar(int id);
   Future<List<T>> recuperarTodos();
-  Future<bool> excluir(int id);
+  Future<void> excluir(int id);
 }

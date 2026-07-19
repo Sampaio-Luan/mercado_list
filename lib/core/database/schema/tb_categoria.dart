@@ -1,18 +1,21 @@
 import '../../contracts/contrato_tb_esquema.dart';
+import '../../constants/categoria_padrao_constantes.dart';
+import 'colunas_entidade.dart';
 
 class TbCategoria implements ContratoTbEsquema {
   static const String nomeTabela = 'tb_categoria';
 
   static const String colunaId = 'id_categoria';
-  static const String colunaTitulo = 'titulo';
+  static const String colunaTitulo = ColunasEntidade.titulo;
   static const String colunaCor = 'cor';
   static const String colunaOrdem = 'ordem';
   static const String colunaDescricao = 'descricao';
-  static const String colunaDataCriacao = 'dt_criacao';
-  static const String colunaDataAlteracao = 'dt_alteracao';
-  static const String colunaEstaExcluido = 'esta_excluido';
+  static const String colunaDataCriacao = ColunasEntidade.dataCriacao;
+  static const String colunaDataAlteracao = ColunasEntidade.dataAlteracao;
+  static const String colunaExcluido = ColunasEntidade.excluido;
   static const String colunaCategoriaPadrao = 'categoria_padrao';
-
+  static const String nomeIndiceCategoriaPadraoAtiva =
+      'idx_categoria_padrao_ativa';
 
   static const String criarTabela = '''
     CREATE TABLE $nomeTabela (
@@ -21,11 +24,19 @@ class TbCategoria implements ContratoTbEsquema {
       $colunaCor TEXT NOT NULL,
       $colunaOrdem INTEGER NOT NULL,
       $colunaDescricao TEXT,
-      $colunaDataCriacao TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      $colunaDataAlteracao TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      $colunaEstaExcluido INTEGER NOT NULL DEFAULT 0,
+      $colunaDataCriacao TIMESTAMP NOT NULL DEFAULT ${ColunasEntidade.dataAtualUtc},
+      $colunaDataAlteracao TIMESTAMP NOT NULL DEFAULT ${ColunasEntidade.dataAtualUtc},
+      $colunaExcluido INTEGER NOT NULL DEFAULT 0
+        CHECK ($colunaExcluido IN (0, 1)),
       $colunaCategoriaPadrao INTEGER NOT NULL DEFAULT 0
+        CHECK ($colunaCategoriaPadrao IN (0, 1))
     )
+  ''';
+
+  static const String criarIndiceCategoriaPadraoAtiva = '''
+    CREATE UNIQUE INDEX $nomeIndiceCategoriaPadraoAtiva
+    ON $nomeTabela ($colunaCategoriaPadrao)
+    WHERE $colunaCategoriaPadrao = 1 AND $colunaExcluido = 0
   ''';
 
   static const String inserirCategorias = '''
@@ -48,6 +59,6 @@ class TbCategoria implements ContratoTbEsquema {
       ('Peixaria', 'azulClaro', 15,0),
       ('Beleza', 'azul', 16,0),
       ('Utilidades', 'azulCinzento', 17,0),
-      ('Outros', 'marrom', 18, 1)
+      ('${CategoriaPadraoConstantes.titulo}', 'marrom', 18, 1)
   ''';
 }

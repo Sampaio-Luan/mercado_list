@@ -1,30 +1,26 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/constants/enums/cor.dart';
+import '../../../core/model/entidade_base.dart';
 import '../../../core/utils/data_utils.dart';
 
-class Categoria {
-  int? id;
-  String titulo;
+class Categoria extends EntidadeBase {
   Color cor;
   int ordem;
   String? descricao;
-  DateTime? dtCriacao;
-  DateTime? dtEdicao;
-  bool estaExcluido;
   bool categoriaPadrao;
 
   // #region ======================== Construtores =========================
 
   Categoria({
-    this.id,
-    required this.titulo,
+    super.id,
+    required super.titulo,
     required this.cor,
     required this.ordem,
     this.descricao,
-    this.dtCriacao,
-    this.dtEdicao,
-    this.estaExcluido = false,
+    super.dataCriacao,
+    super.dataAlteracao,
+    super.excluido,
     this.categoriaPadrao = false,
   });
 
@@ -35,17 +31,30 @@ class Categoria {
       cor: Cor.obterListaCores()[0],
       ordem: 0,
       descricao: null,
-      dtCriacao: null,
-      dtEdicao: null,
-      estaExcluido: false,
+      dataCriacao: null,
+      dataAlteracao: null,
+      excluido: false,
       categoriaPadrao: false,
+    );
+  }
+
+  Categoria copia() {
+    return Categoria(
+      id: id,
+      titulo: titulo,
+      cor: cor,
+      ordem: ordem,
+      descricao: descricao,
+      dataCriacao: dataCriacao,
+      dataAlteracao: dataAlteracao,
+      excluido: excluido,
+      categoriaPadrao: categoriaPadrao,
     );
   }
 
   // #endregion ===================== End Construtores ====================
 
   // #region ======================== Setters =============================
-  String setTitulo(String titulo) => this.titulo = titulo;
   Color setCor(Cor cor) => this.cor = Cor.obterCor(cor: cor);
   int setOrdem(int ordem) => this.ordem = ordem;
   void setDescricao(String descricao) {
@@ -56,6 +65,10 @@ class Categoria {
 
   @override
   String toString() {
-    return 'Categoria{\nid: $id, \ntitulo: $titulo, \ncor: $cor, \nordem: $ordem, \ndescricao: $descricao, \ndtCriacao: ${DataUtils.dataParaStr(data: dtCriacao!)}, \ndtEdicao: ${DataUtils.dataParaStr(data: dtEdicao!)}, \nestaExcluido: $estaExcluido \n}';
+    return 'Categoria{\nid: $id, \ntitulo: $titulo, \ncor: $cor, '
+        '\nordem: $ordem, \ndescricao: $descricao, '
+        '\ndataCriacao: ${dataCriacao == null ? null : DataUtils.formatarDataHora(dataCriacao!)}, '
+        '\ndataAlteracao: ${dataAlteracao == null ? null : DataUtils.formatarDataHora(dataAlteracao!)}, '
+        '\nexcluido: $excluido \n}';
   }
 }

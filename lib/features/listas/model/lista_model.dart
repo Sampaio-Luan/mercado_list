@@ -1,20 +1,17 @@
-class Lista{
-  int? id;
-  String titulo;
+import '../../../core/model/entidade_base.dart';
+
+class Lista extends EntidadeBase {
   String? descricao;
-  DateTime? dataCriacao;
-  DateTime? dataAlteracao;
-  bool estaExcluido;
 
 // #region ======================== Construtores =========================
 
   Lista({
-    this.id,
-    required this.titulo,
+    super.id,
+    required super.titulo,
     this.descricao,
-    this.dataCriacao,
-    this.dataAlteracao,
-    this.estaExcluido = false,
+    super.dataCriacao,
+    super.dataAlteracao,
+    super.excluido,
   });
 
   static Lista padrao() {
@@ -24,7 +21,7 @@ class Lista{
       descricao: null,
       dataCriacao: null,
       dataAlteracao: null,
-      estaExcluido: false,
+      excluido: false,
     );
   }
 // #endregion ===================== End Construtores ====================
@@ -38,19 +35,16 @@ class Lista{
       descricao: descricao,
       dataCriacao: dataCriacao,
       dataAlteracao: dataAlteracao,
-      estaExcluido: estaExcluido,
+      excluido: excluido,
     );
   }
- 
 
 // #endregion ===================== End Implementação ContratoModelo =====
 
 // #region ======================== Setters ==================================
-void setTitulo(String titulo) => this.titulo = titulo;
-void setDescricao(String descricao) {
-  descricao.isEmpty ? this.descricao = null : this.descricao = descricao;
-}
-
+  void setDescricao(String descricao) {
+    descricao.isEmpty ? this.descricao = null : this.descricao = descricao;
+  }
 
 //#endregion ===================== End Setters ==============================
 }

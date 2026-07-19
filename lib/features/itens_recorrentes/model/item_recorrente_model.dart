@@ -1,26 +1,19 @@
-
-
 import '../../../core/constants/enums/tipo_medida.dart';
+import '../../../core/model/entidade_base.dart';
 
-class ItemRecorrente{
-  int? id;
+class ItemRecorrente extends EntidadeBase {
   int idCategoria;
-  String titulo;
   TipoMedida tipoMedida;
-  DateTime? dataCriacao;
-  DateTime? dataAlteracao;
-  bool estaExcluido;
-
 
 // #region ======================== Construtores =========================
   ItemRecorrente({
-    this.id,
+    super.id,
     required this.idCategoria,
-    required this.titulo,
+    required super.titulo,
     required this.tipoMedida,
-    this.dataCriacao,
-    this.dataAlteracao,
-    this.estaExcluido = false,
+    super.dataCriacao,
+    super.dataAlteracao,
+    super.excluido,
   });
 
   static ItemRecorrente padrao({required int idCategoria}) {
@@ -28,13 +21,12 @@ class ItemRecorrente{
       id: null,
       idCategoria: idCategoria,
       titulo: '',
-      tipoMedida:  TipoMedida.und,
+      tipoMedida: TipoMedida.und,
       dataCriacao: null,
       dataAlteracao: null,
-      estaExcluido: false,
+      excluido: false,
     );
   }
-
 
   ItemRecorrente copia() {
     return ItemRecorrente(
@@ -44,14 +36,9 @@ class ItemRecorrente{
       tipoMedida: tipoMedida,
       dataCriacao: dataCriacao,
       dataAlteracao: dataAlteracao,
-      estaExcluido: estaExcluido,
+      excluido: excluido,
     );
   }
 
 // #region ======================== Setters =============================================
-  void setTitulo(String titulo) {
-    this.titulo = titulo;
-  }
-
-  void setEstaExcluido() => estaExcluido = !estaExcluido;
 }

@@ -19,34 +19,32 @@ class ItemRecorrenteMapper implements ContratoMapper<ItemRecorrente> {
       tipoMedida: TipoMedida.obterPorRotulo(
         rotulo: map[TbItemRecorrente.colunaTipoMedida],
       ),
-      dataCriacao: DataUtils.strParaData(
-        strData: map[TbItemRecorrente.colunaDataCriacao],
+      dataCriacao: DataUtils.daPersistencia(
+        map[TbItemRecorrente.colunaDataCriacao] as String,
       ),
-      dataAlteracao: DataUtils.strParaData(
-        strData: map[TbItemRecorrente.colunaDataAlteracao],
+      dataAlteracao: DataUtils.daPersistencia(
+        map[TbItemRecorrente.colunaDataAlteracao] as String,
       ),
-      estaExcluido: map[TbItemRecorrente.colunaEstaExcluido] == 0
-          ? false
-          : true,
+      excluido: map[TbItemRecorrente.colunaExcluido] == 1,
     );
   }
 
   @override
   Map<String, dynamic> paraMapa(ItemRecorrente objeto) {
     Map<String, dynamic> map = {
-      TbItemRecorrente.colunaId: objeto.id,
+      if (objeto.id != null) TbItemRecorrente.colunaId: objeto.id,
       TbItemRecorrente.colunaIdCategoria: objeto.idCategoria,
       TbItemRecorrente.colunaTitulo: objeto.titulo,
       TbItemRecorrente.colunaTipoMedida: TipoMedida.obterRotulo(
         tipo: objeto.tipoMedida,
       ),
       if (objeto.dataCriacao != null)
-        TbItemRecorrente.colunaDataCriacao: objeto.dataCriacao!
-            .toIso8601String(),
+        TbItemRecorrente.colunaDataCriacao:
+            DataUtils.paraPersistencia(objeto.dataCriacao!),
       if (objeto.dataAlteracao != null)
-        TbItemRecorrente.colunaDataAlteracao: objeto.dataAlteracao!
-            .toIso8601String(),
-      TbItemRecorrente.colunaEstaExcluido: objeto.estaExcluido ? 1 : 0,
+        TbItemRecorrente.colunaDataAlteracao:
+            DataUtils.paraPersistencia(objeto.dataAlteracao!),
+      TbItemRecorrente.colunaExcluido: objeto.excluido ? 1 : 0,
     };
     return map;
   }

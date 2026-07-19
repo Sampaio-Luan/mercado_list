@@ -20,13 +20,13 @@ class CategoriaMapper implements ContratoMapper<Categoria> {
       ),
       ordem: map[TbCategoria.colunaOrdem],
       descricao: map[TbCategoria.colunaDescricao],
-      dtCriacao: DataUtils.strParaData(
-        strData: map[TbCategoria.colunaDataCriacao],
+      dataCriacao: DataUtils.daPersistencia(
+        map[TbCategoria.colunaDataCriacao] as String,
       ),
-      dtEdicao: DataUtils.strParaData(
-        strData: map[TbCategoria.colunaDataAlteracao],
+      dataAlteracao: DataUtils.daPersistencia(
+        map[TbCategoria.colunaDataAlteracao] as String,
       ),
-      estaExcluido: map[TbCategoria.colunaEstaExcluido] == 1,
+      excluido: map[TbCategoria.colunaExcluido] == 1,
       categoriaPadrao: map[TbCategoria.colunaCategoriaPadrao] == 1,
     );
   }
@@ -40,11 +40,13 @@ class CategoriaMapper implements ContratoMapper<Categoria> {
       TbCategoria.colunaOrdem: objeto.ordem,
       if (objeto.descricao != null)
         TbCategoria.colunaDescricao: objeto.descricao,
-      if (objeto.dtCriacao != null)
-        TbCategoria.colunaDataCriacao: objeto.dtCriacao!.toIso8601String(),
-      if (objeto.dtEdicao != null)
-        TbCategoria.colunaDataAlteracao: objeto.dtEdicao!.toIso8601String(),
-      TbCategoria.colunaEstaExcluido: objeto.estaExcluido ? 1 : 0,
+      if (objeto.dataCriacao != null)
+        TbCategoria.colunaDataCriacao:
+            DataUtils.paraPersistencia(objeto.dataCriacao!),
+      if (objeto.dataAlteracao != null)
+        TbCategoria.colunaDataAlteracao:
+            DataUtils.paraPersistencia(objeto.dataAlteracao!),
+      TbCategoria.colunaExcluido: objeto.excluido ? 1 : 0,
       TbCategoria.colunaCategoriaPadrao: objeto.categoriaPadrao ? 1 : 0,
     };
   }
