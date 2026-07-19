@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../model/progresso_operacao.dart';
 import '../../shared/widgets/card_progresso_operacao.dart';
 
 class CarregamentoService {
@@ -10,9 +11,7 @@ class CarregamentoService {
   static Future<T> executar<T>({
     required BuildContext context,
     required String titulo,
-    required Future<T> Function(
-      void Function(int etapa, int total, String descricao) atualizar,
-    ) operacao,
+    required Future<T> Function(AoProgredir atualizar) operacao,
     String descricaoInicial = 'Preparando a operação...',
     String mensagemSucesso = 'Operação concluída com sucesso.',
     String mensagemErro = 'Não foi possível concluir a operação.',
@@ -38,11 +37,11 @@ class CarregamentoService {
 
     try {
       await WidgetsBinding.instance.endOfFrame;
-      final resultado = await operacao((etapa, total, descricao) {
+      final resultado = await operacao((atualizacao) {
         progresso.value = progresso.value.atualizar(
-          etapaAtual: etapa,
-          totalEtapas: total,
-          descricao: descricao,
+          etapaAtual: atualizacao.etapa,
+          totalEtapas: atualizacao.total,
+          descricao: atualizacao.descricao,
         );
       });
 

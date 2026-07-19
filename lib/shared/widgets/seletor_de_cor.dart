@@ -4,15 +4,52 @@ import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 
 import '../../core/constants/enums/cor.dart';
 
-
-class SeletorDeCor extends StatelessWidget {
+class SeletorDeCor extends StatefulWidget {
   final Cor corSelecionada;
-  final Function(Cor cor) onCorSelecionada;
+  final ValueChanged<Cor> onCorSelecionada;
+
   const SeletorDeCor({
     super.key,
     required this.corSelecionada,
     required this.onCorSelecionada,
   });
+
+  @override
+  State<SeletorDeCor> createState() => _SeletorDeCorState();
+}
+
+class _SeletorDeCorState extends State<SeletorDeCor> {
+  final ScrollController _controladorRolagem = ScrollController();
+  final GlobalKey _chaveCorSelecionadaInicial = GlobalKey();
+  late final Cor _corSelecionadaInicial;
+
+  @override
+  void initState() {
+    super.initState();
+    _corSelecionadaInicial = widget.corSelecionada;
+    _agendarExibicaoDaCorSelecionadaInicial();
+  }
+
+  @override
+  void dispose() {
+    _controladorRolagem.dispose();
+    super.dispose();
+  }
+
+  void _agendarExibicaoDaCorSelecionadaInicial() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_controladorRolagem.hasClients) return;
+      final objetoRenderizado =
+          _chaveCorSelecionadaInicial.currentContext?.findRenderObject();
+      if (objetoRenderizado == null) return;
+
+      _controladorRolagem.position.ensureVisible(
+        objetoRenderizado,
+        alignment: 0.5,
+        duration: Duration.zero,
+      );
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -26,47 +63,52 @@ class SeletorDeCor extends StatelessWidget {
           color: Theme.of(context).colorScheme.onSurface.withAlpha(190),
         ),
       ),
-      child: GridView.builder(
-          itemCount: Cor.values.length,
-          shrinkWrap: true,
-          scrollDirection: Axis.horizontal,
-          padding: const EdgeInsets.all(0),
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 1,
-            mainAxisSpacing: 5,
-          ),
-          itemBuilder: (context, index) {
-            Color cor = Theme.of(context).brightness == Brightness.light
-                ? Cor.obterCor(cor: Cor.values[index])
-                : Cor.obterCor(cor: Cor.values[index]).withAlpha(200);
-            return InkWell(
-              splashFactory: NoSplash.splashFactory,
-              onTap: () => onCorSelecionada(Cor.values[index]),
-              child: corSelecionada == Cor.values[index]
-                  ? Container(
-                      decoration: BoxDecoration(
-                        color: cor.withAlpha(45),
-                        border: Border.all(
-                          width: 3,
-                          color: cor,
-                        ),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: PhosphorIcon(
-                        PhosphorIcons.sealCheckFill,
-                        color: cor,
-                        size: 30,
-                      ),
-                    )
-                  : Container(
-                      decoration: BoxDecoration(
-                        color: cor,
+      child: SingleChildScrollView(
+        controller: _controladorRolagem,
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          spacing: 5,
+          children: Cor.values.map(_construirCor).toList(),
+        ),
+      ),
+    );
+  }
 
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-            );
-          }),
+  Widget _construirCor(Cor corSelecionavel) {
+    final selecionada = widget.corSelecionada == corSelecionavel;
+    final cor = Theme.of(context).brightness == Brightness.light
+        ? Cor.obterCor(cor: corSelecionavel)
+        : Cor.obterCor(cor: corSelecionavel).withAlpha(200);
+
+    return SizedBox.square(
+      key: ValueKey('cor-${corSelecionavel.name}'),
+      dimension: 45,
+      child: Semantics(
+        label: 'Cor ${corSelecionavel.name}',
+        selected: selecionada,
+        button: true,
+        child: InkWell(
+          splashFactory: NoSplash.splashFactory,
+          onTap: () => widget.onCorSelecionada(corSelecionavel),
+          child: Container(
+            key: corSelecionavel == _corSelecionadaInicial
+                ? _chaveCorSelecionadaInicial
+                : null,
+            decoration: BoxDecoration(
+              color: selecionada ? cor.withAlpha(45) : cor,
+              border: selecionada ? Border.all(width: 3, color: cor) : null,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: selecionada
+                ? PhosphorIcon(
+                    PhosphorIcons.sealCheckFill,
+                    color: cor,
+                    size: 30,
+                  )
+                : null,
+          ),
+        ),
+      ),
     );
   }
 }

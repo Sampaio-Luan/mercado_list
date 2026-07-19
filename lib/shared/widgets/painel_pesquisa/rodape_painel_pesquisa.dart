@@ -7,8 +7,8 @@ import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 ///
 /// Exibe a quantidade de itens selecionados no próprio rótulo do botão,
 /// proporcionando feedback claro ao usuário.
-class RodapeConfirmacaoSelecao extends StatelessWidget {
-  const RodapeConfirmacaoSelecao({
+class RodapePainelPesquisa extends StatelessWidget {
+  const RodapePainelPesquisa({
     super.key,
     required this.quantidadeSelecionados,
     required this.aoConfirmar,
@@ -72,8 +72,8 @@ class RodapeConfirmacaoSelecao extends StatelessWidget {
 /// Widget exibido quando a lista filtrada de resultados está vazia,
 /// seja por ausência de itens ou por nenhuma correspondência encontrada
 /// para o termo pesquisado.
-class EstadoVazioListaPesquisa extends StatelessWidget {
-  const EstadoVazioListaPesquisa({
+class EstadoVazioPainelPesquisa extends StatelessWidget {
+  const EstadoVazioPainelPesquisa({
     super.key,
     required this.mensagem,
     this.icone = PhosphorIcons.magnifyingGlassMinus,

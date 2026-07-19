@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 
 enum EstadoProgressoOperacao { processando, sucesso, erro }
 
@@ -123,13 +124,13 @@ class _IndicadorEstado extends StatelessWidget {
               ),
             ),
           EstadoProgressoOperacao.sucesso => Icon(
-              Icons.check_circle_rounded,
+              PhosphorIcons.checkCircle,
               key: const ValueKey('sucesso'),
               size: 64,
               color: Colors.green.shade600,
             ),
           EstadoProgressoOperacao.erro => Icon(
-              Icons.error_rounded,
+              PhosphorIcons.xCircle,
               key: const ValueKey('erro'),
               size: 64,
               color: cores.error,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 
 import '../constants/enums/tipo_snackbar.dart';
 
@@ -48,17 +49,23 @@ class _EstiloSnackbar {
       case TipoSnackbar.sucesso:
         return _EstiloSnackbar(
           cor: Colors.green.shade600,
-          icone: Icons.check_circle,
+          icone: PhosphorIcons.checkCircle,
         );
       case TipoSnackbar.erro:
-        return _EstiloSnackbar(cor: cores.error, icone: Icons.error);
+        return _EstiloSnackbar(
+          cor: cores.error,
+          icone: PhosphorIcons.xCircle,
+        );
       case TipoSnackbar.aviso:
         return _EstiloSnackbar(
           cor: Colors.orange.shade700,
-          icone: Icons.warning,
+          icone: PhosphorIcons.warning,
         );
       case TipoSnackbar.informacao:
-        return _EstiloSnackbar(cor: cores.primary, icone: Icons.info);
+        return _EstiloSnackbar(
+          cor: cores.primary,
+          icone: PhosphorIcons.info,
+        );
     }
   }
 }

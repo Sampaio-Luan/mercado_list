@@ -7,8 +7,8 @@ import 'tema_menu_de_contexto.dart';
 
 class Sobreposicao extends StatelessWidget {
   final Widget widgetCentral;
-  final List<Acao> acoes;
-  final Tema tema;
+  final List<AcaoMenuContexto> acoes;
+  final TemaMenuContexto tema;
 
   const Sobreposicao({
     super.key,
@@ -39,22 +39,12 @@ class Sobreposicao extends StatelessWidget {
               ),
             ),
           ),
-
           Center(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               spacing: 15,
               children: [
-                Container(
-                  padding: const EdgeInsets.all(0),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(16),
-                    color: Theme.of(context).colorScheme.surface.withAlpha(100),
-                  ),
-
-                  child: widgetCentral,
-                ),
-
+                widgetCentral,
                 _CardMenu(acoes: acoes, tema: tema, colors: colors),
               ],
             ),
@@ -66,8 +56,8 @@ class Sobreposicao extends StatelessWidget {
 }
 
 class _CardMenu extends StatelessWidget {
-  final List<Acao> acoes;
-  final Tema tema;
+  final List<AcaoMenuContexto> acoes;
+  final TemaMenuContexto tema;
   final ColorScheme colors;
 
   const _CardMenu({
@@ -76,8 +66,6 @@ class _CardMenu extends StatelessWidget {
     required this.colors,
   });
 
-  
-
   @override
   Widget build(BuildContext context) {
     int i = 0;
@@ -85,19 +73,16 @@ class _CardMenu extends StatelessWidget {
       width: tema.largura,
       decoration: BoxDecoration(
         borderRadius: tema.borderRadius,
-        color:
-            tema.corFundo ??
+        color: tema.corFundo ??
             (tema.glassmorphism
                 ? Colors.white.withValues(alpha: .10)
                 : colors.surface),
-
         border: Border.all(
           color: tema.corBorda ?? Colors.white.withValues(alpha: .15),
         ),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
-        
         children: acoes.map((acao) {
           final cor =
               acao.cor ?? (acao.destrutivo ? colors.error : colors.onSurface);
@@ -105,35 +90,29 @@ class _CardMenu extends StatelessWidget {
           return InkWell(
             borderRadius: BorderRadius.circular(16),
             onTap: () {
-              Navigator.pop(context);
-
-              acao.aoSelecionar?.call();
+              Navigator.pop(context, acao);
             },
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
               child: Column(
                 spacing: 15,
-         
                 children: [
                   Row(
                     children: [
                       if (acao.icone != null) Icon(acao.icone, color: cor),
-                  
                       if (acao.icone != null) const SizedBox(width: 12),
-                  
                       Expanded(
                         child: Text(acao.titulo, style: TextStyle(color: cor)),
                       ),
-                  
                       if (acao.trailing != null) acao.trailing!,
                     ],
                   ),
-
                   if (i != acoes.length)
                     Divider(
                       height: 0.3,
                       thickness: 0.5,
-                      color: Theme.of(context).colorScheme.onSurface.withAlpha(10),
+                      color:
+                          Theme.of(context).colorScheme.onSurface.withAlpha(10),
                     ),
                 ],
               ),

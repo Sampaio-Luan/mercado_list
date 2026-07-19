@@ -36,6 +36,7 @@ Importe apenas o arquivo de exportações (barrel file):
 
 ```dart
 import 'package:seu_app/componentes/bottom_sheet_pesquisa_generica/bottom_sheet_pesquisa_generica_exportacoes.dart';
+import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 ```
 
 ### Seleção múltipla (padrão)
@@ -104,7 +105,7 @@ BottomSheetPesquisaGenerica.exibir<Produto>(
       color: Colors.deepOrange,
       fontWeight: FontWeight.w900,
     ),
-    iconePesquisa: Icons.travel_explore_rounded,
+    iconePesquisa: PhosphorIcons.magnifyingGlass,
   ),
 );
 ```

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mercado_list/shared/widgets/card_progresso_operacao.dart';
+import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 
 void main() {
   testWidgets('apresenta título, etapa, descrição e progresso', (tester) async {
@@ -46,6 +47,6 @@ void main() {
     await tester.tap(find.text('Fechar'));
 
     expect(fechou, isTrue);
-    expect(find.byIcon(Icons.error_rounded), findsOneWidget);
+    expect(find.byIcon(PhosphorIcons.xCircle), findsOneWidget);
   });
 }

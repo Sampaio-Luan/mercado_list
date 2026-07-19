@@ -1,14 +1,18 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
-class Acao {
+typedef ExecutarAcaoMenu = FutureOr<void> Function();
+
+class AcaoMenuContexto {
   final String titulo;
   final IconData? icone;
-  final VoidCallback? aoSelecionar;
+  final ExecutarAcaoMenu? aoSelecionar;
   final Color? cor;
   final bool destrutivo;
   final Widget? trailing;
 
-  const Acao({
+  const AcaoMenuContexto({
     required this.titulo,
     this.icone,
     this.aoSelecionar,
@@ -16,4 +20,11 @@ class Acao {
     this.destrutivo = false,
     this.trailing,
   });
+
+  Future<void> executar() async {
+    final callback = aoSelecionar;
+    if (callback != null) {
+      await callback();
+    }
+  }
 }

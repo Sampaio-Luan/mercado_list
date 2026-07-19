@@ -1,11 +1,10 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 
 import '../../shared/widgets/dialogo/dialogo_base.dart';
 import '../constants/enums/tipo_dialogo.dart';
-
-
 
 class DialogoService {
   DialogoService._();
@@ -87,10 +86,7 @@ class DialogoService {
                         child: Text(textoCancelar),
                       ),
                     ),
-
-                  if (exibirCancelar)
-                    const SizedBox(width: 12),
-
+                  if (exibirCancelar) const SizedBox(width: 12),
                   Expanded(
                     child: FilledButton(
                       style: FilledButton.styleFrom(
@@ -134,25 +130,25 @@ class _EstiloDialogo {
       case TipoDialogo.sucesso:
         return _EstiloDialogo(
           cor: Colors.green.shade600,
-          icone: Icons.check_circle_rounded,
+          icone: PhosphorIcons.checkCircle,
         );
 
       case TipoDialogo.erro:
         return _EstiloDialogo(
           cor: cores.error,
-          icone: Icons.error_rounded,
+          icone: PhosphorIcons.xCircle,
         );
 
       case TipoDialogo.aviso:
         return _EstiloDialogo(
           cor: Colors.orange.shade700,
-          icone: Icons.warning_amber_rounded,
+          icone: PhosphorIcons.warning,
         );
 
       case TipoDialogo.informacao:
         return _EstiloDialogo(
           cor: cores.primary,
-          icone: Icons.info_rounded,
+          icone: PhosphorIcons.info,
         );
     }
   }

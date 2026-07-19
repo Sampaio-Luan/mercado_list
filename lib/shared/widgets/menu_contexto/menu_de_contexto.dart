@@ -7,20 +7,20 @@ import 'tema_menu_de_contexto.dart';
 
 class MenuDeContexto extends StatelessWidget {
   final Widget child;
-  final List<Acao> acoes;
-  final Tema tema;
-  final Gatilho gatilho;
+  final List<AcaoMenuContexto> acoes;
+  final TemaMenuContexto tema;
+  final GatilhoMenuContexto gatilho;
 
   const MenuDeContexto({
     super.key,
     required this.child,
     required this.acoes,
-    this.tema = const Tema(),
-    this.gatilho = Gatilho.toque,
+    this.tema = const TemaMenuContexto(),
+    this.gatilho = GatilhoMenuContexto.toque,
   });
 
   Future<void> abrir(BuildContext context) async {
-    await showGeneralDialog(
+    final acao = await showGeneralDialog<AcaoMenuContexto>(
       context: context,
       barrierColor: Colors.transparent,
       barrierDismissible: true,
@@ -41,15 +41,23 @@ class MenuDeContexto extends StatelessWidget {
         );
       },
     );
+    if (acao != null) {
+      await Future<void>.delayed(
+        tema.duracaoAnimacao + const Duration(milliseconds: 50),
+      );
+      if (context.mounted) {
+        await acao.executar();
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     switch (gatilho) {
-      case Gatilho.toque:
+      case GatilhoMenuContexto.toque:
         return GestureDetector(onTap: () => abrir(context), child: child);
 
-      case Gatilho.toqueLongo:
+      case GatilhoMenuContexto.toqueLongo:
         return GestureDetector(onLongPress: () => abrir(context), child: child);
     }
   }

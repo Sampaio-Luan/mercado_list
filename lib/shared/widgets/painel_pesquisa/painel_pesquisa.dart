@@ -1,51 +1,59 @@
 import 'package:flutter/material.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 
-import 'cabecalho_bottom_sheet.dart';
-import 'campo_pesquisa.dart';
-import 'controlador_pesquisa_generica.dart';
-import 'estilo_bottom_sheet_pesquisa.dart';
-import 'item_lista_pesquisa.dart';
-import 'modo_selecao.dart';
-import 'rodape_confirmacao_selecao.dart';
+import 'cabecalho_painel_pesquisa.dart';
+import 'campo_painel_pesquisa.dart';
+import 'controlador_painel_pesquisa.dart';
+import 'contexto_item_pesquisa.dart';
+import 'estilo_painel_pesquisa.dart';
+import 'item_padrao_painel_pesquisa.dart';
+import 'modo_interacao_painel.dart';
+import 'rodape_painel_pesquisa.dart';
 
-/// Componente de bottom sheet genérico e totalmente reutilizável para
-/// pesquisa e seleção de itens de qualquer tipo `T`.
+/// Painel inferior genérico para pesquisar, selecionar ou gerenciar itens de
+/// qualquer tipo `T`.
 ///
 /// ### Principais recursos:
 /// - Pesquisa em tempo real com ordenação por relevância (Levenshtein).
 /// - Destaque visual das partes do texto coincidentes com a pesquisa.
-/// - Suporte a seleção única ou múltipla.
+/// - Modos sem seleção, seleção única ou múltipla.
+/// - Renderização customizada de itens e ações no cabeçalho.
+/// - Atualização da lista durante a exibição através do controlador.
 /// - Cabeçalho e barra de pesquisa fixos (não rolam com a lista).
 /// - Arrastável com pontos de ancoragem em 30%, 60%, 90% e 100% da tela.
 /// - Botão de alternância para tela cheia.
 /// - Sobe automaticamente acima do teclado.
 /// - Suporte a carregamento assíncrono via `Future<List<T>>`.
-/// - Totalmente estilizável através de [EstiloBottomSheetPesquisa].
+/// - Totalmente estilizável através de [EstiloPainelPesquisa].
 ///
 /// ### Uso básico:
 /// ```dart
-/// final resultado = await BottomSheetPesquisaGenerica.exibir<MeuModelo>(
+/// final resultado = await PainelPesquisa.exibir<MeuModelo>(
 ///   context: context,
 ///   itens: minhaListaDeItens,
-///   obterTextoExibicao: (item) => item.nome,
-///   modoSelecao: ModoSelecao.unica,
+///   obterTextoPesquisa: (item) => item.nome,
+///   modoSelecao: ModoInteracaoPainel.unica,
 /// );
 /// ```
-class BottomSheetPesquisaGenerica<T> extends StatefulWidget {
-  const BottomSheetPesquisaGenerica({
+class PainelPesquisa<T> extends StatefulWidget {
+  const PainelPesquisa({
     super.key,
     required this.itens,
-    required this.obterTextoExibicao,
+    required this.obterTextoPesquisa,
+    this.obterIdentificador,
+    this.construirItem,
+    this.construirAcoesCabecalho,
+    this.construirRodape,
+    this.gerenciarGestosItemCustomizado = true,
     this.carregarItensAssincronamente,
-    this.modoSelecao = ModoSelecao.multipla,
+    this.modoSelecao = ModoInteracaoPainel.multipla,
     this.itensSelecionadosInicialmente = const [],
     this.titulo = 'Pesquisar',
     this.textoPlaceholderPesquisa = 'Pesquisar...',
     this.textoListaVazia = 'Nenhum item disponível.',
     this.textoSemResultados = 'Nenhum resultado encontrado para a pesquisa.',
     this.textoBotaoConfirmar = 'Confirmar seleção',
-    this.estilo = const EstiloBottomSheetPesquisa(),
+    this.estilo = const EstiloPainelPesquisa(),
     this.obterTextoSubtitulo,
     this.construirIconeLideranca,
     this.exibirRodapeConfirmacao = true,
@@ -59,7 +67,23 @@ class BottomSheetPesquisaGenerica<T> extends StatefulWidget {
   final List<T> itens;
 
   /// Função que extrai o texto de exibição (e de pesquisa) de cada item.
-  final String Function(T item) obterTextoExibicao;
+  final String Function(T item) obterTextoPesquisa;
+
+  /// Identificador estável usado para atualizar, remover, selecionar e
+  /// preservar a identidade visual de itens mutáveis.
+  final Object? Function(T item)? obterIdentificador;
+
+  /// Renderer opcional para cards, menus de contexto ou qualquer outro
+  /// widget. Quando omitido, o painel usa sua linha padrão com destaque.
+  final ConstrutorItemPesquisa<T>? construirItem;
+
+  /// Ações opcionais apresentadas no cabeçalho, antes dos botões de
+  /// expandir e fechar.
+  final ConstrutorAcoesPainel<T>? construirAcoesCabecalho;
+
+  final ConstrutorRodapePainel<T>? construirRodape;
+
+  final bool gerenciarGestosItemCustomizado;
 
   /// Função opcional para carregamento assíncrono da lista de itens.
   /// Quando fornecida, o componente exibe um indicador de carregamento
@@ -67,7 +91,7 @@ class BottomSheetPesquisaGenerica<T> extends StatefulWidget {
   final Future<List<T>> Function()? carregarItensAssincronamente;
 
   /// Define se a seleção é única ou múltipla. Padrão: múltipla.
-  final ModoSelecao modoSelecao;
+  final ModoInteracaoPainel modoSelecao;
 
   /// Itens que devem iniciar já selecionados ao abrir o bottom sheet.
   final List<T> itensSelecionadosInicialmente;
@@ -88,7 +112,7 @@ class BottomSheetPesquisaGenerica<T> extends StatefulWidget {
   final String textoBotaoConfirmar;
 
   /// Conjunto de propriedades visuais customizáveis.
-  final EstiloBottomSheetPesquisa estilo;
+  final EstiloPainelPesquisa estilo;
 
   /// Função opcional para obter um subtítulo exibido abaixo do texto
   /// principal de cada item.
@@ -117,33 +141,40 @@ class BottomSheetPesquisaGenerica<T> extends StatefulWidget {
   /// principalmente através do método estático [exibir]).
   final void Function(T itemSelecionado)? aoSelecionarItemUnico;
 
-  /// Exibe o `BottomSheetPesquisaGenerica<T>` em um `showModalBottomSheet`
+  /// Exibe o `PainelPesquisa<T>` em um `showModalBottomSheet`
   /// já configurado com todos os comportamentos de arraste, teclado e
   /// tela cheia, retornando os itens selecionados pelo usuário.
   ///
-  /// No [ModoSelecao.unica], retorna um único item (`T?`) ou `null` caso
+  /// No [ModoInteracaoPainel.unica], retorna um único item (`T?`) ou `null` caso
   /// o usuário feche o bottom sheet sem selecionar nada.
   ///
-  /// No [ModoSelecao.multipla], retorna a lista de itens selecionados
+  /// No [ModoInteracaoPainel.multipla], retorna a lista de itens selecionados
   /// (`List<T>`) ao confirmar, ou `null` caso o usuário cancele.
   static Future<Object?> exibir<T>({
     required BuildContext context,
-    required String Function(T item) obterTextoExibicao,
+    required String Function(T item) obterTextoPesquisa,
+    Object? Function(T item)? obterIdentificador,
+    ConstrutorItemPesquisa<T>? construirItem,
+    ConstrutorAcoesPainel<T>? construirAcoesCabecalho,
+    ConstrutorRodapePainel<T>? construirRodape,
+    bool gerenciarGestosItemCustomizado = true,
     List<T> itens = const [],
     Future<List<T>> Function()? carregarItensAssincronamente,
-    ModoSelecao modoSelecao = ModoSelecao.multipla,
+    ModoInteracaoPainel modoSelecao = ModoInteracaoPainel.multipla,
     List<T> itensSelecionadosInicialmente = const [],
     String titulo = 'Pesquisar',
     String textoPlaceholderPesquisa = 'Pesquisar...',
     String textoListaVazia = 'Nenhum item disponível.',
     String textoSemResultados = 'Nenhum resultado encontrado para a pesquisa.',
     String textoBotaoConfirmar = 'Confirmar seleção',
-    EstiloBottomSheetPesquisa estilo = const EstiloBottomSheetPesquisa(),
+    EstiloPainelPesquisa estilo = const EstiloPainelPesquisa(),
     String? Function(T item)? obterTextoSubtitulo,
     Widget? Function(T item)? construirIconeLideranca,
     bool exibirRodapeConfirmacao = true,
     double pontuacaoMinimaRelevancia = 0.5,
     bool usarFundoBarreiraTransparente = false,
+    bool fecharAoTocarFora = true,
+    bool fecharAoArrastar = true,
   }) {
     return showModalBottomSheet<Object?>(
       context: context,
@@ -153,10 +184,17 @@ class BottomSheetPesquisaGenerica<T> extends StatefulWidget {
       barrierColor: usarFundoBarreiraTransparente
           ? Colors.transparent
           : Colors.black.withValues(alpha: 0.5),
+      isDismissible: fecharAoTocarFora,
+      enableDrag: fecharAoArrastar,
       builder: (contextoConstrucao) {
-        return BottomSheetPesquisaGenerica<T>(
+        return PainelPesquisa<T>(
           itens: itens,
-          obterTextoExibicao: obterTextoExibicao,
+          obterTextoPesquisa: obterTextoPesquisa,
+          obterIdentificador: obterIdentificador,
+          construirItem: construirItem,
+          construirAcoesCabecalho: construirAcoesCabecalho,
+          construirRodape: construirRodape,
+          gerenciarGestosItemCustomizado: gerenciarGestosItemCustomizado,
           carregarItensAssincronamente: carregarItensAssincronamente,
           modoSelecao: modoSelecao,
           itensSelecionadosInicialmente: itensSelecionadosInicialmente,
@@ -182,12 +220,10 @@ class BottomSheetPesquisaGenerica<T> extends StatefulWidget {
   }
 
   @override
-  State<BottomSheetPesquisaGenerica<T>> createState() =>
-      _EstadoBottomSheetPesquisaGenerica<T>();
+  State<PainelPesquisa<T>> createState() => _EstadoPainelPesquisa<T>();
 }
 
-class _EstadoBottomSheetPesquisaGenerica<T>
-    extends State<BottomSheetPesquisaGenerica<T>> {
+class _EstadoPainelPesquisa<T> extends State<PainelPesquisa<T>> {
   /// Controlador do `DraggableScrollableSheet`, usado para programaticamente
   /// alternar entre tela cheia e o tamanho anterior.
   final DraggableScrollableController _controladorArraste =
@@ -198,22 +234,26 @@ class _EstadoBottomSheetPesquisaGenerica<T>
       TextEditingController();
 
   /// Controlador de estado da pesquisa e seleção de itens.
-  late ControladorPesquisaGenerica<T> _controladorPesquisa;
+  late ControladorPainelPesquisa<T> _controladorPesquisa;
 
   /// Último tamanho (fração da tela) ocupado antes de entrar em tela
   /// cheia, usado para restaurar ao tocar em "recolher".
-  double _ultimoTamanhoAntesDeTelaCheia = PontosAncoragemAltura.inicial;
+  double _ultimoTamanhoAntesDeTelaCheia = AlturasPainelPesquisa.inicial;
 
   /// Indica se o bottom sheet está atualmente em modo tela cheia.
   bool _estaEmTelaCheia = false;
+
+  /// Evita agendar mais de uma sincronização durante o mesmo quadro.
+  bool _sincronizacaoTelaCheiaAgendada = false;
 
   @override
   void initState() {
     super.initState();
 
-    _controladorPesquisa = ControladorPesquisaGenerica<T>(
+    _controladorPesquisa = ControladorPainelPesquisa<T>(
       itens: widget.itens,
-      obterTextoExibicao: widget.obterTextoExibicao,
+      obterTextoPesquisa: widget.obterTextoPesquisa,
+      obterIdentificador: widget.obterIdentificador,
       modoSelecao: widget.modoSelecao,
       itensSelecionadosInicialmente: widget.itensSelecionadosInicialmente,
       pontuacaoMinimaRelevancia: widget.pontuacaoMinimaRelevancia,
@@ -263,15 +303,24 @@ class _EstadoBottomSheetPesquisaGenerica<T>
   void _aoAlterarTamanhoArraste() {
     if (!_controladorArraste.isAttached) return;
 
-    final tamanhoAtual = _controladorArraste.size;
     final estaEmTelaCheiaAgora =
-        tamanhoAtual >= PontosAncoragemAltura.telaCheia - 0.01;
-
-    if (estaEmTelaCheiaAgora != _estaEmTelaCheia) {
-      setState(() {
-        _estaEmTelaCheia = estaEmTelaCheiaAgora;
-      });
+        _controladorArraste.size >= AlturasPainelPesquisa.telaCheia - 0.01;
+    if (estaEmTelaCheiaAgora == _estaEmTelaCheia ||
+        _sincronizacaoTelaCheiaAgendada) {
+      return;
     }
+
+    _sincronizacaoTelaCheiaAgendada = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _sincronizacaoTelaCheiaAgendada = false;
+      if (!mounted || !_controladorArraste.isAttached) return;
+
+      final estaEmTelaCheiaAposQuadro =
+          _controladorArraste.size >= AlturasPainelPesquisa.telaCheia - 0.01;
+      if (estaEmTelaCheiaAposQuadro != _estaEmTelaCheia) {
+        setState(() => _estaEmTelaCheia = estaEmTelaCheiaAposQuadro);
+      }
+    });
   }
 
   /// Alterna entre o modo tela cheia e o último tamanho conhecido antes
@@ -293,7 +342,7 @@ class _EstadoBottomSheetPesquisaGenerica<T>
     } else {
       _ultimoTamanhoAntesDeTelaCheia = _controladorArraste.size;
       _controladorArraste.animateTo(
-        PontosAncoragemAltura.telaCheia,
+        AlturasPainelPesquisa.telaCheia,
         duration: const Duration(milliseconds: 280),
         curve: Curves.easeOutCubic,
       );
@@ -305,7 +354,7 @@ class _EstadoBottomSheetPesquisaGenerica<T>
   void _aoTocarItem(T item) {
     _controladorPesquisa.alternarSelecaoItem(item);
 
-    if (widget.modoSelecao == ModoSelecao.unica) {
+    if (widget.modoSelecao == ModoInteracaoPainel.unica) {
       widget.aoSelecionarItemUnico?.call(item);
     }
   }
@@ -320,17 +369,22 @@ class _EstadoBottomSheetPesquisaGenerica<T>
   Widget build(BuildContext context) {
     final temaAtual = Theme.of(context);
     final alturaTeclado = MediaQuery.of(context).viewInsets.bottom;
+    final tecladoAberto = alturaTeclado > 0;
 
     return AnimatedPadding(
       duration: const Duration(milliseconds: 120),
       padding: EdgeInsets.only(bottom: alturaTeclado),
       child: DraggableScrollableSheet(
         controller: _controladorArraste,
-        initialChildSize: PontosAncoragemAltura.inicial,
-        minChildSize: PontosAncoragemAltura.inicial,
-        maxChildSize: PontosAncoragemAltura.telaCheia,
-        snap: true,
-        snapSizes: PontosAncoragemAltura.todos,
+        initialChildSize: tecladoAberto
+            ? AlturasPainelPesquisa.telaCheia
+            : AlturasPainelPesquisa.inicial,
+        minChildSize: tecladoAberto
+            ? AlturasPainelPesquisa.telaCheia
+            : AlturasPainelPesquisa.inicial,
+        maxChildSize: AlturasPainelPesquisa.telaCheia,
+        snap: !tecladoAberto,
+        snapSizes: tecladoAberto ? null : AlturasPainelPesquisa.todos,
         builder: (contextoConstrucao, controladorRolagem) {
           return Container(
             decoration: BoxDecoration(
@@ -348,49 +402,65 @@ class _EstadoBottomSheetPesquisaGenerica<T>
               ],
             ),
             clipBehavior: Clip.antiAlias,
-            child: ListenableBuilder(
-              listenable: _controladorPesquisa,
-              builder: (contextoOuvinte, _) {
-                return Column(
-                  children: [
-                    // Cabeçalho fixo (não rola com a lista).
-                    CabecalhoBottomSheet(
-                      titulo: widget.titulo,
-                      estaEmTelaCheia: _estaEmTelaCheia,
-                      aoAlternarTelaCheia: _alternarTelaCheia,
-                      aoFechar: () => Navigator.of(context).pop(),
-                      estilo: widget.estilo,
-                    ),
-                    // Barra de pesquisa fixa (não rola com a lista).
-                    CampoPesquisa(
-                      controladorTexto: _controladorTextoPesquisa,
-                      aoAlterarTexto:
-                          _controladorPesquisa.atualizarTermoPesquisa,
-                      aoLimparTexto: () {
-                        _controladorTextoPesquisa.clear();
-                        _controladorPesquisa.limparPesquisa();
-                      },
-                      estilo: widget.estilo,
-                      textoPlaceholder: widget.textoPlaceholderPesquisa,
-                    ),
-                    const SizedBox(height: 4),
-                    // Conteúdo rolável: lista de itens, carregamento ou
-                    // estado vazio.
-                    Expanded(
-                      child: _construirConteudoLista(controladorRolagem),
-                    ),
-                    // Rodapé de confirmação (apenas seleção múltipla).
-                    if (widget.modoSelecao == ModoSelecao.multipla &&
-                        widget.exibirRodapeConfirmacao)
-                      RodapeConfirmacaoSelecao(
-                        quantidadeSelecionados:
-                            _controladorPesquisa.itensSelecionados.length,
-                        aoConfirmar: _confirmarSelecaoMultipla,
-                        textoBotaoConfirmar: widget.textoBotaoConfirmar,
-                      ),
-                  ],
-                );
-              },
+            child: ScaffoldMessenger(
+              child: Scaffold(
+                resizeToAvoidBottomInset: false,
+                backgroundColor: Colors.transparent,
+                body: ListenableBuilder(
+                  listenable: _controladorPesquisa,
+                  builder: (contextoOuvinte, _) {
+                    return Column(
+                      children: [
+                        // Cabeçalho fixo (não rola com a lista).
+                        CabecalhoPainelPesquisa(
+                          titulo: widget.titulo,
+                          estaEmTelaCheia: _estaEmTelaCheia,
+                          aoAlternarTelaCheia: _alternarTelaCheia,
+                          aoFechar: () => Navigator.of(context).pop(),
+                          estilo: widget.estilo,
+                          acoes: widget.construirAcoesCabecalho?.call(
+                                contextoOuvinte,
+                                _controladorPesquisa,
+                              ) ??
+                              const [],
+                        ),
+                        // Barra de pesquisa fixa (não rola com a lista).
+                        CampoPainelPesquisa(
+                          controladorTexto: _controladorTextoPesquisa,
+                          aoAlterarTexto:
+                              _controladorPesquisa.atualizarTermoPesquisa,
+                          aoLimparTexto: () {
+                            _controladorTextoPesquisa.clear();
+                            _controladorPesquisa.limparPesquisa();
+                          },
+                          estilo: widget.estilo,
+                          textoPlaceholder: widget.textoPlaceholderPesquisa,
+                        ),
+                        const SizedBox(height: 4),
+                        // Conteúdo rolável: lista de itens, carregamento ou
+                        // estado vazio.
+                        Expanded(
+                          child: _construirConteudoLista(controladorRolagem),
+                        ),
+                        // Rodapé de confirmação (apenas seleção múltipla).
+                        if (widget.modoSelecao == ModoInteracaoPainel.multipla)
+                          if (widget.construirRodape != null)
+                            widget.construirRodape!(
+                              contextoOuvinte,
+                              _controladorPesquisa,
+                            )
+                          else if (widget.exibirRodapeConfirmacao)
+                            RodapePainelPesquisa(
+                              quantidadeSelecionados:
+                                  _controladorPesquisa.itensSelecionados.length,
+                              aoConfirmar: _confirmarSelecaoMultipla,
+                              textoBotaoConfirmar: widget.textoBotaoConfirmar,
+                            ),
+                      ],
+                    );
+                  },
+                ),
+              ),
             ),
           );
         },
@@ -411,20 +481,20 @@ class _EstadoBottomSheetPesquisaGenerica<T>
     }
 
     if (_controladorPesquisa.mensagemErroCarregamento != null) {
-      return EstadoVazioListaPesquisa(
+      return EstadoVazioPainelPesquisa(
         mensagem: _controladorPesquisa.mensagemErroCarregamento!,
         icone: PhosphorIcons.warningCircle,
       );
     }
 
     if (_controladorPesquisa.naoHaItensDisponiveis) {
-      return EstadoVazioListaPesquisa(mensagem: widget.textoListaVazia);
+      return EstadoVazioPainelPesquisa(mensagem: widget.textoListaVazia);
     }
 
     final itensFiltrados = _controladorPesquisa.itensFiltrados;
 
     if (itensFiltrados.isEmpty) {
-      return EstadoVazioListaPesquisa(mensagem: widget.textoSemResultados);
+      return EstadoVazioPainelPesquisa(mensagem: widget.textoSemResultados);
     }
 
     return ListView.builder(
@@ -436,21 +506,50 @@ class _EstadoBottomSheetPesquisaGenerica<T>
       // construir apenas os itens visíveis.
       itemBuilder: (contextoItem, indice) {
         final item = itensFiltrados[indice];
-        final textoExibicao = widget.obterTextoExibicao(item);
+        final textoExibicao = widget.obterTextoPesquisa(item);
         final textoSubtitulo = widget.obterTextoSubtitulo?.call(item);
         final iconeLideranca = widget.construirIconeLideranca?.call(item);
 
-        return ItemListaPesquisa<T>(
-          key: ValueKey(textoExibicao + indice.toString()),
+        final contextoResultado = ContextoItemPesquisa<T>(
           item: item,
-          textoExibicao: textoExibicao,
-          textoPesquisa: _controladorPesquisa.termoPesquisa,
-          estaSelecionado: _controladorPesquisa.itemEstaSelecionado(item),
-          modoSelecao: widget.modoSelecao,
-          aoTocarItem: () => _aoTocarItem(item),
-          estilo: widget.estilo,
-          textoSubtitulo: textoSubtitulo,
-          iconeLideranca: iconeLideranca,
+          termoPesquisa: _controladorPesquisa.termoPesquisa,
+          selecionado: _controladorPesquisa.itemEstaSelecionado(item),
+          controlador: _controladorPesquisa,
+        );
+        final itemCustomizado = widget.construirItem?.call(
+          contextoItem,
+          contextoResultado,
+        );
+
+        final conteudoItem = itemCustomizado ??
+            ItemPadraoPainelPesquisa<T>(
+              item: item,
+              textoExibicao: textoExibicao,
+              textoPesquisa: _controladorPesquisa.termoPesquisa,
+              estaSelecionado: _controladorPesquisa.itemEstaSelecionado(item),
+              modoSelecao: widget.modoSelecao,
+              aoTocarItem: () => _aoTocarItem(item),
+              estilo: widget.estilo,
+              textoSubtitulo: textoSubtitulo,
+              iconeLideranca: iconeLideranca,
+            );
+
+        return KeyedSubtree(
+          key: ValueKey(
+            widget.obterIdentificador?.call(item) ?? item,
+          ),
+          child: itemCustomizado == null ||
+                  !widget.gerenciarGestosItemCustomizado ||
+                  widget.modoSelecao == ModoInteracaoPainel.semSelecao
+              ? conteudoItem
+              : Semantics(
+                  selected: contextoResultado.selecionado,
+                  button: true,
+                  child: InkWell(
+                    onTap: () => _aoTocarItem(item),
+                    child: conteudoItem,
+                  ),
+                ),
         );
       },
     );

@@ -1,20 +1,21 @@
 import 'package:flutter/material.dart';
 
-import 'estilo_bottom_sheet_pesquisa.dart';
+import 'estilo_painel_pesquisa.dart';
 
 /// Cabeçalho fixo do bottom sheet, contendo:
 /// - Alça de arraste (indicativo visual).
 /// - Título configurável.
 /// - Botão para alternar entre tela cheia e tamanho anterior.
 /// - Botão de fechar (X).
-class CabecalhoBottomSheet extends StatelessWidget {
-  const CabecalhoBottomSheet({
+class CabecalhoPainelPesquisa extends StatelessWidget {
+  const CabecalhoPainelPesquisa({
     super.key,
     required this.titulo,
     required this.estaEmTelaCheia,
     required this.aoAlternarTelaCheia,
     required this.aoFechar,
     required this.estilo,
+    this.acoes = const [],
   });
 
   /// Texto do título exibido no cabeçalho.
@@ -31,7 +32,9 @@ class CabecalhoBottomSheet extends StatelessWidget {
   final VoidCallback aoFechar;
 
   /// Conjunto de propriedades visuais customizáveis.
-  final EstiloBottomSheetPesquisa estilo;
+  final EstiloPainelPesquisa estilo;
+
+  final List<Widget> acoes;
 
   @override
   Widget build(BuildContext context) {
@@ -67,6 +70,7 @@ class CabecalhoBottomSheet extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
+              ...acoes,
               IconButton(
                 icon: Icon(
                   estaEmTelaCheia ? estilo.iconeRecolher : estilo.iconeExpandir,

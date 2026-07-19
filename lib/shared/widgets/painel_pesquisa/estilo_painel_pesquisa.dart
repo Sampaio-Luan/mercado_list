@@ -2,24 +2,24 @@ import 'package:flutter/material.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 
 /// Conjunto de propriedades visuais que permitem customizar totalmente a
-/// aparência do `BottomSheetPesquisaGenerica`, mantendo o padrão visual
+/// aparência do `PainelPesquisa`, mantendo o padrão visual
 /// do Material 3 como base quando nada é especificado.
 ///
 /// Todas as propriedades são opcionais: quando não informadas, valores
 /// sensatos derivados do `Theme` atual são usados automaticamente.
 @immutable
-class EstiloBottomSheetPesquisa {
-  const EstiloBottomSheetPesquisa({
+class EstiloPainelPesquisa {
+  const EstiloPainelPesquisa({
     this.corFundo,
     this.corAlcaArraste,
     this.corIconeFechar,
     this.corIconeTelaCheia,
-    this.corBordaCampoPesquisa,
-    this.corFundoCampoPesquisa,
+    this.corBordaCampoPainelPesquisa,
+    this.corFundoCampoPainelPesquisa,
     this.corItemSelecionado,
     this.corIconeSelecionado,
     this.raioBordaSuperior = 24.0,
-    this.raioBordaCampoPesquisa = 16.0,
+    this.raioBordaCampoPainelPesquisa = 16.0,
     this.estiloTitulo,
     this.estiloTextoItem,
     this.estiloTextoItemDestacado,
@@ -48,10 +48,10 @@ class EstiloBottomSheetPesquisa {
   final Color? corIconeTelaCheia;
 
   /// Cor da borda do campo de pesquisa.
-  final Color? corBordaCampoPesquisa;
+  final Color? corBordaCampoPainelPesquisa;
 
   /// Cor de fundo do campo de pesquisa.
-  final Color? corFundoCampoPesquisa;
+  final Color? corFundoCampoPainelPesquisa;
 
   /// Cor de fundo aplicada ao item quando selecionado.
   final Color? corItemSelecionado;
@@ -63,7 +63,7 @@ class EstiloBottomSheetPesquisa {
   final double raioBordaSuperior;
 
   /// Raio de arredondamento do campo de pesquisa.
-  final double raioBordaCampoPesquisa;
+  final double raioBordaCampoPainelPesquisa;
 
   /// Estilo de texto do título no cabeçalho.
   final TextStyle? estiloTitulo;

@@ -1,4 +1,4 @@
-enum Gatilho {
+enum GatilhoMenuContexto {
   toque,
   toqueLongo,
 }

@@ -1,25 +1,36 @@
 import 'package:flutter/foundation.dart';
 
-import 'modo_selecao.dart';
-import 'utilitario_similaridade_texto.dart';
+import 'modo_interacao_painel.dart';
+import 'similaridade_texto.dart';
 
 /// Controlador responsável por gerenciar o estado interno do
-/// `BottomSheetPesquisaGenerica<T>`: lista completa de itens, termo de
+/// `PainelPesquisa<T>`: lista completa de itens, termo de
 /// pesquisa atual, itens filtrados/ordenados por relevância e os itens
 /// atualmente selecionados.
 ///
 /// Estende [ChangeNotifier] para notificar a interface sempre que o
 /// estado relevante for alterado, seguindo o padrão idiomático do
 /// Flutter para gerenciamento de estado local e reutilizável.
-class ControladorPesquisaGenerica<T> extends ChangeNotifier {
-  ControladorPesquisaGenerica({
+class ControladorPainelPesquisa<T> extends ChangeNotifier {
+  ControladorPainelPesquisa({
     required List<T> itens,
-    required this._obterTextoExibicao,
+    required this._obterTextoPesquisa,
     required this._modoSelecao,
+    Object? Function(T item)? obterIdentificador,
     List<T> itensSelecionadosInicialmente = const [],
     this._pontuacaoMinimaRelevancia = 0.5,
-  })  : _itensCompletos = itens,
+  })  : _itensCompletos = List<T>.from(itens),
+        _obterIdentificador = obterIdentificador ?? ((item) => item as Object?),
         _itensSelecionados = {...itensSelecionadosInicialmente} {
+    if (_modoSelecao == ModoInteracaoPainel.semSelecao) {
+      _itensSelecionados.clear();
+    } else if (_modoSelecao == ModoInteracaoPainel.unica &&
+        _itensSelecionados.length > 1) {
+      final primeiroItem = _itensSelecionados.first;
+      _itensSelecionados
+        ..clear()
+        ..add(primeiroItem);
+    }
     _itensFiltrados = List<T>.from(_itensCompletos);
   }
 
@@ -28,10 +39,12 @@ class ControladorPesquisaGenerica<T> extends ChangeNotifier {
 
   /// Função fornecida pelo usuário do componente para obter o texto de
   /// exibição de cada item.
-  final String Function(T item) _obterTextoExibicao;
+  final String Function(T item) _obterTextoPesquisa;
+
+  final Object? Function(T item) _obterIdentificador;
 
   /// Modo de seleção atual (única ou múltipla).
-  final ModoSelecao _modoSelecao;
+  final ModoInteracaoPainel _modoSelecao;
 
   /// Pontuação mínima de relevância (0.0 a 1.0) para que um item apareça
   /// nos resultados filtrados. Evita exibir itens completamente
@@ -64,7 +77,7 @@ class ControladorPesquisaGenerica<T> extends ChangeNotifier {
   Set<T> get itensSelecionados => Set.unmodifiable(_itensSelecionados);
 
   /// Modo de seleção configurado para este controlador.
-  ModoSelecao get modoSelecao => _modoSelecao;
+  ModoInteracaoPainel get modoSelecao => _modoSelecao;
 
   /// Indica se há uma operação de carregamento assíncrono em andamento.
   bool get estaCarregando => _estaCarregando;
@@ -77,7 +90,8 @@ class ControladorPesquisaGenerica<T> extends ChangeNotifier {
   bool get naoHaItensDisponiveis => _itensCompletos.isEmpty;
 
   /// Verifica se um determinado [item] está atualmente selecionado.
-  bool itemEstaSelecionado(T item) => _itensSelecionados.contains(item);
+  bool itemEstaSelecionado(T item) =>
+      _itensSelecionados.any((selecionado) => _mesmoItem(selecionado, item));
 
   /// Atualiza o termo de pesquisa e recalcula a lista filtrada/ordenada.
   /// Chamado a cada alteração no campo de texto da barra de pesquisa.
@@ -97,7 +111,51 @@ class ControladorPesquisaGenerica<T> extends ChangeNotifier {
   /// Substitui a lista completa de itens (por exemplo, após um
   /// carregamento assíncrono bem-sucedido) e recalcula o filtro atual.
   void substituirItens(List<T> novosItens) {
-    _itensCompletos = novosItens;
+    _itensCompletos = List<T>.from(novosItens);
+    _removerSelecoesInexistentes();
+    _recalcularItensFiltrados();
+    notifyListeners();
+  }
+
+  void adicionarItem(T item) {
+    final indiceExistente = _indiceDoItem(item);
+    if (indiceExistente >= 0) {
+      _itensCompletos[indiceExistente] = item;
+    } else {
+      _itensCompletos.add(item);
+    }
+    _recalcularItensFiltrados();
+    notifyListeners();
+  }
+
+  void atualizarItem(T itemAnterior, T itemAtualizado) {
+    final indice = _indiceDoItem(itemAnterior);
+    if (indice < 0) {
+      throw StateError('O item que será atualizado não está no painel.');
+    }
+
+    final estavaSelecionado = itemEstaSelecionado(itemAnterior);
+    _itensSelecionados.removeWhere(
+      (item) => _mesmoItem(item, itemAnterior),
+    );
+    _itensCompletos[indice] = itemAtualizado;
+    if (estavaSelecionado) {
+      _itensSelecionados.add(itemAtualizado);
+    }
+    _recalcularItensFiltrados();
+    notifyListeners();
+  }
+
+  void removerItem(T item) {
+    _itensCompletos.removeWhere((existente) => _mesmoItem(existente, item));
+    _itensSelecionados.removeWhere(
+      (selecionado) => _mesmoItem(selecionado, item),
+    );
+    _recalcularItensFiltrados();
+    notifyListeners();
+  }
+
+  void notificarItemAlterado() {
     _recalcularItensFiltrados();
     notifyListeners();
   }
@@ -116,16 +174,21 @@ class ControladorPesquisaGenerica<T> extends ChangeNotifier {
   }
 
   /// Alterna a seleção de um [item]:
-  /// - No modo [ModoSelecao.unica], substitui qualquer seleção anterior.
-  /// - No modo [ModoSelecao.multipla], adiciona ou remove o item do
+  /// - No modo [ModoInteracaoPainel.unica], substitui qualquer seleção anterior.
+  /// - No modo [ModoInteracaoPainel.multipla], adiciona ou remove o item do
   ///   conjunto de selecionados.
   void alternarSelecaoItem(T item) {
-    if (_modoSelecao == ModoSelecao.unica) {
+    if (_modoSelecao == ModoInteracaoPainel.semSelecao) {
+      return;
+    }
+    if (_modoSelecao == ModoInteracaoPainel.unica) {
       _itensSelecionados.clear();
       _itensSelecionados.add(item);
     } else {
-      if (_itensSelecionados.contains(item)) {
-        _itensSelecionados.remove(item);
+      if (itemEstaSelecionado(item)) {
+        _itensSelecionados.removeWhere(
+          (selecionado) => _mesmoItem(selecionado, item),
+        );
       } else {
         _itensSelecionados.add(item);
       }
@@ -149,8 +212,8 @@ class ControladorPesquisaGenerica<T> extends ChangeNotifier {
     }
 
     final itensComPontuacao = _itensCompletos.map((item) {
-      final pontuacao = UtilitarioSimilaridadeTexto.calcularPontuacaoRelevancia(
-        textoItem: _obterTextoExibicao(item),
+      final pontuacao = SimilaridadeTexto.calcularPontuacaoRelevancia(
+        textoItem: _obterTextoPesquisa(item),
         textoPesquisa: _termoPesquisa,
       );
       return _ItemComPontuacao<T>(item: item, pontuacao: pontuacao);
@@ -165,6 +228,23 @@ class ControladorPesquisaGenerica<T> extends ChangeNotifier {
     _itensFiltrados = itensComPontuacao
         .map((itemComPontuacao) => itemComPontuacao.item)
         .toList();
+  }
+
+  int _indiceDoItem(T item) {
+    return _itensCompletos
+        .indexWhere((existente) => _mesmoItem(existente, item));
+  }
+
+  bool _mesmoItem(T primeiro, T segundo) {
+    return _obterIdentificador(primeiro) == _obterIdentificador(segundo);
+  }
+
+  void _removerSelecoesInexistentes() {
+    _itensSelecionados.removeWhere(
+      (selecionado) => !_itensCompletos.any(
+        (item) => _mesmoItem(item, selecionado),
+      ),
+    );
   }
 }
 

@@ -14,7 +14,7 @@ library;
 
 /// Classe utilitária estática (não instanciável) com funções puras de
 /// comparação e normalização de texto.
-abstract final class UtilitarioSimilaridadeTexto {
+abstract final class SimilaridadeTexto {
   /// Mapa de caracteres acentuados para seus equivalentes sem acento.
   /// Usado para tornar a busca insensível a acentuação.
   static const Map<String, String> _mapaCaracteresAcentuados = {

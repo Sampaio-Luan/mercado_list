@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-class Tema {
+class TemaMenuContexto {
   final bool glassmorphism;
 
   final double blurFundo;
@@ -15,7 +15,7 @@ class Tema {
   final Color? corFundo;
   final Color? corBorda;
 
-  const Tema({
+  const TemaMenuContexto({
     this.glassmorphism = true,
     this.blurFundo = 10,
     this.blurCard = 20,

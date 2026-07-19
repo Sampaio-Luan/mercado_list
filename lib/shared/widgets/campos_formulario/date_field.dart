@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 
 import '../../../core/mixins/validacoes_mixin.dart';
 import '../../../core/utils/data_utils.dart';
-
 
 class DateField extends StatefulWidget {
   final String rotulo;
@@ -30,7 +30,7 @@ class _DateFieldState extends State<DateField> with ValidacoesMixin {
   @override
   void initState() {
     super.initState();
-    controller.text = DataUtils.dataParaStr(data: widget.initialDate);
+    controller.text = DataUtils.formatarData(widget.initialDate);
   }
 
   @override
@@ -43,7 +43,7 @@ class _DateFieldState extends State<DateField> with ValidacoesMixin {
       decoration: InputDecoration(
         border: OutlineInputBorder(),
         labelText: widget.rotulo,
-        prefixIcon: const Icon(Icons.calendar_month),
+        prefixIcon: const Icon(PhosphorIcons.calendarBlank),
         contentPadding: const EdgeInsets.symmetric(
           vertical: 0,
           horizontal: 2,
@@ -98,7 +98,7 @@ class _DateFieldState extends State<DateField> with ValidacoesMixin {
 
     if (picked != null) {
       setState(() {
-        controller.text = DataUtils.dataParaStr(data: picked);
+        controller.text = DataUtils.formatarData(picked);
 
         widget.onPressed(picked, context);
       });

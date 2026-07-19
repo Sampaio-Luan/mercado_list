@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
 
-import 'estilo_bottom_sheet_pesquisa.dart';
-import 'modo_selecao.dart';
-import 'texto_com_destaque_pesquisa.dart';
+import 'estilo_painel_pesquisa.dart';
+import 'modo_interacao_painel.dart';
+import 'texto_destacado_pesquisa.dart';
 
 /// Representa visualmente um único item dentro da lista de resultados do
-/// `BottomSheetPesquisaGenerica<T>`.
+/// `PainelPesquisa<T>`.
 ///
 /// Exibe o texto principal (com destaque das partes coincidentes com a
 /// pesquisa), um subtítulo opcional, e o indicador de seleção adequado ao
 /// [modoSelecao] configurado (checkbox para múltipla, círculo para única).
-class ItemListaPesquisa<T> extends StatelessWidget {
-  const ItemListaPesquisa({
+class ItemPadraoPainelPesquisa<T> extends StatelessWidget {
+  const ItemPadraoPainelPesquisa({
     super.key,
     required this.item,
     required this.textoExibicao,
@@ -28,7 +28,7 @@ class ItemListaPesquisa<T> extends StatelessWidget {
   final T item;
 
   /// Texto principal de exibição do item (já obtido via
-  /// `obterTextoExibicao`).
+  /// `obterTextoPesquisa`).
   final String textoExibicao;
 
   /// Termo de pesquisa atual, usado para destacar trechos coincidentes.
@@ -39,13 +39,13 @@ class ItemListaPesquisa<T> extends StatelessWidget {
 
   /// Modo de seleção configurado (única ou múltipla), que determina qual
   /// indicador visual de seleção é exibido.
-  final ModoSelecao modoSelecao;
+  final ModoInteracaoPainel modoSelecao;
 
   /// Callback chamado quando o usuário toca neste item.
   final VoidCallback aoTocarItem;
 
   /// Conjunto de propriedades visuais customizáveis.
-  final EstiloBottomSheetPesquisa estilo;
+  final EstiloPainelPesquisa estilo;
 
   /// Subtítulo opcional exibido abaixo do texto principal.
   final String? textoSubtitulo;
@@ -63,7 +63,8 @@ class ItemListaPesquisa<T> extends StatelessWidget {
     return Material(
       color: estaSelecionado ? corFundoSelecionado : Colors.transparent,
       child: InkWell(
-        onTap: aoTocarItem,
+        onTap:
+            modoSelecao == ModoInteracaoPainel.semSelecao ? null : aoTocarItem,
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           child: Row(
@@ -77,7 +78,7 @@ class ItemListaPesquisa<T> extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    TextoComDestaquePesquisa(
+                    TextoDestacadoPesquisa(
                       texto: textoExibicao,
                       textoPesquisa: textoPesquisa,
                       estiloBase: estilo.estiloTextoItem ??
@@ -101,8 +102,10 @@ class ItemListaPesquisa<T> extends StatelessWidget {
                   ],
                 ),
               ),
-              const SizedBox(width: 8),
-              _construirIndicadorSelecao(temaAtual),
+              if (modoSelecao != ModoInteracaoPainel.semSelecao) ...[
+                const SizedBox(width: 8),
+                _construirIndicadorSelecao(temaAtual),
+              ],
             ],
           ),
         ),
@@ -117,7 +120,7 @@ class ItemListaPesquisa<T> extends StatelessWidget {
     final corIndicador =
         estilo.corIconeSelecionado ?? temaAtual.colorScheme.primary;
 
-    if (modoSelecao == ModoSelecao.multipla) {
+    if (modoSelecao == ModoInteracaoPainel.multipla) {
       return Checkbox(
         value: estaSelecionado,
         activeColor: corIndicador,

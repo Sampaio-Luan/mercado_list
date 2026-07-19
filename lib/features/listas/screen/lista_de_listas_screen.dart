@@ -209,7 +209,6 @@ class _ListaDeListasScreenState extends State<ListaDeListasScreen> {
                 opacity: 0.3,
               ),
             ),
-
             child: Column(
               mainAxisAlignment: MainAxisAlignment.end,
               crossAxisAlignment: CrossAxisAlignment.end,
@@ -229,10 +228,10 @@ class _ListaDeListasScreenState extends State<ListaDeListasScreen> {
                         shadows: [
                           Shadow(
                             blurRadius: 10.0, // Nível de desfoque da sombra
-                            color: Theme.of(context).colorScheme.primary
-                                .withAlpha(
-                                  100,
-                                ), // Cor da sombra com transparência
+                            color:
+                                Theme.of(context).colorScheme.primary.withAlpha(
+                                      100,
+                                    ), // Cor da sombra com transparência
                             offset: Offset(1, 1), // Deslocamento no eixo X e Y
                           ),
                         ],
@@ -307,23 +306,24 @@ class _ListaDeListasScreenState extends State<ListaDeListasScreen> {
           BotaoAddNovaLista(),
           MenuDeContexto(
             // gatilho: Gatilho.toque,
-            tema: const Tema(glassmorphism: true, blurFundo: 15),
+            tema: const TemaMenuContexto(
+              glassmorphism: true,
+              blurFundo: 15,
+            ),
             acoes: [
-              Acao(
+              AcaoMenuContexto(
                 titulo: 'Editar',
-                icone: Icons.edit_outlined,
+                icone: PhosphorIcons.pencilLine,
                 aoSelecionar: () {},
               ),
-
-              Acao(
+              AcaoMenuContexto(
                 titulo: 'Duplicar',
-                icone: Icons.copy_outlined,
+                icone: PhosphorIcons.copy,
                 aoSelecionar: () {},
               ),
-
-              Acao(
+              AcaoMenuContexto(
                 titulo: 'Excluir',
-                icone: Icons.delete_outline,
+                icone: PhosphorIcons.trash,
                 destrutivo: true,
                 aoSelecionar: () {},
               ),
@@ -341,20 +341,17 @@ class _ListaDeListasScreenState extends State<ListaDeListasScreen> {
             onPressed: () {
               Navigator.of(context).push(
                 MaterialPageRoute(
-                  builder: (context) => CategoriasScreen(
-                  ), //CategoriasScreen(),
+                  builder: (context) =>
+                      CategoriasScreen(), //CategoriasScreen(),
                 ),
               );
             },
             cor: Colors.green,
           ),
-
           BotaoDrawer(
             icone: PhosphorIcons.clockCounterClockwiseBold,
             titulo: 'Histórico de Compras',
-            onPressed: () {
-              
-            },
+            onPressed: () {},
             // (){
             //   Navigator.of(context).push(
             //     MaterialPageRoute(
@@ -574,9 +571,8 @@ class IndicadorDeItens extends StatelessWidget {
             : CircularPercentIndicator(
                 radius: 13,
                 lineWidth: 5.0,
-                percent: qtdTotal == 0
-                    ? 0
-                    : (qtdComprado / qtdTotal) * 100 / 100,
+                percent:
+                    qtdTotal == 0 ? 0 : (qtdComprado / qtdTotal) * 100 / 100,
                 progressColor: Theme.of(context).colorScheme.inverseSurface,
                 backgroundColor: Theme.of(
                   context,

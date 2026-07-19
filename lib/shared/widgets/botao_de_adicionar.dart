@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 
 class BotaoDeAdicionar extends StatelessWidget {
   final Color? cor;
@@ -16,7 +17,7 @@ class BotaoDeAdicionar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color:  Theme.of(context).colorScheme.surface,
+      color: Theme.of(context).colorScheme.surface,
       child: InkWell(
         onTap: () => onPressed(),
         child: Container(
@@ -31,7 +32,7 @@ class BotaoDeAdicionar extends StatelessWidget {
             spacing: 10,
             children: [
               Icon(
-                icon ?? Icons.add,
+                icon ?? PhosphorIcons.plus,
                 color: Theme.of(context).colorScheme.onPrimary,
                 size: 20,
               ),
