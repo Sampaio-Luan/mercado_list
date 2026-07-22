@@ -7,7 +7,6 @@ import '../../core/constants/enums/tipo_visualizacao_itens.dart';
 import '../../core/services/preferencias_service.dart';
 import 'preferencias_usuario_model.dart';
 
-
 class PreferenciasProvider extends ChangeNotifier {
   final PreferenciasService _service;
 
@@ -43,7 +42,7 @@ class PreferenciasProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> alterarUltimaLista(int idLista) async {
+  Future<void> alterarUltimaLista(int? idLista) async {
     _preferencias = _preferencias.copyWith(ultimaListaAberta: idLista);
 
     await _service.salvar(_preferencias);

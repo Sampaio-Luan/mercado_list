@@ -24,6 +24,7 @@ void main() {
             item: item,
             termoPesquisa: '',
             corCategoria: Colors.orange,
+            tituloCategoria: 'Mercearia',
             selecionado: true,
           ),
         ),
@@ -31,6 +32,8 @@ void main() {
     );
 
     expect(find.byIcon(PhosphorIcons.check), findsOneWidget);
+    expect(find.text('Mercearia • und'), findsOneWidget);
+    expect(find.textContaining('id:'), findsNothing);
     final card = tester.widget<Card>(find.byType(Card));
     expect(
       card.color,

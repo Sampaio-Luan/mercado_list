@@ -1,6 +1,8 @@
 import '../../core/constants/enums/tema_app.dart';
 import '../../core/constants/enums/tipo_visualizacao_itens.dart';
 
+const Object _naoInformado = Object();
+
 class PreferenciasUsuario {
   final TemaApp tema;
   final TipoVisualizacaoItens tipoVisualizacao;
@@ -17,7 +19,7 @@ class PreferenciasUsuario {
   factory PreferenciasUsuario.padrao() {
     return const PreferenciasUsuario(
       tema: TemaApp.escuro,
-      tipoVisualizacao: TipoVisualizacaoItens.lista,
+      tipoVisualizacao: TipoVisualizacaoItens.categorias,
       ultimaListaAberta: null,
       mostrarItensComprados: true,
     );
@@ -26,13 +28,15 @@ class PreferenciasUsuario {
   PreferenciasUsuario copyWith({
     TemaApp? tema,
     TipoVisualizacaoItens? tipoVisualizacao,
-    int? ultimaListaAberta,
+    Object? ultimaListaAberta = _naoInformado,
     bool? mostrarItensComprados,
   }) {
     return PreferenciasUsuario(
       tema: tema ?? this.tema,
       tipoVisualizacao: tipoVisualizacao ?? this.tipoVisualizacao,
-      ultimaListaAberta: ultimaListaAberta ?? this.ultimaListaAberta,
+      ultimaListaAberta: identical(ultimaListaAberta, _naoInformado)
+          ? this.ultimaListaAberta
+          : ultimaListaAberta as int?,
       mostrarItensComprados:
           mostrarItensComprados ?? this.mostrarItensComprados,
     );
@@ -41,7 +45,8 @@ class PreferenciasUsuario {
   Map<String, dynamic> toJson() {
     return {
       'tema': TemaApp.obterRotulo(tema: tema),
-      'tipoVisualizacao': TipoVisualizacaoItens.obterRotulo(tipo: tipoVisualizacao),
+      'tipoVisualizacao':
+          TipoVisualizacaoItens.obterRotulo(tipo: tipoVisualizacao),
       'ultimaListaAberta': ultimaListaAberta,
       'mostrarItensComprados': mostrarItensComprados,
     };
@@ -52,11 +57,10 @@ class PreferenciasUsuario {
   ) {
     return PreferenciasUsuario(
       tema: TemaApp.obterPorRotulo(rotulo: json['tema']),
-      tipoVisualizacao:
-          TipoVisualizacaoItens.obterPorRotulo(rotulo: json['tipoVisualizacao']),
+      tipoVisualizacao: TipoVisualizacaoItens.obterPorRotulo(
+          rotulo: json['tipoVisualizacao']),
       ultimaListaAberta: json['ultimaListaAberta'],
-      mostrarItensComprados:
-          json['mostrarItensComprados'] ?? true,
+      mostrarItensComprados: json['mostrarItensComprados'] ?? true,
     );
   }
 }

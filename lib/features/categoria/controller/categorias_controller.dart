@@ -363,6 +363,24 @@ class CategoriasController extends ChangeNotifier {
     }
   }
 
+  void sincronizarItensRecorrentes(Iterable<ItemRecorrente> itens) {
+    final atualizados = itens.map((item) => item.copia()).toList();
+    final atuais = [
+      for (final grupo in _categoriasComItensRecorrentes)
+        ...grupo.itensRecorrentes,
+    ];
+    if (_itensRecorrentesIguais(atuais, atualizados)) return;
+    _agruparCategorias(
+      _categoriasComItensRecorrentes.map((grupo) => grupo.categoria).toList(),
+      atualizados,
+    );
+    _registrarSucesso(
+      'sincronizarItensRecorrentes',
+      'itens=${atualizados.length}',
+    );
+    notifyListeners();
+  }
+
   void _agruparCategorias(
     List<Categoria> categorias,
     List<ItemRecorrente> itensRecorrentes,
@@ -382,6 +400,25 @@ class CategoriasController extends ChangeNotifier {
           ),
         ),
       );
+  }
+
+  bool _itensRecorrentesIguais(
+    List<ItemRecorrente> atuais,
+    List<ItemRecorrente> atualizados,
+  ) {
+    if (atuais.length != atualizados.length) return false;
+    for (var indice = 0; indice < atuais.length; indice++) {
+      final atual = atuais[indice];
+      final atualizado = atualizados[indice];
+      if (atual.id != atualizado.id ||
+          atual.idCategoria != atualizado.idCategoria ||
+          atual.titulo != atualizado.titulo ||
+          atual.tipoMedida != atualizado.tipoMedida ||
+          atual.excluido != atualizado.excluido) {
+        return false;
+      }
+    }
+    return true;
   }
 
   CategoriaComItensRecorrentes _buscarCategoriaEmMemoria(int? idCategoria) {

@@ -59,6 +59,34 @@ void main() {
     });
   });
 
+  test('sincroniza item recorrente criado pela feature de itens', () async {
+    final controller = CategoriasController(
+      _CategoriasServiceFake(
+        categorias: [
+          _categoria(id: 1, titulo: 'Limpeza'),
+          _categoria(id: 2, titulo: 'Outros', categoriaPadrao: true),
+        ],
+      ),
+      _ItemRecorrenteServiceFake(itens: const []),
+      _ExcluirCategoriaFake(),
+    );
+    await controller.carregar();
+    var notificacoes = 0;
+    controller.addListener(() => notificacoes++);
+    final item = _item(id: 20, idCategoria: 1, titulo: 'Sabão');
+
+    controller.sincronizarItensRecorrentes([item]);
+
+    expect(
+      controller
+          .categoriasComItensRecorrentes.first.itensRecorrentes.single.titulo,
+      'Sabão',
+    );
+    expect(notificacoes, 1);
+    controller.sincronizarItensRecorrentes([item.copia()]);
+    expect(notificacoes, 1);
+  });
+
   test('excluir atualiza a memória a partir do resultado do caso de uso',
       () async {
     final categoriaOrigem = _categoria(id: 1, titulo: 'Limpeza');

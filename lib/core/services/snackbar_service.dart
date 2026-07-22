@@ -11,25 +11,41 @@ class SnackbarService {
     required String mensagem,
     required TipoSnackbar tipo,
   }) {
-    final estilo = _EstiloSnackbar.obter(context, tipo);
-
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(
-          behavior: SnackBarBehavior.floating,
-          margin: const EdgeInsets.all(16),
-          duration: const Duration(seconds: 3),
-          backgroundColor: estilo.cor,
-          content: Row(
-            children: [
-              Icon(estilo.icone, color: Colors.white),
-              const SizedBox(width: 12),
-              Expanded(child: Text(mensagem)),
-            ],
-          ),
-        ),
-      );
+      ..showSnackBar(_construir(context, mensagem, tipo));
+  }
+
+  static void mostrarNoMensageiro({
+    required ScaffoldMessengerState mensageiro,
+    required BuildContext context,
+    required String mensagem,
+    required TipoSnackbar tipo,
+  }) {
+    mensageiro
+      ..hideCurrentSnackBar()
+      ..showSnackBar(_construir(context, mensagem, tipo));
+  }
+
+  static SnackBar _construir(
+    BuildContext context,
+    String mensagem,
+    TipoSnackbar tipo,
+  ) {
+    final estilo = _EstiloSnackbar.obter(context, tipo);
+    return SnackBar(
+      behavior: SnackBarBehavior.floating,
+      margin: const EdgeInsets.all(16),
+      duration: const Duration(seconds: 3),
+      backgroundColor: estilo.cor,
+      content: Row(
+        children: [
+          Icon(estilo.icone, color: Colors.white),
+          const SizedBox(width: 12),
+          Expanded(child: Text(mensagem)),
+        ],
+      ),
+    );
   }
 }
 

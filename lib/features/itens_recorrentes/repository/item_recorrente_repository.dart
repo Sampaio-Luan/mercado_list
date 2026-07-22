@@ -22,8 +22,11 @@ class ItemRecorrenteRepository implements ContratoRepository<ItemRecorrente> {
   Future<Database> get _db async => bancoLocal.dataBase;
 
   @override
-  Future<ItemRecorrente> criar(ItemRecorrente objeto) async {
-    final dbLocal = await _db;
+  Future<ItemRecorrente> criar(
+    ItemRecorrente objeto, {
+    DatabaseExecutor? databaseExecutor,
+  }) async {
+    final dbLocal = databaseExecutor ?? await _db;
     final agora = DataUtils.agoraUtc();
     objeto
       ..dataCriacao ??= agora
@@ -38,7 +41,7 @@ class ItemRecorrenteRepository implements ContratoRepository<ItemRecorrente> {
       name: LogId.itensRecorrentesRepository,
       'criar(): criado com sucesso ! id: $id',
     );
-    return recuperar(id);
+    return recuperar(id, databaseExecutor: dbLocal);
   }
 
   @override
@@ -90,8 +93,11 @@ class ItemRecorrenteRepository implements ContratoRepository<ItemRecorrente> {
   }
 
   @override
-  Future<ItemRecorrente> recuperar(int id) async {
-    final dbLocal = await _db;
+  Future<ItemRecorrente> recuperar(
+    int id, {
+    DatabaseExecutor? databaseExecutor,
+  }) async {
+    final dbLocal = databaseExecutor ?? await _db;
 
     final resultado = await dbLocal.query(
       TbItemRecorrente.nomeTabela,

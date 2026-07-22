@@ -1,227 +1,220 @@
-import 'dart:developer';
-
 import 'package:sqflite/sqflite.dart';
 
-import '../../../core/constants/logs/logs.dart';
 import '../../../core/contracts/contrato_repository.dart';
+import '../../../core/database/banco_local.dart';
+import '../../../core/database/schema/tb_item.dart';
+import '../../../core/database/schema/tb_lista.dart';
+import '../../../core/utils/data_utils.dart';
+import '../mapper/lista_mapper.dart';
+import '../model/lista_com_resumo_de_itens_model.dart';
 import '../model/lista_model.dart';
-import '../screen/lista_ui.dart';
 
-class ListaRepository implements ContratoRepository<Lista> {
-  late Database dbLocal;
-  List<Lista> listas = [];
-  final List<ListaUi> listasTeste = [
-    ListaUi(
-      lista: Lista(
-        id: 1,
-        titulo: 'Compras do Mês',
-        descricao: 'Supermercado e itens básicos',
-        dataCriacao: DateTime.now().subtract(const Duration(days: 30)),
-        dataAlteracao: DateTime.now().subtract(const Duration(days: 2)),
-      ),
-      quantidadeItens: 45,
-      quantidadeItensComprados: 32,
-    ),
-    ListaUi(
-      lista: Lista(
-        id: 2,
-        titulo: 'Churrasco de Domingo',
-        descricao: 'Itens para churrasco da família',
-        dataCriacao: DateTime.now().subtract(const Duration(days: 20)),
-        dataAlteracao: DateTime.now().subtract(const Duration(days: 1)),
-      ),
-      quantidadeItens: 0,
-      quantidadeItensComprados: 0,
-    ),
-    ListaUi(
-      lista: Lista(
-        id: 3,
-        titulo: 'Material Escolar',
-        descricao: 'Volta às aulas',
-        dataCriacao: DateTime.now().subtract(const Duration(days: 60)),
-        dataAlteracao: DateTime.now().subtract(const Duration(days: 15)),
-      ),
-      quantidadeItens: 22,
-      quantidadeItensComprados: 22,
-    ),
-    ListaUi(
-      lista: Lista(
-        id: 4,
-        titulo: 'Reforma da Casa',
-        descricao: 'Tintas, cimento e ferramentas',
-        dataCriacao: DateTime.now().subtract(const Duration(days: 12)),
-        dataAlteracao: DateTime.now().subtract(const Duration(hours: 8)),
-      ),
-      quantidadeItens: 35,
-      quantidadeItensComprados: 8,
-    ),
-    ListaUi(
-      lista: Lista(
-        id: 5,
-        titulo: 'Farmácia',
-        descricao: 'Medicamentos e higiene',
-        dataCriacao: DateTime.now().subtract(const Duration(days: 5)),
-        dataAlteracao: DateTime.now().subtract(const Duration(hours: 12)),
-      ),
-      quantidadeItens: 12,
-      quantidadeItensComprados: 4,
-    ),
-    ListaUi(
-      lista: Lista(
-        id: 6,
-        titulo: 'Festa de Aniversário',
-        descricao: 'Doces, salgados e decoração',
-        dataCriacao: DateTime.now().subtract(const Duration(days: 25)),
-        dataAlteracao: DateTime.now().subtract(const Duration(days: 3)),
-      ),
-      quantidadeItens: 50,
-      quantidadeItensComprados: 20,
-      selecionado: true,
-    ),
-    ListaUi(
-      lista: Lista(
-        id: 7,
-        titulo: 'Viagem para Praia',
-        descricao: 'Itens para as férias',
-        dataCriacao: DateTime.now().subtract(const Duration(days: 40)),
-        dataAlteracao: DateTime.now().subtract(const Duration(days: 10)),
-      ),
-      quantidadeItens: 17,
-      quantidadeItensComprados: 7,
-    ),
-    ListaUi(
-      lista: Lista(
-        id: 8,
-        titulo: 'Pet Shop',
-        descricao: 'Ração e acessórios',
-        dataCriacao: DateTime.now().subtract(const Duration(days: 8)),
-        dataAlteracao: DateTime.now().subtract(const Duration(days: 1)),
-      ),
-      quantidadeItens: 9,
-      quantidadeItensComprados: 2,
-    ),
-    ListaUi(
-      lista: Lista(
-        id: 9,
-        titulo: 'Natal',
-        descricao: 'Presentes e decoração',
-        dataCriacao: DateTime.now().subtract(const Duration(days: 180)),
-        dataAlteracao: DateTime.now().subtract(const Duration(days: 120)),
-      ),
-      quantidadeItens: 40,
-      quantidadeItensComprados: 15,
-    ),
-    ListaUi(
-      lista: Lista(
-        id: 10,
-        titulo: 'Ferramentas',
-        descricao: 'Oficina e manutenção',
-        dataCriacao: DateTime.now().subtract(const Duration(days: 70)),
-        dataAlteracao: DateTime.now().subtract(const Duration(days: 18)),
-      ),
-      quantidadeItens: 25,
-      quantidadeItensComprados: 5,
-    ),
-    ListaUi(
-      lista: Lista(
-        id: 11,
-        titulo: 'Tecnologia',
-        descricao: 'Peças e periféricos',
-        dataCriacao: DateTime.now().subtract(const Duration(days: 14)),
-        dataAlteracao: DateTime.now().subtract(const Duration(days: 2)),
-      ),
-      quantidadeItens: 14,
-      quantidadeItensComprados: 1,
-    ),
-    ListaUi(
-      lista: Lista(
-        id: 12,
-        titulo: 'Academia',
-        descricao: 'Suplementos e acessórios',
-        dataCriacao: DateTime.now().subtract(const Duration(days: 9)),
-        dataAlteracao: DateTime.now().subtract(const Duration(hours: 18)),
-      ),
-      quantidadeItens: 11,
-      quantidadeItensComprados: 9,
-    ),
-    ListaUi(
-      lista: Lista(
-        id: 13,
-        titulo: 'Café da Empresa',
-        descricao: 'Reposição da copa',
-        dataCriacao: DateTime.now().subtract(const Duration(days: 3)),
-        dataAlteracao: DateTime.now().subtract(const Duration(hours: 6)),
-      ),
-      quantidadeItens: 16,
-      quantidadeItensComprados: 10,
-    ),
-    ListaUi(
-      lista: Lista(
-        id: 14,
-        titulo: 'Mudança',
-        descricao: 'Caixas e organização',
-        dataCriacao: DateTime.now().subtract(const Duration(days: 90)),
-        dataAlteracao: DateTime.now().subtract(const Duration(days: 30)),
-      ),
-      quantidadeItens: 28,
-      quantidadeItensComprados: 18,
-    ),
-    ListaUi(
-      lista: Lista(
-        id: 15,
-        titulo: 'Compras Rápidas',
-        descricao: 'Itens urgentes',
-        dataCriacao: DateTime.now().subtract(const Duration(days: 1)),
-        dataAlteracao: DateTime.now(),
-      ),
-      quantidadeItens: 5,
-      quantidadeItensComprados: 0,
-    ),
-  ];
+abstract interface class ListaRepositoryContract
+    implements ContratoRepository<Lista> {
+  @override
+  Future<Lista> criar(Lista lista, {DatabaseExecutor? databaseExecutor});
 
-  ListaRepository() {
-    _iniciarRepositorio();
+  @override
+  Future<Lista> editar(Lista lista, {DatabaseExecutor? databaseExecutor});
+
+  @override
+  Future<Lista> recuperar(int id, {DatabaseExecutor? databaseExecutor});
+
+  @override
+  Future<void> excluir(
+    int id, {
+    DatabaseExecutor? databaseExecutor,
+    DateTime? dataAlteracao,
+  });
+
+  Future<List<ListaComResumoDeItens>> recuperarComResumo();
+
+  Future<List<Lista>> recuperarTodosNoExecutor(DatabaseExecutor executor);
+
+  Future<int> contarFixadas({DatabaseExecutor? databaseExecutor});
+
+  Future<void> atualizarOrdens(
+    List<Lista> listas, {
+    DatabaseExecutor? databaseExecutor,
+    DateTime? dataAlteracao,
+  });
+}
+
+class ListaRepository implements ListaRepositoryContract {
+  final BancoLocal bancoLocal;
+  final ListaMapper listaMapper;
+
+  ListaRepository({required this.bancoLocal, required this.listaMapper});
+
+  Future<Database> get _db async => bancoLocal.dataBase;
+
+  @override
+  Future<Lista> criar(
+    Lista lista, {
+    DatabaseExecutor? databaseExecutor,
+  }) async {
+    final db = databaseExecutor ?? await _db;
+    final agora = DataUtils.agoraUtc();
+    final maximo = Sqflite.firstIntValue(
+          await db.rawQuery(
+            'SELECT MAX(${TbLista.colunaOrdem}) FROM ${TbLista.nomeTabela} '
+            'WHERE ${TbLista.colunaExcluido} = 0',
+          ),
+        ) ??
+        -1;
+    lista
+      ..ordem = maximo + 1
+      ..dataCriacao ??= agora
+      ..dataAlteracao ??= agora;
+    final id = await db.insert(
+      TbLista.nomeTabela,
+      listaMapper.paraMapa(lista),
+    );
+    return recuperar(id, databaseExecutor: db);
   }
 
-  void _iniciarRepositorio() async {
-    if (listas.isEmpty) {
-      await recuperarTodos();
-      log(
-        name: LogId.listaRepository,
-        '_iniciarRepositorio(): precisou iniciar o repositorio ',
+  @override
+  Future<Lista> editar(
+    Lista lista, {
+    DatabaseExecutor? databaseExecutor,
+  }) async {
+    if (lista.id == null || lista.id! <= 0) {
+      throw StateError('A lista precisa estar persistida para ser editada.');
+    }
+    final db = databaseExecutor ?? await _db;
+    final persistida = await recuperar(lista.id!, databaseExecutor: db);
+    lista
+      ..ordem = persistida.ordem
+      ..dataCriacao = persistida.dataCriacao
+      ..dataAlteracao = DataUtils.agoraUtc()
+      ..excluido = persistida.excluido;
+    final linhas = await db.update(
+      TbLista.nomeTabela,
+      listaMapper.paraMapa(lista)..remove(TbLista.colunaId),
+      where: '${TbLista.colunaId} = ? AND ${TbLista.colunaExcluido} = 0',
+      whereArgs: [lista.id],
+    );
+    if (linhas == 0) throw StateError('Lista ${lista.id} não encontrada.');
+    return recuperar(lista.id!, databaseExecutor: db);
+  }
+
+  @override
+  Future<void> excluir(
+    int id, {
+    DatabaseExecutor? databaseExecutor,
+    DateTime? dataAlteracao,
+  }) async {
+    final db = databaseExecutor ?? await _db;
+    final linhas = await db.update(
+      TbLista.nomeTabela,
+      {
+        TbLista.colunaExcluido: 1,
+        TbLista.colunaFixada: 0,
+        TbLista.colunaDataAlteracao: DataUtils.paraPersistencia(
+          dataAlteracao ?? DataUtils.agoraUtc(),
+        ),
+      },
+      where: '${TbLista.colunaId} = ? AND ${TbLista.colunaExcluido} = 0',
+      whereArgs: [id],
+    );
+    if (linhas == 0) throw StateError('Lista $id não encontrada.');
+  }
+
+  @override
+  Future<Lista> recuperar(
+    int id, {
+    DatabaseExecutor? databaseExecutor,
+  }) async {
+    final db = databaseExecutor ?? await _db;
+    final resultado = await db.query(
+      TbLista.nomeTabela,
+      where: '${TbLista.colunaId} = ? AND ${TbLista.colunaExcluido} = 0',
+      whereArgs: [id],
+    );
+    if (resultado.isEmpty) throw StateError('Lista $id não encontrada.');
+    return listaMapper.doMapa(resultado.single);
+  }
+
+  @override
+  Future<List<Lista>> recuperarTodos() async {
+    final db = await _db;
+    return recuperarTodosNoExecutor(db);
+  }
+
+  @override
+  Future<List<Lista>> recuperarTodosNoExecutor(
+      DatabaseExecutor executor) async {
+    final resultado = await executor.query(
+      TbLista.nomeTabela,
+      where: '${TbLista.colunaExcluido} = 0',
+      orderBy: '${TbLista.colunaFixada} DESC, ${TbLista.colunaOrdem}, '
+          '${TbLista.colunaId}',
+    );
+    return resultado.map(listaMapper.doMapa).toList();
+  }
+
+  @override
+  Future<List<ListaComResumoDeItens>> recuperarComResumo() async {
+    final db = await _db;
+    final resultado = await db.rawQuery('''
+      SELECT lista.*,
+             COUNT(item.${TbItem.colunaId}) AS quantidade_itens,
+             COALESCE(SUM(CASE WHEN item.${TbItem.colunaObtido} = 1
+                               THEN 1 ELSE 0 END), 0) AS quantidade_marcados
+      FROM ${TbLista.nomeTabela} lista
+      LEFT JOIN ${TbItem.nomeTabela} item
+        ON item.${TbItem.colunaIdLista} = lista.${TbLista.colunaId}
+       AND item.${TbItem.colunaExcluido} = 0
+      WHERE lista.${TbLista.colunaExcluido} = 0
+      GROUP BY lista.${TbLista.colunaId}
+      ORDER BY lista.${TbLista.colunaFixada} DESC,
+               lista.${TbLista.colunaOrdem}, lista.${TbLista.colunaId}
+    ''');
+    return resultado.map((mapa) {
+      return ListaComResumoDeItens(
+        lista: listaMapper.doMapa(mapa),
+        quantidadeItens: mapa['quantidade_itens'] as int,
+        quantidadeItensMarcados: mapa['quantidade_marcados'] as int,
+      );
+    }).toList();
+  }
+
+  @override
+  Future<int> contarFixadas({DatabaseExecutor? databaseExecutor}) async {
+    final db = databaseExecutor ?? await _db;
+    return Sqflite.firstIntValue(
+          await db.rawQuery(
+            'SELECT COUNT(*) FROM ${TbLista.nomeTabela} '
+            'WHERE ${TbLista.colunaFixada} = 1 '
+            'AND ${TbLista.colunaExcluido} = 0',
+          ),
+        ) ??
+        0;
+  }
+
+  @override
+  Future<void> atualizarOrdens(
+    List<Lista> listas, {
+    DatabaseExecutor? databaseExecutor,
+    DateTime? dataAlteracao,
+  }) async {
+    final db = databaseExecutor ?? await _db;
+    final agora = dataAlteracao ?? DataUtils.agoraUtc();
+    final lote = db.batch();
+    for (var indice = 0; indice < listas.length; indice++) {
+      listas[indice]
+        ..ordem = indice
+        ..dataAlteracao = agora;
+      lote.update(
+        TbLista.nomeTabela,
+        {
+          TbLista.colunaOrdem: indice,
+          TbLista.colunaDataAlteracao: DataUtils.paraPersistencia(agora),
+        },
+        where: '${TbLista.colunaId} = ?',
+        whereArgs: [listas[indice].id],
       );
     }
-  }
-
-  String titulobyid(int id) {
-    return listasTeste
-        .firstWhere((element) => element.lista.id == id)
-        .lista
-        .titulo;
-  }
-
-  @override
-  Future<Lista> criar(Lista objeto) {
-    throw UnimplementedError();
-  }
-
-  @override
-  Future<Lista> editar(Lista objeto) {
-    throw UnimplementedError();
-  }
-
-  @override
-  Future<void> excluir(int id) {
-    throw UnimplementedError();
-  }
-
-  @override
-  Future<Lista> recuperar(int id) {
-    throw UnimplementedError();
-  }
-
-  @override
-  Future<List<Lista>> recuperarTodos() {
-    throw UnimplementedError();
+    await lote.commit(noResult: true);
   }
 }

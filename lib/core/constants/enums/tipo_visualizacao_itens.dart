@@ -1,24 +1,26 @@
 enum TipoVisualizacaoItens {
-  lista,
-  grade;
+  categorias,
+  tabela;
 
   static String obterRotulo({required TipoVisualizacaoItens tipo}) {
     switch (tipo) {
-      case TipoVisualizacaoItens.lista:
-        return TipoVisualizacaoItens.lista.name;
-      case TipoVisualizacaoItens.grade:
-        return TipoVisualizacaoItens.grade.name;
+      case TipoVisualizacaoItens.categorias:
+        return TipoVisualizacaoItens.categorias.name;
+      case TipoVisualizacaoItens.tabela:
+        return TipoVisualizacaoItens.tabela.name;
     }
   }
 
   static TipoVisualizacaoItens obterPorRotulo({required String rotulo}) {
     switch (rotulo) {
+      case 'categorias':
       case 'lista':
-        return TipoVisualizacaoItens.lista;
+        return TipoVisualizacaoItens.categorias;
+      case 'tabela':
       case 'grade':
-        return TipoVisualizacaoItens.grade;
+        return TipoVisualizacaoItens.tabela;
       default:
-        return TipoVisualizacaoItens.grade;
+        return TipoVisualizacaoItens.categorias;
     }
   }
 }

@@ -29,6 +29,18 @@ class Migrations {
     if (versaoAnterior < 5 && novaVersao >= 5) {
       await paraVersao5(db);
     }
+    if (versaoAnterior < 6 && novaVersao >= 6) {
+      await paraVersao6(db);
+    }
+    if (versaoAnterior < 7 && novaVersao >= 7) {
+      await paraVersao7(db);
+    }
+    if (versaoAnterior < 8 && novaVersao >= 8) {
+      await paraVersao8(db);
+    }
+    if (versaoAnterior < 9 && novaVersao >= 9) {
+      await paraVersao9(db);
+    }
   }
 
   static Future<void> paraVersao2(DatabaseExecutor db) async {
@@ -82,5 +94,58 @@ class Migrations {
 
   static Future<void> paraVersao5(DatabaseExecutor db) async {
     await db.execute(TbCategoria.criarIndiceCategoriaPadraoAtiva);
+  }
+
+  static Future<void> paraVersao6(DatabaseExecutor db) async {
+    await db.execute('''
+      ALTER TABLE ${TbLista.nomeTabela}
+      ADD COLUMN ${TbLista.colunaCor} TEXT NOT NULL DEFAULT 'indigo'
+    ''');
+    await db.execute('''
+      ALTER TABLE ${TbLista.nomeTabela}
+      ADD COLUMN ${TbLista.colunaOrcamento} INTEGER
+    ''');
+    await db.execute('''
+      ALTER TABLE ${TbLista.nomeTabela}
+      ADD COLUMN ${TbLista.colunaOrdem} INTEGER NOT NULL DEFAULT 0
+    ''');
+    await db.execute('''
+      ALTER TABLE ${TbLista.nomeTabela}
+      ADD COLUMN ${TbLista.colunaFixada} INTEGER NOT NULL DEFAULT 0
+        CHECK (${TbLista.colunaFixada} IN (0, 1))
+    ''');
+    await db.execute('''
+      UPDATE ${TbLista.nomeTabela}
+      SET ${TbLista.colunaOrdem} = ${TbLista.colunaId}
+    ''');
+    await db.execute(TbLista.criarIndiceOrdenacao);
+    await db.execute(TbItem.criarIndiceLista);
+  }
+
+  static Future<void> paraVersao7(DatabaseExecutor db) async {
+    await db.execute(TbLista.inserirListaExemploSeAusente);
+    await db.execute(TbItem.inserirItensExemploSeAusentes);
+  }
+
+  static Future<void> paraVersao8(DatabaseExecutor db) async {
+    await db.execute(TbLista.atualizarDescricaoListaExemplo);
+    await db.execute(TbItem.excluirDicasAntigasDaListaExemplo);
+    await db.execute(TbItem.inserirItensExemploSeAusentes);
+  }
+
+  /// Quantidades de itens em kg passam a ser persistidas em gramas.
+  static Future<void> paraVersao9(DatabaseExecutor db) async {
+    await db.execute('''
+      UPDATE ${TbItem.nomeTabela}
+      SET ${TbItem.colunaQuantidade} = ${TbItem.colunaQuantidade} * 1000
+      WHERE ${TbItem.colunaUnidadeMedida} = 'kg'
+        AND ${TbItem.colunaQuantidade} IS NOT NULL
+    ''');
+    await db.execute('''
+      UPDATE ${TbItemHistorico.nomeTabela}
+      SET ${TbItemHistorico.colunaQuantidade} =
+          ${TbItemHistorico.colunaQuantidade} * 1000
+      WHERE ${TbItemHistorico.colunaUnidadeDeMedida} = 'kg'
+    ''');
   }
 }

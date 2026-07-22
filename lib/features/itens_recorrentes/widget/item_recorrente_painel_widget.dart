@@ -8,6 +8,7 @@ class ItemRecorrentePainelWidget extends StatelessWidget {
   final ItemRecorrente item;
   final String termoPesquisa;
   final Color corCategoria;
+  final String tituloCategoria;
   final bool selecionado;
 
   const ItemRecorrentePainelWidget({
@@ -15,6 +16,7 @@ class ItemRecorrentePainelWidget extends StatelessWidget {
     required this.item,
     required this.termoPesquisa,
     required this.corCategoria,
+    this.tituloCategoria = 'Sem categoria',
     this.selecionado = false,
   });
 
@@ -58,7 +60,7 @@ class ItemRecorrentePainelWidget extends StatelessWidget {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    'Medida: ${item.tipoMedida.name} • id: ${item.id}',
+                    '$tituloCategoria • ${item.tipoMedida.name}',
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
                 ],

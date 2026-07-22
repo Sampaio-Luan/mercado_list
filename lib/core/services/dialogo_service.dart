@@ -25,6 +25,7 @@ class DialogoService {
 
     return showGeneralDialog(
       context: context,
+      useRootNavigator: true,
       barrierLabel: '',
       barrierDismissible: !exibirCancelar,
       barrierColor: Colors.black54,

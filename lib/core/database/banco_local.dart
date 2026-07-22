@@ -34,7 +34,7 @@ class BancoLocal implements GerenciadorTransacoes {
   Future<Database> _iniciaBancoLocal() async {
     _dataBase = await openDatabase(
       join(await getDatabasesPath(), 'mercado_list_local.db'),
-      version: 5,
+      version: 9,
       onConfigure: _onConfigure,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
@@ -54,6 +54,10 @@ class BancoLocal implements GerenciadorTransacoes {
     await db.execute(TbItemRecorrente.inserirItensRecorrentes);
     await db.execute(TbLista.criarTabela);
     await db.execute(TbItem.criarTabela);
+    await db.execute(TbLista.criarIndiceOrdenacao);
+    await db.execute(TbItem.criarIndiceLista);
+    await db.execute(TbLista.inserirListaExemplo);
+    await db.execute(TbItem.inserirItensExemplo);
     await db.execute(TbHistorico.criarTabela);
     await db.execute(TbItemHistorico.criarTabela);
 
