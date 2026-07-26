@@ -2,10 +2,10 @@ import 'dart:developer';
 
 import 'package:flutter/material.dart';
 
-import '../../core/constants/enums/tema_app.dart';
-import '../../core/constants/enums/tipo_visualizacao_itens.dart';
-import '../../core/services/preferencias_service.dart';
-import 'preferencias_usuario_model.dart';
+import '../../../core/constants/enums/tema_app.dart';
+import '../../../core/constants/enums/tipo_visualizacao_itens.dart';
+import '../../../core/services/preferencias_service.dart';
+import '../preferencias_usuario_model.dart';
 
 class PreferenciasProvider extends ChangeNotifier {
   final PreferenciasService _service;

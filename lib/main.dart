@@ -16,6 +16,7 @@ import 'features/itens_recorrentes/mapper/item_recorrente_mapper.dart';
 import 'features/itens_recorrentes/repository/item_recorrente_repository.dart';
 import 'features/itens_recorrentes/service/item_recorrente_service.dart';
 import 'features/itens/mapper/item_mapper.dart';
+import 'features/itens/controller/itens_controller.dart';
 import 'features/itens/repository/itens_repository.dart';
 import 'features/itens/service/criar_item_service.dart';
 import 'features/itens/service/itens_service.dart';
@@ -25,7 +26,7 @@ import 'features/listas/controller/listas_controller.dart';
 import 'features/listas/mapper/lista_mapper.dart';
 import 'features/listas/repository/lista_repository.dart';
 import 'features/listas/service/listas_service.dart';
-import 'features/preferencias_usuario/preferencias_provider.dart';
+import 'features/preferencias_usuario/controller/preferencias_provider.dart';
 import 'meu_app.dart';
 
 void main() async {
@@ -107,12 +108,12 @@ void main() async {
             final controller = listasController!;
             if (categoriasController.estado == EstadoDeTela.carregadaComDados ||
                 categoriasController.estado == EstadoDeTela.carregadaSemDados) {
-              controller.sincronizarCategorias(
+              controller.itensController.sincronizarCategorias(
                 categoriasController.categoriasComItensRecorrentes.map(
                   (grupo) => grupo.categoria,
                 ),
               );
-              controller.sincronizarItensRecorrentes(
+              controller.itensController.sincronizarItensRecorrentes(
                 categoriasController.categoriasComItensRecorrentes.expand(
                   (grupo) => grupo.itensRecorrentes,
                 ),
@@ -120,6 +121,12 @@ void main() async {
             }
             return controller;
           },
+          lazy: false,
+        ),
+        ChangeNotifierProxyProvider<ListasController, ItensController>(
+          create: (context) => context.read<ListasController>().itensController,
+          update: (_, listasController, itensController) =>
+              listasController.itensController,
           lazy: false,
         ),
       ],

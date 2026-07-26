@@ -10,7 +10,53 @@ import '../../../core/utils/data_utils.dart';
 import '../mapper/item_mapper.dart';
 import '../model/item_model.dart';
 
-class ItensRepository {
+abstract interface class ItensRepositoryContract {
+  Future<Item> criar(
+    Item item, {
+    DatabaseExecutor? databaseExecutor,
+  });
+
+  Future<Item> editar(Item item);
+
+  Future<void> excluir(Item item);
+
+  Future<int> buscarIdCategoriaPadrao();
+
+  Future<Item> recuperar(
+    int id, {
+    DatabaseExecutor? databaseExecutor,
+  });
+
+  Future<List<Item>> buscarPorLista(
+    int idLista, {
+    DatabaseExecutor? databaseExecutor,
+  });
+
+  Future<Item> alterarObtido(
+    Item item, {
+    DatabaseExecutor? databaseExecutor,
+  });
+
+  Future<int> excluirPorLista(
+    int idLista, {
+    required DateTime dataAlteracao,
+    DatabaseExecutor? databaseExecutor,
+  });
+
+  Future<List<Item>> copiarParaLista(
+    List<Item> itens,
+    int idListaDestino, {
+    DatabaseExecutor? databaseExecutor,
+  });
+
+  Future<int> moverParaCategoria({
+    required int categoriaOrigem,
+    required int categoriaDestino,
+    DatabaseExecutor? databaseExecutor,
+  });
+}
+
+class ItensRepository implements ItensRepositoryContract {
   final BancoLocal bancoLocal;
   final ItemMapper itemMapper;
 
@@ -18,6 +64,7 @@ class ItensRepository {
 
   Future<Database> get _db async => bancoLocal.dataBase;
 
+  @override
   Future<Item> criar(
     Item item, {
     DatabaseExecutor? databaseExecutor,
@@ -35,13 +82,15 @@ class ItensRepository {
   }) async {
     final db = databaseExecutor ?? await _db;
     final agora = DataUtils.agoraUtc();
-    item
+    final novo = item.copia();
+    novo
       ..dataCriacao ??= agora
       ..dataAlteracao ??= agora;
-    final id = await db.insert(TbItem.nomeTabela, itemMapper.paraMapa(item));
+    final id = await db.insert(TbItem.nomeTabela, itemMapper.paraMapa(novo));
     return recuperar(id, databaseExecutor: db);
   }
 
+  @override
   Future<Item> editar(Item item) {
     return _executar(
       'editar',
@@ -53,8 +102,8 @@ class ItensRepository {
   Future<Item> _editar(Item item) async {
     if (item.id == null) throw StateError('O item precisa estar persistido.');
     final db = await _db;
-    item.dataAlteracao = DataUtils.agoraUtc();
-    final valores = itemMapper.paraMapa(item)
+    final editado = item.copia()..dataAlteracao = DataUtils.agoraUtc();
+    final valores = itemMapper.paraMapa(editado)
       ..remove(TbItem.colunaId)
       ..remove(TbItem.colunaDataCriacao);
     final linhas = await db.update(
@@ -67,6 +116,7 @@ class ItensRepository {
     return recuperar(item.id!, databaseExecutor: db);
   }
 
+  @override
   Future<void> excluir(Item item) {
     return _executar(
       'excluir',
@@ -91,6 +141,7 @@ class ItensRepository {
     if (linhas == 0) throw StateError('Item ${item.id} não encontrado.');
   }
 
+  @override
   Future<int> buscarIdCategoriaPadrao() {
     return _executar(
       'buscarIdCategoriaPadrao',
@@ -114,6 +165,7 @@ class ItensRepository {
     return resultado.single[TbCategoria.colunaId] as int;
   }
 
+  @override
   Future<Item> recuperar(
     int id, {
     DatabaseExecutor? databaseExecutor,
@@ -139,6 +191,7 @@ class ItensRepository {
     return itemMapper.doMapa(resultado.single);
   }
 
+  @override
   Future<List<Item>> buscarPorLista(
     int idLista, {
     DatabaseExecutor? databaseExecutor,
@@ -165,6 +218,7 @@ class ItensRepository {
     return resultado.map(itemMapper.doMapa).toList();
   }
 
+  @override
   Future<Item> alterarObtido(
     Item item, {
     DatabaseExecutor? databaseExecutor,
@@ -195,6 +249,7 @@ class ItensRepository {
     return recuperar(item.id!, databaseExecutor: db);
   }
 
+  @override
   Future<int> excluirPorLista(
     int idLista, {
     required DateTime dataAlteracao,
@@ -228,6 +283,7 @@ class ItensRepository {
     );
   }
 
+  @override
   Future<List<Item>> copiarParaLista(
     List<Item> itens,
     int idListaDestino, {
@@ -262,6 +318,7 @@ class ItensRepository {
     return copiados;
   }
 
+  @override
   Future<int> moverParaCategoria({
     required int categoriaOrigem,
     required int categoriaDestino,

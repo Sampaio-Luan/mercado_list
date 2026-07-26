@@ -1,18 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mercado_list/features/categoria/model/categoria_model.dart';
 import 'package:mercado_list/features/categoria/controller/categorias_controller.dart';
-import 'package:mercado_list/features/categoria/service/categorias_service.dart';
+import 'package:mercado_list/features/categoria/model/categoria_model.dart';
 import 'package:mercado_list/features/categoria/service/excluir_categoria_service.dart';
+import 'package:mercado_list/features/categoria/service/categorias_service.dart';
+import 'package:mercado_list/features/categoria/widget/seletor_categoria.dart';
 import 'package:mercado_list/features/itens_recorrentes/model/item_recorrente_model.dart';
 import 'package:mercado_list/features/itens_recorrentes/service/item_recorrente_service.dart';
-import 'package:mercado_list/features/itens/widget/seletor_categoria_modal.dart';
 import 'package:provider/provider.dart';
 
 void main() {
   testWidgets('pesquisa e seleciona categoria em modal separado',
       (tester) async {
-    int? selecionada;
+    ResultadoSelecaoCategoria? selecionada;
     final categorias = [
       Categoria(
         id: 1,
@@ -32,7 +32,7 @@ void main() {
         builder: (context) => Scaffold(
           body: ElevatedButton(
             onPressed: () async {
-              selecionada = await SeletorCategoriaModal.exibir(
+              selecionada = await SeletorCategoria.exibir(
                 context,
                 categorias: categorias,
                 idSelecionado: 2,
@@ -48,7 +48,7 @@ void main() {
     await tester.tap(find.text('Abrir'));
     await tester.pumpAndSettle();
     await tester.enterText(
-      find.byKey(const ValueKey('pesquisa-categorias-item')),
+      find.byType(TextField),
       'limp',
     );
     await tester.pump();
@@ -58,11 +58,11 @@ void main() {
 
     await tester.tap(find.text('Limpeza'));
     await tester.pumpAndSettle();
-    expect(selecionada, 1);
+    expect(selecionada?.idCategoria, 1);
   });
 
   testWidgets('cria categoria sem sair do fluxo de seleção', (tester) async {
-    int? selecionada;
+    ResultadoSelecaoCategoria? selecionada;
     final service = _CategoriasServiceFake();
     final controller = CategoriasController(
       service,
@@ -78,7 +78,7 @@ void main() {
             builder: (context) => Scaffold(
               body: ElevatedButton(
                 onPressed: () async {
-                  selecionada = await SeletorCategoriaModal.exibir(
+                  selecionada = await SeletorCategoria.exibir(
                     context,
                     categorias: controller.categoriasComItensRecorrentes
                         .map((grupo) => grupo.categoria)
@@ -104,11 +104,98 @@ void main() {
     await tester.tap(find.text('Salvar'));
     await tester.pumpAndSettle();
 
-    expect(selecionada, 2);
+    expect(selecionada?.idCategoria, 2);
     expect(
       controller.categoriasComItensRecorrentes.last.categoria.titulo,
       'Bebidas',
     );
+  });
+
+  testWidgets('distingue todas as categorias de cancelamento', (tester) async {
+    ResultadoSelecaoCategoria? selecionada;
+    final categorias = [
+      Categoria(
+        id: 1,
+        titulo: 'Limpeza',
+        cor: Colors.blue,
+        ordem: 1,
+      ),
+    ];
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Builder(
+          builder: (context) => Scaffold(
+            body: ElevatedButton(
+              onPressed: () async {
+                selecionada = await SeletorCategoria.exibir(
+                  context,
+                  categorias: categorias,
+                  permitirTodas: true,
+                );
+              },
+              child: const Text('Abrir todas'),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('Abrir todas'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Todas as categorias'));
+    await tester.pumpAndSettle();
+
+    expect(selecionada, isNotNull);
+    expect(selecionada?.todas, isTrue);
+    expect(selecionada?.idCategoria, isNull);
+
+    await tester.tap(find.text('Abrir todas'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Fechar'));
+    await tester.pumpAndSettle();
+
+    expect(selecionada, isNull);
+  });
+
+  testWidgets('remove categorias excluídas das opções', (tester) async {
+    final categorias = [
+      Categoria(
+        id: 1,
+        titulo: 'Origem',
+        cor: Colors.blue,
+        ordem: 1,
+      ),
+      Categoria(
+        id: 2,
+        titulo: 'Destino',
+        cor: Colors.green,
+        ordem: 2,
+      ),
+    ];
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Builder(
+          builder: (context) => Scaffold(
+            body: ElevatedButton(
+              onPressed: () => SeletorCategoria.exibir(
+                context,
+                categorias: categorias,
+                idsCategoriasExcluidas: const {1},
+              ),
+              child: const Text('Abrir destinos'),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('Abrir destinos'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Origem'), findsNothing);
+    expect(find.text('Destino'), findsOneWidget);
   });
 }
 

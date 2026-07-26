@@ -14,34 +14,31 @@ import '../../../core/utils/monetario_utils.dart';
 import '../../../shared/widgets/campos_formulario/peso_field.dart';
 import '../../../shared/widgets/campos_formulario/real_field.dart';
 import '../../../shared/widgets/painel_pesquisa/texto_destacado_pesquisa.dart';
-import '../../categoria/model/categoria_model.dart';
-import '../../listas/controller/listas_controller.dart';
+import '../../categoria/extensions/categorias_extension.dart';
+import '../../categoria/widget/seletor_categoria.dart';
+import '../controller/itens_controller.dart';
 import '../model/filtro_itens.dart';
 import '../model/item_model.dart';
 import '../model/sugestao_item_recorrente.dart';
 
-import 'seletor_categoria_modal.dart';
-
 class CompositorItemWidget extends StatefulWidget {
   final int idLista;
+  final bool exibirSomenteAoEditar;
   final VoidCallback aoFiltrar;
   final VoidCallback aoOrdenar;
-  final VoidCallback aoPesquisar;
   final VoidCallback aoVisualizar;
   final VoidCallback aoItensRecorrentes;
-  final bool pesquisaAtiva;
   final bool categoriasExpandidas;
   final VoidCallback aoAlternarCategorias;
 
   const CompositorItemWidget({
     super.key,
     required this.idLista,
+    this.exibirSomenteAoEditar = false,
     required this.aoFiltrar,
     required this.aoOrdenar,
-    required this.aoPesquisar,
     required this.aoVisualizar,
     required this.aoItensRecorrentes,
-    required this.pesquisaAtiva,
     required this.categoriasExpandidas,
     required this.aoAlternarCategorias,
   });
@@ -101,7 +98,14 @@ class CompositorItemState extends State<CompositorItemWidget> {
 
   @override
   Widget build(BuildContext context) {
-    final controller = context.watch<ListasController>();
+    if (widget.exibirSomenteAoEditar && !editando) {
+      return const SizedBox.shrink();
+    }
+
+    final controller = context.watch<ItensController>();
+    final categoriaSelecionada = controller.categorias.localizarPorId(
+      _idCategoria ?? _categoriaPadrao(controller),
+    );
     final resumo = controller.resumoFinanceiro;
     final sugestoes = editando || _ocultarSugestoes
         ? const <SugestaoItemRecorrente>[]
@@ -139,9 +143,7 @@ class CompositorItemState extends State<CompositorItemWidget> {
                         child: Text('/'),
                       ),
                       Text(
-                        MonetarioUtils.formatarIntToMoeda(
-                          resumo.totalMarcado,
-                        ),
+                        MonetarioUtils.formatarIntToMoeda(resumo.totalMarcado),
                         style: const TextStyle(fontWeight: FontWeight.w700),
                       ),
                     ],
@@ -238,9 +240,7 @@ class CompositorItemState extends State<CompositorItemWidget> {
                         alignment: Alignment.centerRight,
                         child: editando
                             ? IconButton(
-                                key: const ValueKey(
-                                  'excluir-item-em-edicao',
-                                ),
+                                key: const ValueKey('excluir-item-em-edicao'),
                                 tooltip: 'Excluir item',
                                 onPressed: _excluirItemEmEdicao,
                                 style: IconButton.styleFrom(
@@ -263,28 +263,24 @@ class CompositorItemState extends State<CompositorItemWidget> {
                       flex: 4,
                       child: OutlinedButton.icon(
                         key: const ValueKey('selecionar-categoria-item'),
-                        onPressed: () => _selecionarCategoria(
-                          controller,
-                        ),
+                        onPressed: () => _selecionarCategoria(controller),
                         icon: Icon(
                           PhosphorIcons.tag,
-                          color: _categoriaSelecionada(controller)?.cor ??
+                          color: categoriaSelecionada?.cor ??
                               tema.colorScheme.primary,
                         ),
                         label: Text(
-                          _categoriaSelecionada(controller)?.titulo ??
-                              'Sem categoria',
+                          categoriaSelecionada?.titulo ?? 'Sem categoria',
                           overflow: TextOverflow.ellipsis,
                         ),
                         style: OutlinedButton.styleFrom(
                           minimumSize: const Size.fromHeight(48),
-                          backgroundColor:
-                              (_categoriaSelecionada(controller)?.cor ??
-                                      tema.colorScheme.surfaceContainerHighest)
-                                  .withAlpha(30),
+                          backgroundColor: (categoriaSelecionada?.cor ??
+                                  tema.colorScheme.surfaceContainerHighest)
+                              .withAlpha(30),
                           foregroundColor: tema.colorScheme.onSurface,
                           side: BorderSide(
-                            color: (_categoriaSelecionada(controller)?.cor ??
+                            color: (categoriaSelecionada?.cor ??
                                     tema.colorScheme.outline)
                                 .withAlpha(120),
                           ),
@@ -331,9 +327,13 @@ class CompositorItemState extends State<CompositorItemWidget> {
                         showSelectedIcon: false,
                         segments: const [
                           ButtonSegment(
-                              value: TipoMedida.und, label: Text('und')),
+                            value: TipoMedida.und,
+                            label: Text('und'),
+                          ),
                           ButtonSegment(
-                              value: TipoMedida.kg, label: Text('kg')),
+                            value: TipoMedida.kg,
+                            label: Text('kg'),
+                          ),
                         ],
                         selected: {_medida},
                         style: ButtonStyle(
@@ -421,34 +421,31 @@ class CompositorItemState extends State<CompositorItemWidget> {
                   ),
                 ],
               ),
-             const SizedBox(height: 7),
-              const Divider(height: 1, thickness: .2),
-              const SizedBox(height: 3),
-              _BarraAcoes(
-                habilitada: controller.possuiItens,
-                corLista: controller.listaSelecionada!.cor,
-                filtroAtivo: controller.filtroItens.ativo,
-                ordenacaoAtiva: controller.ordenarItensPor != OrdenarPor.nome ||
-                    controller.ordemItens != Ordem.ascendente,
-                pesquisaAtiva: widget.pesquisaAtiva,
-                visualizacao: controller.tipoVisualizacaoItens,
-                aoFiltrar: widget.aoFiltrar,
-                aoOrdenar: widget.aoOrdenar,
-                aoPesquisar: widget.aoPesquisar,
-                aoVisualizar: widget.aoVisualizar,
-                aoItensRecorrentes: widget.aoItensRecorrentes,
-                categoriasExpandidas: widget.categoriasExpandidas,
-                aoAlternarCategorias: widget.aoAlternarCategorias,
-                aoLimparFiltro: () => controller.alterarFiltroItens(
-                  const FiltroItens(),
+              if (!widget.exibirSomenteAoEditar) ...[
+                const SizedBox(height: 7),
+                const Divider(height: 1, thickness: .2),
+                const SizedBox(height: 3),
+                _BarraAcoes(
+                  habilitada: controller.possuiItens,
+                  corLista: controller.listaSelecionada!.cor,
+                  filtroAtivo: controller.filtro.ativo,
+                  ordenacaoAtiva: controller.ordenarPor != OrdenarPor.nome ||
+                      controller.ordem != Ordem.ascendente,
+                  visualizacao: controller.tipoVisualizacao,
+                  aoFiltrar: widget.aoFiltrar,
+                  aoOrdenar: widget.aoOrdenar,
+                  aoVisualizar: widget.aoVisualizar,
+                  aoItensRecorrentes: widget.aoItensRecorrentes,
+                  categoriasExpandidas: widget.categoriasExpandidas,
+                  aoAlternarCategorias: widget.aoAlternarCategorias,
+                  aoLimparFiltro: () =>
+                      controller.alterarFiltro(const FiltroItens()),
+                  aoLimparOrdenacao: () => controller.alterarOrdenacao(
+                    OrdenarPor.nome,
+                    Ordem.ascendente,
+                  ),
                 ),
-                aoLimparOrdenacao: () => controller.alterarOrdenacaoItens(
-                  OrdenarPor.nome,
-                  Ordem.ascendente,
-                ),
-                aoLimparPesquisa:
-                    widget.pesquisaAtiva ? widget.aoPesquisar : null,
-              ),
+              ],
             ],
           ),
         ),
@@ -473,7 +470,7 @@ class CompositorItemState extends State<CompositorItemWidget> {
 
   Future<void> _salvar() async {
     if (_salvando || _titulo.text.trim().isEmpty) return;
-    final controller = context.read<ListasController>();
+    final controller = context.read<ItensController>();
     final quantidade = _lerQuantidade();
     final preco = _lerPreco();
     final categoria = _idCategoria ?? _categoriaPadrao(controller);
@@ -496,7 +493,7 @@ class CompositorItemState extends State<CompositorItemWidget> {
           limparObservacao: _observacao.text.trim().isEmpty,
           prioridade: _prioridade,
         );
-        await controller.editarItem(item);
+        await controller.editar(item);
         if (mounted) context.mostrarSucesso('Item atualizado.');
       } else {
         final duplicado = controller.localizarDuplicado(_titulo.text);
@@ -517,17 +514,20 @@ class CompositorItemState extends State<CompositorItemWidget> {
             return;
           }
         }
-        await controller.criarItem(Item(
-          idLista: controller.idListaSelecionada!,
-          idCategoria: categoria,
-          titulo: _titulo.text,
-          tipoMedida: _medida,
-          quantidade: quantidade,
-          preco: preco,
-          observacao:
-              _observacao.text.trim().isEmpty ? null : _observacao.text.trim(),
-          prioridade: _prioridade,
-        ));
+        await controller.criar(
+          Item(
+            idLista: controller.idListaSelecionada!,
+            idCategoria: categoria,
+            titulo: _titulo.text,
+            tipoMedida: _medida,
+            quantidade: quantidade,
+            preco: preco,
+            observacao: _observacao.text.trim().isEmpty
+                ? null
+                : _observacao.text.trim(),
+            prioridade: _prioridade,
+          ),
+        );
         if (mounted) context.mostrarSucesso('Item adicionado.');
       }
       _limpar();
@@ -583,7 +583,7 @@ class CompositorItemState extends State<CompositorItemWidget> {
     return digitos.isEmpty ? null : int.parse(digitos);
   }
 
-  int? _categoriaPadrao(ListasController controller) {
+  int? _categoriaPadrao(ItensController controller) {
     for (final categoria in controller.categorias) {
       if (categoria.categoriaPadrao) return categoria.id;
     }
@@ -606,29 +606,22 @@ class CompositorItemState extends State<CompositorItemWidget> {
     });
   }
 
-  Categoria? _categoriaSelecionada(ListasController controller) {
-    final id = _idCategoria ?? _categoriaPadrao(controller);
-    for (final categoria in controller.categorias) {
-      if (categoria.id == id) return categoria;
-    }
-    return null;
-  }
-
-  Future<void> _selecionarCategoria(
-    ListasController controller,
-  ) async {
-    final id = await SeletorCategoriaModal.exibir(
+  Future<void> _selecionarCategoria(ItensController controller) async {
+    final resultado = await SeletorCategoria.exibir(
       context,
       categorias: controller.categorias,
       idSelecionado: _idCategoria ?? _categoriaPadrao(controller),
       corDestaque: controller.listaSelecionada!.cor,
       permitirCriar: true,
     );
-    if (id != null && mounted) setState(() => _idCategoria = id);
+    final idCategoria = resultado?.idCategoria;
+    if (idCategoria != null && mounted) {
+      setState(() => _idCategoria = idCategoria);
+    }
   }
 
   Color _corPrioridade(Prioridade prioridade) => switch (prioridade) {
-        Prioridade.neutra => Colors.blueGrey,
+        Prioridade.neutra => Colors.blue,
         Prioridade.baixa => Colors.green,
         Prioridade.media => Colors.orange,
         Prioridade.alta => Colors.red,
@@ -666,7 +659,7 @@ class CompositorItemState extends State<CompositorItemWidget> {
       ),
     );
     if (confirmar != true || !mounted) return;
-    await context.read<ListasController>().excluirItem(item);
+    await context.read<ItensController>().excluir(item);
     if (!mounted) return;
     context.mostrarSucesso('Item excluído.');
     _limpar();
@@ -727,9 +720,7 @@ class _SeletorPrioridadeCompacto extends StatelessWidget {
           selected: {prioridade},
           style: ButtonStyle(
             shape: WidgetStatePropertyAll(
-              RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(6),
-              ),
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
             ),
             minimumSize: const WidgetStatePropertyAll(Size.fromHeight(48)),
             padding: const WidgetStatePropertyAll(EdgeInsets.zero),
@@ -792,17 +783,14 @@ class _BarraAcoes extends StatelessWidget {
   final Color corLista;
   final bool filtroAtivo;
   final bool ordenacaoAtiva;
-  final bool pesquisaAtiva;
   final TipoVisualizacaoItens visualizacao;
   final bool categoriasExpandidas;
   final VoidCallback aoFiltrar;
   final VoidCallback aoOrdenar;
-  final VoidCallback aoPesquisar;
   final VoidCallback aoVisualizar;
   final VoidCallback aoItensRecorrentes;
   final VoidCallback aoLimparFiltro;
   final VoidCallback aoLimparOrdenacao;
-  final VoidCallback? aoLimparPesquisa;
   final VoidCallback aoAlternarCategorias;
 
   const _BarraAcoes({
@@ -810,22 +798,22 @@ class _BarraAcoes extends StatelessWidget {
     required this.corLista,
     required this.filtroAtivo,
     required this.ordenacaoAtiva,
-    required this.pesquisaAtiva,
     required this.visualizacao,
     required this.categoriasExpandidas,
     required this.aoFiltrar,
     required this.aoOrdenar,
-    required this.aoPesquisar,
     required this.aoVisualizar,
     required this.aoItensRecorrentes,
     required this.aoLimparFiltro,
     required this.aoLimparOrdenacao,
-    required this.aoLimparPesquisa,
     required this.aoAlternarCategorias,
   });
 
   @override
   Widget build(BuildContext context) {
+    final fundo = Theme.of(context).colorScheme.surfaceContainer;
+    final corIcones = _contraste(corLista, fundo) >= 3 ? corLista : null;
+
     return LayoutBuilder(
       builder: (context, restricoes) => SizedBox(
         height: 48,
@@ -840,7 +828,8 @@ class _BarraAcoes extends StatelessWidget {
                   icone: PhosphorIcons.funnel,
                   rotulo: 'Filtrar',
                   ativa: filtroAtivo,
-                  corAtiva: corLista,
+                  corAtiva: corIcones,
+                  corIcone: corIcones,
                   onTap: habilitada ? aoFiltrar : null,
                   onDesativar: filtroAtivo ? aoLimparFiltro : null,
                 ),
@@ -848,24 +837,17 @@ class _BarraAcoes extends StatelessWidget {
                   icone: PhosphorIcons.sortAscending,
                   rotulo: 'Ordenar',
                   ativa: ordenacaoAtiva,
-                  corAtiva: corLista,
+                  corAtiva: corIcones,
+                  corIcone: corIcones,
                   onTap: habilitada ? aoOrdenar : null,
                   onDesativar: ordenacaoAtiva ? aoLimparOrdenacao : null,
-                ),
-                _Acao(
-                  icone: PhosphorIcons.magnifyingGlass,
-                  rotulo: 'Pesquisar',
-                  ativa: pesquisaAtiva,
-                  corAtiva: corLista,
-                  heroTag: 'pesquisa-itens-hero',
-                  onTap: habilitada ? aoPesquisar : null,
-                  onDesativar: aoLimparPesquisa,
                 ),
                 _Acao(
                   icone: visualizacao == TipoVisualizacaoItens.categorias
                       ? PhosphorIcons.stack
                       : PhosphorIcons.table,
                   rotulo: 'Visualização',
+                  corIcone: corIcones,
                   onTap: habilitada ? aoVisualizar : null,
                 ),
                 if (visualizacao == TipoVisualizacaoItens.categorias)
@@ -876,11 +858,13 @@ class _BarraAcoes extends StatelessWidget {
                     rotulo: categoriasExpandidas
                         ? 'Recolher categorias'
                         : 'Expandir categorias',
+                    corIcone: corIcones,
                     onTap: habilitada ? aoAlternarCategorias : null,
                   ),
                 _Acao(
                   icone: PhosphorIcons.repeat,
                   rotulo: 'Itens recorrentes',
+                  corIcone: corIcones,
                   onTap: aoItensRecorrentes,
                 ),
               ],
@@ -890,6 +874,18 @@ class _BarraAcoes extends StatelessWidget {
       ),
     );
   }
+
+  static double _contraste(Color primeira, Color segunda) {
+    final luminanciaPrimeira = primeira.computeLuminance();
+    final luminanciaSegunda = segunda.computeLuminance();
+    final maior = luminanciaPrimeira > luminanciaSegunda
+        ? luminanciaPrimeira
+        : luminanciaSegunda;
+    final menor = luminanciaPrimeira < luminanciaSegunda
+        ? luminanciaPrimeira
+        : luminanciaSegunda;
+    return (maior + 0.05) / (menor + 0.05);
+  }
 }
 
 class _Acao extends StatelessWidget {
@@ -897,18 +893,18 @@ class _Acao extends StatelessWidget {
   final String rotulo;
   final bool ativa;
   final Color? corAtiva;
+  final Color? corIcone;
   final VoidCallback? onTap;
   final VoidCallback? onDesativar;
-  final String? heroTag;
 
   const _Acao({
     required this.icone,
     required this.rotulo,
     this.ativa = false,
     this.corAtiva,
+    this.corIcone,
     this.onTap,
     this.onDesativar,
-    this.heroTag,
   });
 
   @override
@@ -946,19 +942,11 @@ class _Acao extends StatelessWidget {
     final botao = IconButton(
       tooltip: rotulo,
       onPressed: onTap,
-      icon: Icon(icone),
+      icon: Icon(icone, color: onTap == null ? null : corIcone),
     );
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 5),
-      child: heroTag == null
-          ? botao
-          : Hero(
-              tag: heroTag!,
-              child: Material(
-                type: MaterialType.transparency,
-                child: botao,
-              ),
-            ),
+      child: botao,
     );
   }
 }

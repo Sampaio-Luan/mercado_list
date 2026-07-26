@@ -55,6 +55,7 @@ class ListaRepository implements ListaRepositoryContract {
   }) async {
     final db = databaseExecutor ?? await _db;
     final agora = DataUtils.agoraUtc();
+    final nova = lista.copia();
     final maximo = Sqflite.firstIntValue(
           await db.rawQuery(
             'SELECT MAX(${TbLista.colunaOrdem}) FROM ${TbLista.nomeTabela} '
@@ -62,13 +63,13 @@ class ListaRepository implements ListaRepositoryContract {
           ),
         ) ??
         -1;
-    lista
+    nova
       ..ordem = maximo + 1
       ..dataCriacao ??= agora
       ..dataAlteracao ??= agora;
     final id = await db.insert(
       TbLista.nomeTabela,
-      listaMapper.paraMapa(lista),
+      listaMapper.paraMapa(nova),
     );
     return recuperar(id, databaseExecutor: db);
   }
@@ -83,14 +84,15 @@ class ListaRepository implements ListaRepositoryContract {
     }
     final db = databaseExecutor ?? await _db;
     final persistida = await recuperar(lista.id!, databaseExecutor: db);
-    lista
+    final alterada = lista.copia();
+    alterada
       ..ordem = persistida.ordem
       ..dataCriacao = persistida.dataCriacao
       ..dataAlteracao = DataUtils.agoraUtc()
       ..excluido = persistida.excluido;
     final linhas = await db.update(
       TbLista.nomeTabela,
-      listaMapper.paraMapa(lista)..remove(TbLista.colunaId),
+      listaMapper.paraMapa(alterada)..remove(TbLista.colunaId),
       where: '${TbLista.colunaId} = ? AND ${TbLista.colunaExcluido} = 0',
       whereArgs: [lista.id],
     );
@@ -202,9 +204,6 @@ class ListaRepository implements ListaRepositoryContract {
     final agora = dataAlteracao ?? DataUtils.agoraUtc();
     final lote = db.batch();
     for (var indice = 0; indice < listas.length; indice++) {
-      listas[indice]
-        ..ordem = indice
-        ..dataAlteracao = agora;
       lote.update(
         TbLista.nomeTabela,
         {

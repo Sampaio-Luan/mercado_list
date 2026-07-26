@@ -68,41 +68,65 @@ class _SeletorDeCorState extends State<SeletorDeCor> {
         scrollDirection: Axis.horizontal,
         child: Row(
           spacing: 5,
-          children: Cor.values.map(_construirCor).toList(),
+          children: [
+            for (final cor in Cor.values)
+              _OpcaoCor(
+                key: ValueKey('cor-${cor.name}'),
+                cor: cor,
+                selecionada: widget.corSelecionada == cor,
+                chaveCorSelecionadaInicial: cor == _corSelecionadaInicial
+                    ? _chaveCorSelecionadaInicial
+                    : null,
+                aoSelecionar: widget.onCorSelecionada,
+              ),
+          ],
         ),
       ),
     );
   }
+}
 
-  Widget _construirCor(Cor corSelecionavel) {
-    final selecionada = widget.corSelecionada == corSelecionavel;
-    final cor = Theme.of(context).brightness == Brightness.light
-        ? Cor.obterCor(cor: corSelecionavel)
-        : Cor.obterCor(cor: corSelecionavel).withAlpha(200);
+class _OpcaoCor extends StatelessWidget {
+  final Cor cor;
+  final bool selecionada;
+  final Key? chaveCorSelecionadaInicial;
+  final ValueChanged<Cor> aoSelecionar;
+
+  const _OpcaoCor({
+    super.key,
+    required this.cor,
+    required this.selecionada,
+    required this.chaveCorSelecionadaInicial,
+    required this.aoSelecionar,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final corExibida = Theme.of(context).brightness == Brightness.light
+        ? Cor.obterCor(cor: cor)
+        : Cor.obterCor(cor: cor).withAlpha(200);
 
     return SizedBox.square(
-      key: ValueKey('cor-${corSelecionavel.name}'),
       dimension: 45,
       child: Semantics(
-        label: 'Cor ${corSelecionavel.name}',
+        label: 'Cor ${cor.name}',
         selected: selecionada,
         button: true,
         child: InkWell(
           splashFactory: NoSplash.splashFactory,
-          onTap: () => widget.onCorSelecionada(corSelecionavel),
+          onTap: () => aoSelecionar(cor),
           child: Container(
-            key: corSelecionavel == _corSelecionadaInicial
-                ? _chaveCorSelecionadaInicial
-                : null,
+            key: chaveCorSelecionadaInicial,
             decoration: BoxDecoration(
-              color: selecionada ? cor.withAlpha(45) : cor,
-              border: selecionada ? Border.all(width: 3, color: cor) : null,
+              color: selecionada ? corExibida.withAlpha(45) : corExibida,
+              border:
+                  selecionada ? Border.all(width: 3, color: corExibida) : null,
               borderRadius: BorderRadius.circular(10),
             ),
             child: selecionada
                 ? PhosphorIcon(
                     PhosphorIcons.sealCheckFill,
-                    color: cor,
+                    color: corExibida,
                     size: 30,
                   )
                 : null,

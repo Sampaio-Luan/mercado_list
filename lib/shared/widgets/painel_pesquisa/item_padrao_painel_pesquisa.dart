@@ -104,7 +104,12 @@ class ItemPadraoPainelPesquisa<T> extends StatelessWidget {
               ),
               if (modoSelecao != ModoInteracaoPainel.semSelecao) ...[
                 const SizedBox(width: 8),
-                _construirIndicadorSelecao(temaAtual),
+                _IndicadorSelecaoPainel(
+                  modoSelecao: modoSelecao,
+                  estaSelecionado: estaSelecionado,
+                  estilo: estilo,
+                  aoTocar: aoTocarItem,
+                ),
               ],
             ],
           ),
@@ -112,11 +117,24 @@ class ItemPadraoPainelPesquisa<T> extends StatelessWidget {
       ),
     );
   }
+}
 
-  /// Constrói o indicador visual de seleção adequado ao [modoSelecao]:
-  /// um `Checkbox` para seleção múltipla, ou um ícone de círculo
-  /// preenchido/vazio para seleção única.
-  Widget _construirIndicadorSelecao(ThemeData temaAtual) {
+class _IndicadorSelecaoPainel extends StatelessWidget {
+  final ModoInteracaoPainel modoSelecao;
+  final bool estaSelecionado;
+  final EstiloPainelPesquisa estilo;
+  final VoidCallback aoTocar;
+
+  const _IndicadorSelecaoPainel({
+    required this.modoSelecao,
+    required this.estaSelecionado,
+    required this.estilo,
+    required this.aoTocar,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final temaAtual = Theme.of(context);
     final corIndicador =
         estilo.corIconeSelecionado ?? temaAtual.colorScheme.primary;
 
@@ -124,7 +142,7 @@ class ItemPadraoPainelPesquisa<T> extends StatelessWidget {
       return Checkbox(
         value: estaSelecionado,
         activeColor: corIndicador,
-        onChanged: (_) => aoTocarItem(),
+        onChanged: (_) => aoTocar(),
       );
     }
 

@@ -11,7 +11,7 @@ import '../../../core/extensions/dialogo_extension.dart';
 import '../../../core/services/snackbar_service.dart';
 import '../../../core/utils/monetario_utils.dart';
 import '../../categoria/screen/categorias_screen.dart';
-import '../../preferencias_usuario/preferencias_provider.dart';
+import '../../preferencias_usuario/controller/preferencias_provider.dart';
 import '../controller/listas_controller.dart';
 import '../form/lista_formulario.dart';
 import '../model/lista_com_resumo_de_itens_model.dart';
@@ -38,9 +38,13 @@ class _ListaDeListasScreenState extends State<ListaDeListasScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final controller = context.watch<ListasController>();
-    final preferencias = context.watch<PreferenciasProvider>();
-    final resultados = controller.pesquisar(_pesquisa.text);
+    final controller = context.read<ListasController>();
+    final tema = context.select<PreferenciasProvider, TemaApp>(
+      (preferencias) => preferencias.preferencias.tema,
+    );
+    final alterandoOrdem = context.select<ListasController, bool>(
+      (controller) => controller.alterandoOrdem,
+    );
     final largura = MediaQuery.sizeOf(context).width * .82;
 
     return Drawer(
@@ -54,12 +58,13 @@ class _ListaDeListasScreenState extends State<ListaDeListasScreen> {
             child: Column(
               children: [
                 _CabecalhoDrawer(
-                  tema: preferencias.preferencias.tema,
+                  tema: tema,
                   aoAlternarTema: () {
-                    final atual = preferencias.preferencias.tema;
-                    preferencias.alterarTema(
-                      atual == TemaApp.claro ? TemaApp.escuro : TemaApp.claro,
-                    );
+                    context.read<PreferenciasProvider>().alterarTema(
+                          tema == TemaApp.claro
+                              ? TemaApp.escuro
+                              : TemaApp.claro,
+                        );
                   },
                 ),
                 Padding(
@@ -91,7 +96,7 @@ class _ListaDeListasScreenState extends State<ListaDeListasScreen> {
                       ),
                       IconButton(
                         tooltip: 'Ordenar listas de A a Z',
-                        onPressed: controller.alterandoOrdem
+                        onPressed: alterandoOrdem
                             ? null
                             : () => _ordenarAlfabeticamente(controller),
                         icon: Icon(PhosphorIcons.sortAscending),
@@ -100,25 +105,13 @@ class _ListaDeListasScreenState extends State<ListaDeListasScreen> {
                   ),
                 ),
                 Expanded(
-                  child: switch (controller.estado) {
-                    EstadoDeTela.carregando => const Center(
-                        child: CircularProgressIndicator(),
-                      ),
-                    EstadoDeTela.erro => _EstadoDrawer(
-                        mensagem: controller.mensagemErro ??
-                            'Não foi possível carregar as listas.',
-                        aoTentarNovamente: controller.carregar,
-                      ),
-                    EstadoDeTela.carregadaSemDados => const _EstadoDrawer(
-                        mensagem: 'Nenhuma lista criada.',
-                      ),
-                    EstadoDeTela.carregadaComDados when resultados.isEmpty =>
-                      const _EstadoDrawer(
-                        mensagem: 'Nenhuma lista encontrada para a pesquisa.',
-                      ),
-                    EstadoDeTela.carregadaComDados =>
-                      _construirListasAgrupadas(controller, resultados),
-                  },
+                  child: _ConteudoListasDrawer(
+                    termoPesquisa: _pesquisa.text,
+                    aoSelecionar: _selecionar,
+                    aoReordenar: (antigo, novo) =>
+                        _reordenar(controller, antigo, novo),
+                    aoAcionar: _executarAcao,
+                  ),
                 ),
                 Padding(
                   padding: const EdgeInsets.fromLTRB(12, 6, 12, 8),
@@ -162,84 +155,6 @@ class _ListaDeListasScreenState extends State<ListaDeListasScreen> {
           ),
         ),
       ),
-    );
-  }
-
-  Widget _construirListasAgrupadas(
-    ListasController controller,
-    List<ListaComResumoDeItens> resultados,
-  ) {
-    final fixadas = resultados
-        .where((resumo) => resumo.lista.fixada)
-        .toList(growable: false);
-    final outras = resultados
-        .where((resumo) => !resumo.lista.fixada)
-        .toList(growable: false);
-
-    return ListView(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      children: [
-        if (fixadas.isNotEmpty) ...[
-          _CabecalhoGrupoListas(
-            key: const ValueKey('grupo-listas-fixadas'),
-            titulo: 'Listas fixadas',
-            quantidade: fixadas.length,
-            icone: PhosphorIcons.pushPinFill,
-          ),
-          _construirGrupo(
-            controller: controller,
-            resumos: fixadas,
-            deslocamento: 0,
-            chave: 'listas-fixadas',
-          ),
-        ],
-        if (outras.isNotEmpty) ...[
-          _CabecalhoGrupoListas(
-            key: const ValueKey('grupo-outras-listas'),
-            titulo: fixadas.isEmpty ? 'Listas' : 'Outras listas',
-            quantidade: outras.length,
-            icone: PhosphorIcons.listBullets,
-          ),
-          _construirGrupo(
-            controller: controller,
-            resumos: outras,
-            deslocamento: fixadas.length,
-            chave: 'outras-listas',
-          ),
-        ],
-      ],
-    );
-  }
-
-  Widget _construirGrupo({
-    required ListasController controller,
-    required List<ListaComResumoDeItens> resumos,
-    required int deslocamento,
-    required String chave,
-  }) {
-    return ReorderableListView.builder(
-      key: ValueKey(chave),
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      buildDefaultDragHandles: _pesquisa.text.isEmpty,
-      itemCount: resumos.length,
-      onReorderItem: _pesquisa.text.isNotEmpty
-          ? (_, _) {}
-          : (antigo, novo) => _reordenar(
-                controller,
-                deslocamento + antigo,
-                deslocamento + novo,
-              ),
-      itemBuilder: (context, index) {
-        final resumo = resumos[index];
-        return _CartaoLista(
-          key: ValueKey('lista-${resumo.lista.id}'),
-          resumo: resumo,
-          selecionada: resumo.lista.id == controller.idListaSelecionada,
-          aoSelecionar: () => _selecionar(resumo.lista),
-          aoAcionar: (acao) => _executarAcao(acao, resumo.lista),
-        );
-      },
     );
   }
 
@@ -350,6 +265,169 @@ class _ListaDeListasScreenState extends State<ListaDeListasScreen> {
       context: context,
       mensagem: mensagem,
       tipo: tipo,
+    );
+  }
+}
+
+class _ConteudoListasDrawer extends StatelessWidget {
+  final String termoPesquisa;
+  final ValueChanged<Lista> aoSelecionar;
+  final void Function(int antigo, int novo) aoReordenar;
+  final void Function(_AcaoLista acao, Lista lista) aoAcionar;
+
+  const _ConteudoListasDrawer({
+    required this.termoPesquisa,
+    required this.aoSelecionar,
+    required this.aoReordenar,
+    required this.aoAcionar,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final controller = context.watch<ListasController>();
+    final resultados = controller.pesquisar(termoPesquisa);
+
+    return switch (controller.estado) {
+      EstadoDeTela.carregando =>
+        const Center(child: CircularProgressIndicator()),
+      EstadoDeTela.erro => _EstadoDrawer(
+          mensagem:
+              controller.mensagemErro ?? 'Não foi possível carregar as listas.',
+          aoTentarNovamente: controller.carregar,
+        ),
+      EstadoDeTela.carregadaSemDados => const _EstadoDrawer(
+          mensagem: 'Nenhuma lista criada.',
+        ),
+      EstadoDeTela.carregadaComDados when resultados.isEmpty =>
+        const _EstadoDrawer(
+          mensagem: 'Nenhuma lista encontrada para a pesquisa.',
+        ),
+      EstadoDeTela.carregadaComDados => _ListasAgrupadas(
+          resultados: resultados,
+          idListaSelecionada: controller.idListaSelecionada,
+          permitirReordenacao: termoPesquisa.isEmpty,
+          aoSelecionar: aoSelecionar,
+          aoReordenar: aoReordenar,
+          aoAcionar: aoAcionar,
+        ),
+    };
+  }
+}
+
+class _ListasAgrupadas extends StatelessWidget {
+  final List<ListaComResumoDeItens> resultados;
+  final int? idListaSelecionada;
+  final bool permitirReordenacao;
+  final ValueChanged<Lista> aoSelecionar;
+  final void Function(int antigo, int novo) aoReordenar;
+  final void Function(_AcaoLista acao, Lista lista) aoAcionar;
+
+  const _ListasAgrupadas({
+    required this.resultados,
+    required this.idListaSelecionada,
+    required this.permitirReordenacao,
+    required this.aoSelecionar,
+    required this.aoReordenar,
+    required this.aoAcionar,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final fixadas = resultados
+        .where((resumo) => resumo.lista.fixada)
+        .toList(growable: false);
+    final outras = resultados
+        .where((resumo) => !resumo.lista.fixada)
+        .toList(growable: false);
+
+    return ListView(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      children: [
+        if (fixadas.isNotEmpty) ...[
+          _CabecalhoGrupoListas(
+            key: const ValueKey('grupo-listas-fixadas'),
+            titulo: 'Listas fixadas',
+            quantidade: fixadas.length,
+            icone: PhosphorIcons.pushPinFill,
+          ),
+          _GrupoListasReordenavel(
+            key: const ValueKey('listas-fixadas'),
+            resumos: fixadas,
+            idListaSelecionada: idListaSelecionada,
+            permitirReordenacao: permitirReordenacao,
+            deslocamento: 0,
+            aoSelecionar: aoSelecionar,
+            aoReordenar: aoReordenar,
+            aoAcionar: aoAcionar,
+          ),
+        ],
+        if (outras.isNotEmpty) ...[
+          _CabecalhoGrupoListas(
+            key: const ValueKey('grupo-outras-listas'),
+            titulo: fixadas.isEmpty ? 'Listas' : 'Outras listas',
+            quantidade: outras.length,
+            icone: PhosphorIcons.listBullets,
+          ),
+          _GrupoListasReordenavel(
+            key: const ValueKey('outras-listas'),
+            resumos: outras,
+            idListaSelecionada: idListaSelecionada,
+            permitirReordenacao: permitirReordenacao,
+            deslocamento: fixadas.length,
+            aoSelecionar: aoSelecionar,
+            aoReordenar: aoReordenar,
+            aoAcionar: aoAcionar,
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _GrupoListasReordenavel extends StatelessWidget {
+  final List<ListaComResumoDeItens> resumos;
+  final int? idListaSelecionada;
+  final bool permitirReordenacao;
+  final int deslocamento;
+  final ValueChanged<Lista> aoSelecionar;
+  final void Function(int antigo, int novo) aoReordenar;
+  final void Function(_AcaoLista acao, Lista lista) aoAcionar;
+
+  const _GrupoListasReordenavel({
+    super.key,
+    required this.resumos,
+    required this.idListaSelecionada,
+    required this.permitirReordenacao,
+    required this.deslocamento,
+    required this.aoSelecionar,
+    required this.aoReordenar,
+    required this.aoAcionar,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ReorderableListView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      buildDefaultDragHandles: permitirReordenacao,
+      itemCount: resumos.length,
+      onReorderItem: permitirReordenacao
+          ? (antigo, novo) => aoReordenar(
+                deslocamento + antigo,
+                deslocamento + novo,
+              )
+          : (_, _) {},
+      itemBuilder: (context, index) {
+        final resumo = resumos[index];
+
+        return _CartaoLista(
+          key: ValueKey('lista-${resumo.lista.id}'),
+          resumo: resumo,
+          selecionada: resumo.lista.id == idListaSelecionada,
+          aoSelecionar: () => aoSelecionar(resumo.lista),
+          aoAcionar: (acao) => aoAcionar(acao, resumo.lista),
+        );
+      },
     );
   }
 }

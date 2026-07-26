@@ -18,6 +18,7 @@ import '../controller/categorias_controller.dart';
 import '../form/categoria_formulario.dart';
 import '../model/categoria_com_itens_recorrentes_model.dart';
 import '../model/categoria_model.dart';
+import 'seletor_categoria.dart';
 
 class CategoriaComItensRecorrentesWidget extends StatelessWidget {
   final CategoriaComItensRecorrentes categoriaComItensRecorrentes;
@@ -205,21 +206,18 @@ class CategoriaComItensRecorrentesWidget extends StatelessWidget {
               titulo: 'Mover para outra categoria',
               icone: PhosphorIcons.folderSimple,
               aoSelecionar: () async {
-                final categoriasDestino = categoriasController
+                final categoriasDisponiveis = categoriasController
                     .categoriasComItensRecorrentes
                     .map((grupo) => grupo.categoria)
-                    .where((outra) => outra.id != item.idCategoria)
                     .toList();
-                final resposta = await PainelPesquisa.exibir<Categoria>(
-                  context: contextoItem,
-                  itens: categoriasDestino,
-                  obterTextoPesquisa: (categoria) => categoria.titulo,
-                  obterIdentificador: (categoria) => categoria.id,
-                  modoSelecao: ModoInteracaoPainel.unica,
+                final selecaoCategoria = await SeletorCategoria.exibir(
+                  contextoItem,
+                  categorias: categoriasDisponiveis,
+                  idsCategoriasExcluidas: {item.idCategoria},
                   titulo: 'Mover para categoria',
                   textoPlaceholderPesquisa: 'Buscar categoria...',
                 );
-                final destino = resposta as Categoria?;
+                final destino = selecaoCategoria?.categoria;
                 if (destino == null) return;
 
                 try {
@@ -313,26 +311,24 @@ class CategoriaComItensRecorrentesWidget extends StatelessWidget {
     ControladorPainelPesquisa<ItemRecorrente> controladorPainel,
     List<ItemRecorrente> itensSelecionados,
   ) async {
-    final categoriasDestino = categoriasController.categoriasComItensRecorrentes
+    final categoriasDisponiveis = categoriasController
+        .categoriasComItensRecorrentes
         .map((grupo) => grupo.categoria)
-        .where((outra) => outra.id != categoria.id)
         .toList();
 
-    if (categoriasDestino.isEmpty) {
+    if (!categoriasDisponiveis.any((outra) => outra.id != categoria.id)) {
       context.mostrarAviso('Não há outra categoria disponível.');
       return;
     }
 
-    final resposta = await PainelPesquisa.exibir<Categoria>(
-      context: context,
-      itens: categoriasDestino,
-      obterTextoPesquisa: (categoria) => categoria.titulo,
-      obterIdentificador: (categoria) => categoria.id,
-      modoSelecao: ModoInteracaoPainel.unica,
+    final selecaoCategoria = await SeletorCategoria.exibir(
+      context,
+      categorias: categoriasDisponiveis,
+      idsCategoriasExcluidas: {categoria.id!},
       titulo: 'Mover ${itensSelecionados.length} selecionados',
       textoPlaceholderPesquisa: 'Buscar categoria...',
     );
-    final destino = resposta as Categoria?;
+    final destino = selecaoCategoria?.categoria;
     if (destino == null || !context.mounted) return;
 
     try {

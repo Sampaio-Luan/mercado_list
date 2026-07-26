@@ -4,6 +4,7 @@ import 'package:mercado_list/core/constants/enums/tipo_medida.dart';
 import 'package:mercado_list/core/constants/enums/tipo_visualizacao_itens.dart';
 import 'package:mercado_list/core/services/preferencias_service.dart';
 import 'package:mercado_list/features/categoria/model/categoria_model.dart';
+import 'package:mercado_list/features/itens/controller/itens_controller.dart';
 import 'package:mercado_list/features/categoria/service/categorias_service.dart';
 import 'package:mercado_list/features/itens_recorrentes/model/item_recorrente_model.dart';
 import 'package:mercado_list/features/itens_recorrentes/screen/itens_recorrentes_drawer.dart';
@@ -15,7 +16,7 @@ import 'package:mercado_list/features/listas/controller/listas_controller.dart';
 import 'package:mercado_list/features/listas/model/lista_com_resumo_de_itens_model.dart';
 import 'package:mercado_list/features/listas/model/lista_model.dart';
 import 'package:mercado_list/features/listas/service/listas_service.dart';
-import 'package:mercado_list/features/preferencias_usuario/preferencias_provider.dart';
+import 'package:mercado_list/features/preferencias_usuario/controller/preferencias_provider.dart';
 import 'package:mercado_list/features/principal_screen.dart';
 import 'package:mercado_list/shared/widgets/dialogo/dialogo_base.dart';
 import 'package:mercado_list/shared/widgets/painel_pesquisa/texto_destacado_pesquisa.dart';
@@ -160,7 +161,7 @@ void main() {
     await tester.tap(find.text('Excluir').last);
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));
-    expect(ambiente.controller.itens, isEmpty);
+    expect(ambiente.controller.itensController.itens, isEmpty);
   });
 
   testWidgets('atalho expande e recolhe todas as categorias', (tester) async {
@@ -211,16 +212,55 @@ void main() {
 
     await tester.tap(indicador);
     await tester.pump();
-    expect(ambiente.controller.filtroItens.ativo, isFalse);
+    expect(ambiente.controller.itensController.filtro.ativo, isFalse);
     expect(indicador, findsNothing);
   });
 
-  testWidgets('compartilhar e histórico ficam somente na AppBar',
+  testWidgets('ícones dos atalhos usam a cor da lista somente com contraste',
+      (tester) async {
+    final ambiente = await _prepararAmbiente();
+    await _montarApp(tester, ambiente);
+
+    final compositor = find.byType(CompositorItemWidget);
+    final iconeFiltro = find.descendant(
+      of: compositor,
+      matching: find.byIcon(PhosphorIcons.funnel),
+    );
+    expect(tester.widget<Icon>(iconeFiltro).color, Colors.indigo);
+
+    final esquemaSemContraste = ColorScheme.fromSeed(
+      seedColor: Colors.blue,
+    ).copyWith(surfaceContainer: Colors.indigo);
+    final temaSemContraste = ThemeData(colorScheme: esquemaSemContraste);
+    expect(esquemaSemContraste.surfaceContainer, Colors.indigo);
+    expect(temaSemContraste.colorScheme.surfaceContainer, Colors.indigo);
+    await _montarApp(
+      tester,
+      ambiente,
+      tema: temaSemContraste,
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      Theme.of(tester.element(iconeFiltro)).colorScheme.surfaceContainer,
+      Colors.indigo,
+    );
+    expect(tester.widget<Icon>(iconeFiltro).color, isNull);
+  });
+
+  testWidgets('pesquisa, compartilhar e histórico ficam somente na AppBar',
       (tester) async {
     final ambiente = await _prepararAmbiente();
     await _montarApp(tester, ambiente);
 
     final appBar = find.byType(AppBar);
+    expect(
+      find.descendant(
+        of: appBar,
+        matching: find.byTooltip('Pesquisar itens'),
+      ),
+      findsOneWidget,
+    );
     expect(
       find.descendant(
         of: appBar,
@@ -249,9 +289,16 @@ void main() {
       ),
       findsNothing,
     );
+    expect(
+      find.descendant(
+        of: find.byType(CompositorItemWidget),
+        matching: find.byIcon(PhosphorIcons.magnifyingGlass),
+      ),
+      findsNothing,
+    );
   });
 
-  testWidgets('atalho alterna tabela e categorias e oculta expansão na tabela',
+  testWidgets('tabela usa cor da lista nos controles e alterna visualização',
       (tester) async {
     final ambiente = await _prepararAmbiente();
     await ambiente.preferencias.alterarTipoVisualizacao(
@@ -270,6 +317,14 @@ void main() {
     );
     expect(tester.widget<Checkbox>(find.byType(Checkbox)).activeColor,
         Colors.indigo);
+    expect(
+      tester.widget<Checkbox>(find.byType(Checkbox)).side,
+      const BorderSide(color: Colors.indigo, width: 2),
+    );
+    expect(
+      tester.widget<Icon>(find.byIcon(PhosphorIcons.pencilSimple)).color,
+      Colors.indigo,
+    );
 
     expect(find.byIcon(PhosphorIcons.arrowsIn), findsNothing);
     expect(find.byIcon(PhosphorIcons.arrowsOut), findsNothing);
@@ -277,7 +332,7 @@ void main() {
       find.widgetWithIcon(IconButton, PhosphorIcons.table),
     );
     tabela.onPressed!();
-    await tester.pump();
+    await tester.pumpAndSettle();
 
     expect(
       ambiente.preferencias.preferencias.tipoVisualizacao,
@@ -289,21 +344,32 @@ void main() {
       find.widgetWithIcon(IconButton, PhosphorIcons.stack),
     );
     categorias.onPressed!();
-    await tester.pump();
+    await tester.pumpAndSettle();
     expect(
       ambiente.preferencias.preferencias.tipoVisualizacao,
       TipoVisualizacaoItens.tabela,
     );
   });
 
-  testWidgets('pesquisa usa Hero na AppBar, recebe foco e retorna ao atalho',
+  testWidgets('pesquisa permite editar item e retorna à AppBar',
       (tester) async {
     final ambiente = await _prepararAmbiente();
     await _montarApp(tester, ambiente);
 
-    await tester.tap(
-      find.widgetWithIcon(IconButton, PhosphorIcons.magnifyingGlass),
+    final botaoPesquisa = find.descendant(
+      of: find.byType(AppBar),
+      matching: find.byTooltip('Pesquisar itens'),
     );
+    expect(botaoPesquisa, findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byType(CompositorItemWidget),
+        matching: find.byIcon(PhosphorIcons.magnifyingGlass),
+      ),
+      findsNothing,
+    );
+
+    await tester.tap(botaoPesquisa);
     await tester.pumpAndSettle();
 
     final campo = find.byKey(const ValueKey('pesquisa-itens'));
@@ -341,24 +407,51 @@ void main() {
 
     await tester.enterText(campo, 'sabo');
     await tester.pump();
-    expect(ambiente.controller.pesquisaItens, 'sabo');
+    expect(ambiente.controller.itensController.pesquisa, 'sabo');
     expect(find.byTooltip('Limpar pesquisa'), findsOneWidget);
 
     await tester.tap(find.byTooltip('Limpar pesquisa'));
     await tester.pump();
-    expect(ambiente.controller.pesquisaItens, isEmpty);
+    expect(ambiente.controller.itensController.pesquisa, isEmpty);
     expect(find.byTooltip('Limpar pesquisa'), findsNothing);
     expect(tester.widget<TextField>(campo).focusNode?.hasFocus, isTrue);
 
     await tester.enterText(campo, 'sabo');
     await tester.pump();
 
+    expect(find.byKey(const ValueKey('titulo-item-rapido')), findsNothing);
+    await tester.tap(find.byTooltip('Editar item'));
+    await tester.pump();
+    expect(find.text('Editar Item'), findsOneWidget);
+    expect(
+      tester
+          .widget<TextField>(
+            find.byKey(const ValueKey('titulo-item-rapido')),
+          )
+          .controller
+          ?.text,
+      'Sabonete',
+    );
+    expect(
+      find.descendant(
+        of: find.byType(CompositorItemWidget),
+        matching: find.byIcon(PhosphorIcons.funnel),
+      ),
+      findsNothing,
+    );
+    await tester.tap(find.byTooltip('Cancelar edição'));
+    await tester.pump();
+    expect(find.byKey(const ValueKey('titulo-item-rapido')), findsNothing);
+
     await tester.tap(fechar);
     await tester.pumpAndSettle();
     expect(campo, findsNothing);
-    expect(ambiente.controller.pesquisaItens, isEmpty);
+    expect(ambiente.controller.itensController.pesquisa, isEmpty);
     expect(
-      find.widgetWithIcon(IconButton, PhosphorIcons.magnifyingGlass),
+      find.descendant(
+        of: find.byType(AppBar),
+        matching: find.byTooltip('Pesquisar itens'),
+      ),
       findsOneWidget,
     );
   });
@@ -401,11 +494,17 @@ void main() {
     expect(arrozDrawer, findsOneWidget);
     await tester.tap(arrozDrawer);
     await tester.pump();
-    expect(ambiente.controller.localizarDuplicado('Arroz'), isNotNull);
+    expect(
+      ambiente.controller.itensController.localizarDuplicado('Arroz'),
+      isNotNull,
+    );
 
     await tester.tap(arrozDrawer);
     await tester.pump();
-    expect(ambiente.controller.localizarDuplicado('Arroz'), isNull);
+    expect(
+      ambiente.controller.itensController.localizarDuplicado('Arroz'),
+      isNull,
+    );
 
     await tester.enterText(
       find.byKey(const ValueKey('pesquisa-itens-recorrentes')),
@@ -651,6 +750,9 @@ Future<void> _montarApp(
       providers: [
         ChangeNotifierProvider.value(value: ambiente.preferencias),
         ChangeNotifierProvider.value(value: ambiente.controller),
+        ChangeNotifierProvider<ItensController>.value(
+          value: ambiente.controller.itensController,
+        ),
       ],
       child: MaterialApp(
         theme: tema,

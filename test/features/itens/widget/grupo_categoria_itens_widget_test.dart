@@ -5,6 +5,7 @@ import 'package:mercado_list/features/itens/model/categoria_com_itens_model.dart
 import 'package:mercado_list/features/itens/model/item_model.dart';
 import 'package:mercado_list/features/itens/widget/grupo_categoria_itens_widget.dart';
 import 'package:mercado_list/features/itens/widget/item_da_lista_widget.dart';
+import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 
 void main() {
   testWidgets('usa cor da categoria e exibe subtotal e total marcado no rodapé',
@@ -47,8 +48,11 @@ void main() {
     final expansionTile = tester.widget<ExpansionTile>(
       find.byType(ExpansionTile),
     );
-    expect(expansionTile.backgroundColor, corCategoria);
-    expect(expansionTile.collapsedBackgroundColor, corCategoria);
+    expect(expansionTile.backgroundColor, corCategoria.withAlpha(210));
+    expect(
+      expansionTile.collapsedBackgroundColor,
+      corCategoria.withAlpha(210),
+    );
     expect(
       expansionTile.key,
       isA<PageStorageKey<String>>().having(
@@ -59,15 +63,14 @@ void main() {
     );
     expect(
         find.byKey(const ValueKey('rolagem-interna-categoria')), findsNothing);
-    expect(find.text('Subtotal'), findsOneWidget);
-    final subtotalTitulo = find.byWidgetPredicate(
+    final resumoValores = find.byWidgetPredicate(
       (widget) =>
-          widget is Text &&
-          (widget.data?.contains('Subtotal') ?? false) &&
-          (widget.data?.contains('10,00') ?? false),
+          widget is RichText &&
+          widget.text.toPlainText().contains('10,00 /') &&
+          widget.text.toPlainText().endsWith('10,00'),
     );
-    expect(subtotalTitulo, findsNothing);
     expect(find.text('Total'), findsOneWidget);
+    expect(resumoValores, findsOneWidget);
     expect(find.textContaining('10,00'), findsAtLeastNWidgets(1));
 
     final detalhe = find.descendant(
@@ -109,13 +112,34 @@ void main() {
       materiais.any((material) => material.color == corCategoria.withAlpha(28)),
       isTrue,
     );
+    final checkbox = tester.widget<Checkbox>(
+      find.descendant(
+        of: find.byType(ItemDaListaWidget),
+        matching: find.byType(Checkbox),
+      ),
+    );
+    expect(checkbox.activeColor, corCategoria);
+    expect(checkbox.side, const BorderSide(color: corCategoria, width: 2));
+    expect(
+      tester
+          .widget<Icon>(
+            find.descendant(
+              of: find.byType(ItemDaListaWidget),
+              matching: find.byIcon(PhosphorIcons.pencilSimple),
+            ),
+          )
+          .color,
+      corCategoria,
+    );
 
     await tester.tap(find.text('Hortifruti'));
     await tester.pumpAndSettle();
-    expect(subtotalTitulo, findsOneWidget);
+    expect(find.text('Total'), findsNothing);
+    expect(resumoValores, findsOneWidget);
     await tester.tap(find.text('Hortifruti'));
     await tester.pumpAndSettle();
-    expect(subtotalTitulo, findsNothing);
+    expect(find.text('Total'), findsOneWidget);
+    expect(resumoValores, findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 

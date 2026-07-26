@@ -13,18 +13,41 @@ import '../../../core/constants/enums/tipo_visualizacao_itens.dart';
 import '../../../core/extensions/snackbar_extension.dart';
 import '../../../core/utils/monetario_utils.dart';
 import '../../../shared/widgets/campos_formulario/peso_field.dart';
+import '../../categoria/extensions/categorias_extension.dart';
 import '../../categoria/model/categoria_model.dart';
-import '../../listas/controller/listas_controller.dart';
+import '../../categoria/widget/seletor_categoria.dart';
+import '../../listas/model/lista_model.dart';
+import '../controller/itens_controller.dart';
 import '../model/filtro_itens.dart';
 import '../model/item_model.dart';
 import '../widget/compositor_item_widget.dart';
 import '../widget/grupo_categoria_itens_widget.dart';
-import '../widget/seletor_categoria_modal.dart';
 
 class ListaItensScreen extends StatefulWidget {
   final bool modoPesquisa;
 
   const ListaItensScreen({super.key, this.modoPesquisa = false});
+
+  static Future<void> abrirPesquisa(BuildContext context) async {
+    final controller = context.read<ItensController>();
+    await Navigator.of(context).push<void>(
+      PageRouteBuilder<void>(
+        transitionDuration: const Duration(milliseconds: 650),
+        reverseTransitionDuration: const Duration(milliseconds: 550),
+        pageBuilder: (_, _, _) => const _PesquisaItensScreen(),
+        transitionsBuilder: (context, animacao, animacaoSecundaria, child) {
+          return FadeTransition(
+            opacity: CurvedAnimation(
+              parent: animacao,
+              curve: Curves.easeOutCubic,
+            ),
+            child: child,
+          );
+        },
+      ),
+    );
+    controller.alterarPesquisa('');
+  }
 
   @override
   State<ListaItensScreen> createState() => _ListaItensScreenState();
@@ -38,8 +61,10 @@ class _ListaItensScreenState extends State<ListaItensScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final controller = context.watch<ListasController>();
-    final lista = controller.listaSelecionada;
+    final controller = context.read<ItensController>();
+    final lista = context.select<ItensController, Lista?>(
+      (controller) => controller.listaSelecionada,
+    );
     if (lista == null) {
       return const _EstadoItens(
         icone: PhosphorIcons.listPlus,
@@ -62,87 +87,41 @@ class _ListaItensScreenState extends State<ListaItensScreen> {
               style: const TextStyle(fontWeight: FontWeight.w600),
             ),
           ),
-        Expanded(child: _conteudo(controller)),
-        if (!widget.modoPesquisa)
-          AnimatedPadding(
-            key: const ValueKey('rodape-lista-itens'),
-            duration: const Duration(milliseconds: 180),
-            curve: Curves.easeOut,
-            padding: EdgeInsets.only(
-              bottom: drawerDireitoAberto
-                  ? 0
-                  : MediaQuery.viewInsetsOf(context).bottom,
-            ),
-            child: CompositorItemWidget(
-              key: _chaveCompositor,
-              idLista: lista.id!,
-              pesquisaAtiva: false,
-              aoFiltrar: () => _exibirFiltros(controller),
-              aoOrdenar: () => _exibirOrdenacao(controller),
-              aoPesquisar: _abrirPesquisa,
-              aoVisualizar: () => _alternarVisualizacao(controller),
-              categoriasExpandidas: _categoriasExpandidas,
-              aoAlternarCategorias: _alternarTodasCategorias,
-              aoItensRecorrentes: () => Scaffold.of(context).openEndDrawer(),
-            ),
-          ),
-      ],
-    );
-  }
-
-  Widget _conteudo(ListasController controller) {
-    return switch (controller.estadoItens) {
-      EstadoDeTela.carregando =>
-        const Center(child: CircularProgressIndicator()),
-      EstadoDeTela.erro => _EstadoItens(
-          icone: PhosphorIcons.warningCircle,
-          mensagem: 'Não foi possível carregar os itens desta lista.',
-          textoAcao: 'Tentar novamente',
-          aoAcionar: () => controller.selecionar(
-            controller.idListaSelecionada!,
+        Expanded(
+          child: _ConteudoListaItens(
+            categoriasExpandidas: _categoriasExpandidas,
+            versaoExpansaoCategorias: _versaoExpansaoCategorias,
+            expansaoPorCategoria: _expansaoPorCategoria,
+            aoAlterarExpansao: (chave, expandido) {
+              _expansaoPorCategoria[chave] = expandido;
+            },
+            aoAlterarMarcacao: (item, valor) =>
+                _alterarObtido(controller, item, valor),
+            aoEditar: (item) => _chaveCompositor.currentState?.editar(item),
           ),
         ),
-      EstadoDeTela.carregadaSemDados => const ListaVazia(),
-      EstadoDeTela.carregadaComDados => controller.itensVisiveis.isEmpty
-          ? const _EstadoItens(
-              icone: PhosphorIcons.magnifyingGlass,
-              mensagem: 'Nenhum item corresponde aos filtros atuais.',
-            )
-          : controller.tipoVisualizacaoItens == TipoVisualizacaoItens.categorias
-              ? _visualizacaoCategorias(controller)
-              : _visualizacaoTabela(controller),
-    };
-  }
-
-  Widget _visualizacaoCategorias(ListasController controller) {
-    return ListView.builder(
-      key: PageStorageKey<String>(
-        'rolagem-itens-lista-${controller.idListaSelecionada}',
-      ),
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      itemCount: controller.categoriasComItens.length,
-      itemBuilder: (context, indice) {
-        final grupo = controller.categoriasComItens[indice];
-        final idCategoria = grupo.categoria.id ?? -indice - 1;
-        final chaveExpansao = '${controller.idListaSelecionada}-$idCategoria';
-        return GrupoCategoriaItensWidget(
-          key: ValueKey(
-            'categoria-$idCategoria-$_versaoExpansaoCategorias',
+        AnimatedPadding(
+          key: const ValueKey('rodape-lista-itens'),
+          duration: const Duration(milliseconds: 180),
+          curve: Curves.easeOut,
+          padding: EdgeInsets.only(
+            bottom: drawerDireitoAberto
+                ? 0
+                : MediaQuery.viewInsetsOf(context).bottom,
           ),
-          grupo: grupo,
-          chaveEstado: 'estado-expansao-v2-lista-'
-              '${controller.idListaSelecionada}-categoria-$idCategoria-'
-              'versao-$_versaoExpansaoCategorias',
-          inicialmenteExpandido:
-              _expansaoPorCategoria[chaveExpansao] ?? _categoriasExpandidas,
-          aoAlterarExpansao: (expandido) {
-            _expansaoPorCategoria[chaveExpansao] = expandido;
-          },
-          aoAlterarMarcacao: (item, valor) =>
-              _alterarObtido(controller, item, valor),
-          aoEditar: (item) => _chaveCompositor.currentState?.editar(item),
-        );
-      },
+          child: CompositorItemWidget(
+            key: _chaveCompositor,
+            idLista: lista.id!,
+            exibirSomenteAoEditar: widget.modoPesquisa,
+            aoFiltrar: () => _exibirFiltros(controller),
+            aoOrdenar: () => _exibirOrdenacao(controller),
+            aoVisualizar: () => _alternarVisualizacao(controller),
+            categoriasExpandidas: _categoriasExpandidas,
+            aoAlternarCategorias: _alternarTodasCategorias,
+            aoItensRecorrentes: () => Scaffold.of(context).openEndDrawer(),
+          ),
+        ),
+      ],
     );
   }
 
@@ -154,25 +133,8 @@ class _ListaItensScreenState extends State<ListaItensScreen> {
     });
   }
 
-  Widget _visualizacaoTabela(ListasController controller) {
-    final categorias = {
-      for (final categoria in controller.categorias) categoria.id: categoria,
-    };
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(8, 8, 8, 4),
-      child: _TabelaItensCompacta(
-        itens: controller.itensVisiveis,
-        categorias: categorias,
-        corLista: controller.listaSelecionada!.cor,
-        aoAlterarMarcacao: (item, valor) =>
-            _alterarObtido(controller, item, valor),
-        aoEditar: (item) => _chaveCompositor.currentState?.editar(item),
-      ),
-    );
-  }
-
   Future<void> _alterarObtido(
-    ListasController controller,
+    ItensController controller,
     Item item,
     bool valor,
   ) async {
@@ -183,28 +145,7 @@ class _ListaItensScreenState extends State<ListaItensScreen> {
     }
   }
 
-  Future<void> _abrirPesquisa() async {
-    final controller = context.read<ListasController>();
-    await Navigator.of(context).push<void>(
-      PageRouteBuilder<void>(
-        transitionDuration: const Duration(milliseconds: 650),
-        reverseTransitionDuration: const Duration(milliseconds: 550),
-        pageBuilder: (_, _, _) => const _PesquisaItensScreen(),
-        transitionsBuilder: (context, animacao, animacaoSecundaria, child) {
-          return FadeTransition(
-            opacity: CurvedAnimation(
-              parent: animacao,
-              curve: Curves.easeOutCubic,
-            ),
-            child: child,
-          );
-        },
-      ),
-    );
-    controller.alterarPesquisaItens('');
-  }
-
-  Future<void> _exibirFiltros(ListasController controller) async {
+  Future<void> _exibirFiltros(ItensController controller) async {
     final corLista = controller.listaSelecionada!.cor;
     final tema = Theme.of(context);
     final filtro = await showModalBottomSheet<FiltroItens>(
@@ -219,35 +160,154 @@ class _ListaItensScreenState extends State<ListaItensScreen> {
           ),
         ),
         child: _FiltroItensSheet(
-          filtroInicial: controller.filtroItens,
+          filtroInicial: controller.filtro,
           categorias: controller.categorias,
           corLista: corLista,
         ),
       ),
     );
-    if (filtro != null) controller.alterarFiltroItens(filtro);
+    if (filtro != null) controller.alterarFiltro(filtro);
   }
 
-  Future<void> _exibirOrdenacao(ListasController controller) async {
+  Future<void> _exibirOrdenacao(ItensController controller) async {
     final resultado = await showModalBottomSheet<(OrdenarPor, Ordem)>(
       context: context,
       useSafeArea: true,
       builder: (_) => _OrdenacaoItensSheet(
-        ordenarPor: controller.ordenarItensPor,
-        ordem: controller.ordemItens,
+        ordenarPor: controller.ordenarPor,
+        ordem: controller.ordem,
       ),
     );
     if (resultado != null) {
-      controller.alterarOrdenacaoItens(resultado.$1, resultado.$2);
+      controller.alterarOrdenacao(resultado.$1, resultado.$2);
     }
   }
 
-  Future<void> _alternarVisualizacao(ListasController controller) {
+  Future<void> _alternarVisualizacao(ItensController controller) {
     final proxima =
-        controller.tipoVisualizacaoItens == TipoVisualizacaoItens.categorias
+        controller.tipoVisualizacao == TipoVisualizacaoItens.categorias
             ? TipoVisualizacaoItens.tabela
             : TipoVisualizacaoItens.categorias;
-    return controller.alterarVisualizacaoItens(proxima);
+    return controller.alterarVisualizacao(proxima);
+  }
+}
+
+class _ConteudoListaItens extends StatelessWidget {
+  final bool categoriasExpandidas;
+  final int versaoExpansaoCategorias;
+  final Map<String, bool> expansaoPorCategoria;
+  final void Function(String chave, bool expandido) aoAlterarExpansao;
+  final void Function(Item item, bool valor) aoAlterarMarcacao;
+  final ValueChanged<Item> aoEditar;
+
+  const _ConteudoListaItens({
+    required this.categoriasExpandidas,
+    required this.versaoExpansaoCategorias,
+    required this.expansaoPorCategoria,
+    required this.aoAlterarExpansao,
+    required this.aoAlterarMarcacao,
+    required this.aoEditar,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final controller = context.watch<ItensController>();
+
+    return switch (controller.estado) {
+      EstadoDeTela.carregando =>
+        const Center(child: CircularProgressIndicator()),
+      EstadoDeTela.erro => _EstadoItens(
+          icone: PhosphorIcons.warningCircle,
+          mensagem: 'Não foi possível carregar os itens desta lista.',
+          textoAcao: 'Tentar novamente',
+          aoAcionar: controller.recarregar,
+        ),
+      EstadoDeTela.carregadaSemDados => const ListaVazia(),
+      EstadoDeTela.carregadaComDados when controller.itensVisiveis.isEmpty =>
+        const _EstadoItens(
+          icone: PhosphorIcons.magnifyingGlass,
+          mensagem: 'Nenhum item corresponde aos filtros atuais.',
+        ),
+      EstadoDeTela.carregadaComDados
+          when controller.tipoVisualizacao ==
+              TipoVisualizacaoItens.categorias =>
+        _VisualizacaoCategoriasItens(
+          controller: controller,
+          categoriasExpandidas: categoriasExpandidas,
+          versaoExpansaoCategorias: versaoExpansaoCategorias,
+          expansaoPorCategoria: expansaoPorCategoria,
+          aoAlterarExpansao: aoAlterarExpansao,
+          aoAlterarMarcacao: aoAlterarMarcacao,
+          aoEditar: aoEditar,
+        ),
+      EstadoDeTela.carregadaComDados => Padding(
+          padding: const EdgeInsets.fromLTRB(8, 8, 8, 4),
+          child: _TabelaItensCompacta(
+            itens: controller.itensVisiveis,
+            categorias: {
+              for (final categoria in controller.categorias)
+                categoria.id: categoria,
+            },
+            corLista: controller.listaSelecionada!.cor,
+            aoAlterarMarcacao: aoAlterarMarcacao,
+            aoEditar: aoEditar,
+          ),
+        ),
+    };
+  }
+}
+
+class _VisualizacaoCategoriasItens extends StatelessWidget {
+  final ItensController controller;
+  final bool categoriasExpandidas;
+  final int versaoExpansaoCategorias;
+  final Map<String, bool> expansaoPorCategoria;
+  final void Function(String chave, bool expandido) aoAlterarExpansao;
+  final void Function(Item item, bool valor) aoAlterarMarcacao;
+  final ValueChanged<Item> aoEditar;
+
+  const _VisualizacaoCategoriasItens({
+    required this.controller,
+    required this.categoriasExpandidas,
+    required this.versaoExpansaoCategorias,
+    required this.expansaoPorCategoria,
+    required this.aoAlterarExpansao,
+    required this.aoAlterarMarcacao,
+    required this.aoEditar,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final grupos = controller.categoriasComItens;
+
+    return ListView.builder(
+      key: PageStorageKey<String>(
+        'rolagem-itens-lista-${controller.idListaSelecionada}',
+      ),
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      itemCount: grupos.length,
+      itemBuilder: (context, indice) {
+        final grupo = grupos[indice];
+        final idCategoria = grupo.categoria.id ?? -indice - 1;
+        final chaveExpansao = '${controller.idListaSelecionada}-$idCategoria';
+
+        return GrupoCategoriaItensWidget(
+          key: ValueKey(
+            'categoria-$idCategoria-$versaoExpansaoCategorias',
+          ),
+          grupo: grupo,
+          chaveEstado: 'estado-expansao-v2-lista-'
+              '${controller.idListaSelecionada}-categoria-$idCategoria-'
+              'versao-$versaoExpansaoCategorias',
+          inicialmenteExpandido:
+              expansaoPorCategoria[chaveExpansao] ?? categoriasExpandidas,
+          aoAlterarExpansao: (expandido) =>
+              aoAlterarExpansao(chaveExpansao, expandido),
+          aoAlterarMarcacao: aoAlterarMarcacao,
+          aoEditar: aoEditar,
+        );
+      },
+    );
   }
 }
 
@@ -316,7 +376,7 @@ class _PesquisaItensScreenState extends State<_PesquisaItensScreen> {
                 isDense: true,
               ),
               onChanged: (valor) {
-                context.read<ListasController>().alterarPesquisaItens(valor);
+                context.read<ItensController>().alterarPesquisa(valor);
                 setState(() {});
               },
             ),
@@ -357,7 +417,7 @@ class _PesquisaItensScreenState extends State<_PesquisaItensScreen> {
 
   void _limparPesquisa() {
     _pesquisa.clear();
-    context.read<ListasController>().alterarPesquisaItens('');
+    context.read<ItensController>().alterarPesquisa('');
     setState(() {});
     _solicitarFoco();
   }
@@ -454,6 +514,7 @@ class _TabelaItensCompacta extends StatelessWidget {
                               child: Checkbox(
                                 value: item.obtido,
                                 activeColor: corLista,
+                                side: BorderSide(color: corLista, width: 2),
                                 checkColor:
                                     ThemeData.estimateBrightnessForColor(
                                               corLista,
@@ -577,9 +638,10 @@ class _TabelaItensCompacta extends StatelessWidget {
                               child: IconButton(
                                 tooltip: 'Editar item',
                                 onPressed: () => aoEditar(item),
-                                icon: const Icon(
+                                icon: Icon(
                                   PhosphorIcons.pencilSimple,
                                   size: 20,
+                                  color: corLista,
                                 ),
                               ),
                             ),
@@ -662,7 +724,7 @@ class _FiltroItensSheetState extends State<_FiltroItensSheet> {
           OutlinedButton.icon(
             onPressed: _selecionarCategoria,
             icon: const Icon(PhosphorIcons.tag),
-            label: Text(_tituloCategoria()),
+            label: Text(widget.categorias.tituloPorId(idCategoria)),
           ),
           Text('Prioridade', style: Theme.of(context).textTheme.labelLarge),
           SingleChildScrollView(
@@ -741,24 +803,16 @@ class _FiltroItensSheetState extends State<_FiltroItensSheet> {
     );
   }
 
-  String _tituloCategoria() {
-    if (idCategoria == null) return 'Todas as categorias';
-    for (final categoria in widget.categorias) {
-      if (categoria.id == idCategoria) return categoria.titulo;
-    }
-    return 'Todas as categorias';
-  }
-
   Future<void> _selecionarCategoria() async {
-    final id = await SeletorCategoriaModal.exibir(
+    final resultado = await SeletorCategoria.exibir(
       context,
       categorias: widget.categorias,
       idSelecionado: idCategoria,
       corDestaque: Theme.of(context).colorScheme.primary,
       permitirTodas: true,
     );
-    if (id == null || !mounted) return;
-    setState(() => idCategoria = id == 0 ? null : id);
+    if (resultado == null || !mounted) return;
+    setState(() => idCategoria = resultado.idCategoria);
   }
 }
 

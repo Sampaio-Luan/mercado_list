@@ -1,5 +1,3 @@
-import 'package:sqflite/sqflite.dart';
-
 import '../../../core/contracts/gerenciador_transacoes.dart';
 import '../../../core/utils/data_utils.dart';
 import '../../itens/model/item_model.dart';
@@ -21,7 +19,7 @@ class ListasService implements ListasServiceContract {
   static const int limiteFixadas = 3;
 
   final ListaRepositoryContract _repository;
-  final ItensService _itensService;
+  final ItensServiceContract _itensService;
   final GerenciadorTransacoes _gerenciadorTransacoes;
 
   ListasService(
@@ -33,14 +31,15 @@ class ListasService implements ListasServiceContract {
   @override
   Future<Lista> criar(Lista lista) async {
     if (lista.id != null) throw StateError('Uma nova lista não pode ter id.');
-    _normalizar(lista);
-    if (lista.fixada) {
+    final nova = lista.copia();
+    _normalizar(nova);
+    if (nova.fixada) {
       return _gerenciadorTransacoes.executar((executor) async {
         await _validarLimiteFixadas(databaseExecutor: executor);
-        return _repository.criar(lista, databaseExecutor: executor);
+        return _repository.criar(nova, databaseExecutor: executor);
       });
     }
-    return _repository.criar(lista);
+    return _repository.criar(nova);
   }
 
   @override
@@ -48,15 +47,16 @@ class ListasService implements ListasServiceContract {
     if (lista.id == null || lista.id! <= 0) {
       throw StateError('A lista precisa estar persistida para ser editada.');
     }
-    _normalizar(lista);
+    final alterada = lista.copia();
+    _normalizar(alterada);
     final persistida = await _repository.recuperar(lista.id!);
-    if (!persistida.fixada && lista.fixada) {
+    if (!persistida.fixada && alterada.fixada) {
       return _gerenciadorTransacoes.executar((executor) async {
         await _validarLimiteFixadas(databaseExecutor: executor);
-        return _repository.editar(lista, databaseExecutor: executor);
+        return _repository.editar(alterada, databaseExecutor: executor);
       });
     }
-    return _repository.editar(lista);
+    return _repository.editar(alterada);
   }
 
   @override
@@ -130,7 +130,7 @@ class ListasService implements ListasServiceContract {
 
   Future<List<Item>> _buscarItens(
     int idLista,
-    DatabaseExecutor executor,
+    ExecutorTransacao executor,
   ) {
     return _itensService.buscarPorLista(
       idLista,
@@ -138,12 +138,12 @@ class ListasService implements ListasServiceContract {
     );
   }
 
-  Future<List<Lista>> _recuperarTodos(DatabaseExecutor executor) {
+  Future<List<Lista>> _recuperarTodos(ExecutorTransacao executor) {
     return _repository.recuperarTodosNoExecutor(executor);
   }
 
   Future<void> _validarLimiteFixadas({
-    DatabaseExecutor? databaseExecutor,
+    ExecutorTransacao? databaseExecutor,
   }) async {
     if (await _repository.contarFixadas(
           databaseExecutor: databaseExecutor,

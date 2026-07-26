@@ -175,6 +175,7 @@ class PainelPesquisa<T> extends StatefulWidget {
     bool usarFundoBarreiraTransparente = false,
     bool fecharAoTocarFora = true,
     bool fecharAoArrastar = true,
+    ThemeData? tema,
   }) {
     return showModalBottomSheet<Object?>(
       context: context,
@@ -187,33 +188,36 @@ class PainelPesquisa<T> extends StatefulWidget {
       isDismissible: fecharAoTocarFora,
       enableDrag: fecharAoArrastar,
       builder: (contextoConstrucao) {
-        return PainelPesquisa<T>(
-          itens: itens,
-          obterTextoPesquisa: obterTextoPesquisa,
-          obterIdentificador: obterIdentificador,
-          construirItem: construirItem,
-          construirAcoesCabecalho: construirAcoesCabecalho,
-          construirRodape: construirRodape,
-          gerenciarGestosItemCustomizado: gerenciarGestosItemCustomizado,
-          carregarItensAssincronamente: carregarItensAssincronamente,
-          modoSelecao: modoSelecao,
-          itensSelecionadosInicialmente: itensSelecionadosInicialmente,
-          titulo: titulo,
-          textoPlaceholderPesquisa: textoPlaceholderPesquisa,
-          textoListaVazia: textoListaVazia,
-          textoSemResultados: textoSemResultados,
-          textoBotaoConfirmar: textoBotaoConfirmar,
-          estilo: estilo,
-          obterTextoSubtitulo: obterTextoSubtitulo,
-          construirIconeLideranca: construirIconeLideranca,
-          exibirRodapeConfirmacao: exibirRodapeConfirmacao,
-          pontuacaoMinimaRelevancia: pontuacaoMinimaRelevancia,
-          aoConfirmarSelecaoMultipla: (itensSelecionados) {
-            Navigator.of(contextoConstrucao).pop(itensSelecionados);
-          },
-          aoSelecionarItemUnico: (itemSelecionado) {
-            Navigator.of(contextoConstrucao).pop(itemSelecionado);
-          },
+        return Theme(
+          data: tema ?? Theme.of(contextoConstrucao),
+          child: PainelPesquisa<T>(
+            itens: itens,
+            obterTextoPesquisa: obterTextoPesquisa,
+            obterIdentificador: obterIdentificador,
+            construirItem: construirItem,
+            construirAcoesCabecalho: construirAcoesCabecalho,
+            construirRodape: construirRodape,
+            gerenciarGestosItemCustomizado: gerenciarGestosItemCustomizado,
+            carregarItensAssincronamente: carregarItensAssincronamente,
+            modoSelecao: modoSelecao,
+            itensSelecionadosInicialmente: itensSelecionadosInicialmente,
+            titulo: titulo,
+            textoPlaceholderPesquisa: textoPlaceholderPesquisa,
+            textoListaVazia: textoListaVazia,
+            textoSemResultados: textoSemResultados,
+            textoBotaoConfirmar: textoBotaoConfirmar,
+            estilo: estilo,
+            obterTextoSubtitulo: obterTextoSubtitulo,
+            construirIconeLideranca: construirIconeLideranca,
+            exibirRodapeConfirmacao: exibirRodapeConfirmacao,
+            pontuacaoMinimaRelevancia: pontuacaoMinimaRelevancia,
+            aoConfirmarSelecaoMultipla: (itensSelecionados) {
+              Navigator.of(contextoConstrucao).pop(itensSelecionados);
+            },
+            aoSelecionarItemUnico: (itemSelecionado) {
+              Navigator.of(contextoConstrucao).pop(itemSelecionado);
+            },
+          ),
         );
       },
     );
@@ -406,59 +410,37 @@ class _EstadoPainelPesquisa<T> extends State<PainelPesquisa<T>> {
               child: Scaffold(
                 resizeToAvoidBottomInset: false,
                 backgroundColor: Colors.transparent,
-                body: ListenableBuilder(
-                  listenable: _controladorPesquisa,
-                  builder: (contextoOuvinte, _) {
-                    return Column(
-                      children: [
-                        // Cabeçalho fixo (não rola com a lista).
-                        CabecalhoPainelPesquisa(
-                          titulo: widget.titulo,
-                          estaEmTelaCheia: _estaEmTelaCheia,
-                          aoAlternarTelaCheia: _alternarTelaCheia,
-                          aoFechar: () => Navigator.of(context).pop(),
-                          estilo: widget.estilo,
-                          acoes: widget.construirAcoesCabecalho?.call(
-                                contextoOuvinte,
-                                _controladorPesquisa,
-                              ) ??
-                              const [],
-                        ),
-                        // Barra de pesquisa fixa (não rola com a lista).
-                        CampoPainelPesquisa(
-                          controladorTexto: _controladorTextoPesquisa,
-                          aoAlterarTexto:
-                              _controladorPesquisa.atualizarTermoPesquisa,
-                          aoLimparTexto: () {
-                            _controladorTextoPesquisa.clear();
-                            _controladorPesquisa.limparPesquisa();
-                          },
-                          estilo: widget.estilo,
-                          textoPlaceholder: widget.textoPlaceholderPesquisa,
-                        ),
-                        const SizedBox(height: 4),
-                        // Conteúdo rolável: lista de itens, carregamento ou
-                        // estado vazio.
-                        Expanded(
-                          child: _construirConteudoLista(controladorRolagem),
-                        ),
-                        // Rodapé de confirmação (apenas seleção múltipla).
-                        if (widget.modoSelecao == ModoInteracaoPainel.multipla)
-                          if (widget.construirRodape != null)
-                            widget.construirRodape!(
-                              contextoOuvinte,
-                              _controladorPesquisa,
-                            )
-                          else if (widget.exibirRodapeConfirmacao)
-                            RodapePainelPesquisa(
-                              quantidadeSelecionados:
-                                  _controladorPesquisa.itensSelecionados.length,
-                              aoConfirmar: _confirmarSelecaoMultipla,
-                              textoBotaoConfirmar: widget.textoBotaoConfirmar,
-                            ),
-                      ],
-                    );
-                  },
+                body: Column(
+                  children: [
+                    _CabecalhoReativoPainel<T>(
+                      painel: widget,
+                      controlador: _controladorPesquisa,
+                      estaEmTelaCheia: _estaEmTelaCheia,
+                      aoAlternarTelaCheia: _alternarTelaCheia,
+                      aoFechar: () => Navigator.of(context).pop(),
+                    ),
+                    CampoPainelPesquisa(
+                      controladorTexto: _controladorTextoPesquisa,
+                      aoAlterarTexto:
+                          _controladorPesquisa.atualizarTermoPesquisa,
+                      aoLimparTexto: () {
+                        _controladorTextoPesquisa.clear();
+                        _controladorPesquisa.limparPesquisa();
+                      },
+                      estilo: widget.estilo,
+                      textoPlaceholder: widget.textoPlaceholderPesquisa,
+                    ),
+                    const SizedBox(height: 4),
+                    Expanded(
+                      child: _ConteudoPainelPesquisa<T>(
+                        painel: widget,
+                        controlador: _controladorPesquisa,
+                        controladorRolagem: controladorRolagem,
+                        aoTocarItem: _aoTocarItem,
+                        aoConfirmarSelecaoMultipla: _confirmarSelecaoMultipla,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -467,89 +449,161 @@ class _EstadoPainelPesquisa<T> extends State<PainelPesquisa<T>> {
       ),
     );
   }
+}
 
-  /// Constrói a área rolável principal: indicador de carregamento,
-  /// mensagem de erro, estado vazio ou a lista de itens propriamente dita.
-  Widget _construirConteudoLista(ScrollController controladorRolagem) {
-    if (_controladorPesquisa.estaCarregando) {
-      return const Center(
-        child: Padding(
-          padding: EdgeInsets.all(32),
-          child: CircularProgressIndicator(),
-        ),
+class _CabecalhoReativoPainel<T> extends StatelessWidget {
+  final PainelPesquisa<T> painel;
+  final ControladorPainelPesquisa<T> controlador;
+  final bool estaEmTelaCheia;
+  final VoidCallback aoAlternarTelaCheia;
+  final VoidCallback aoFechar;
+
+  const _CabecalhoReativoPainel({
+    required this.painel,
+    required this.controlador,
+    required this.estaEmTelaCheia,
+    required this.aoAlternarTelaCheia,
+    required this.aoFechar,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final construirAcoes = painel.construirAcoesCabecalho;
+    if (construirAcoes == null) {
+      return CabecalhoPainelPesquisa(
+        titulo: painel.titulo,
+        estaEmTelaCheia: estaEmTelaCheia,
+        aoAlternarTelaCheia: aoAlternarTelaCheia,
+        aoFechar: aoFechar,
+        estilo: painel.estilo,
       );
     }
 
-    if (_controladorPesquisa.mensagemErroCarregamento != null) {
-      return EstadoVazioPainelPesquisa(
-        mensagem: _controladorPesquisa.mensagemErroCarregamento!,
-        icone: PhosphorIcons.warningCircle,
-      );
-    }
+    return ListenableBuilder(
+      listenable: controlador,
+      builder: (contextoOuvinte, _) => CabecalhoPainelPesquisa(
+        titulo: painel.titulo,
+        estaEmTelaCheia: estaEmTelaCheia,
+        aoAlternarTelaCheia: aoAlternarTelaCheia,
+        aoFechar: aoFechar,
+        estilo: painel.estilo,
+        acoes: construirAcoes(contextoOuvinte, controlador),
+      ),
+    );
+  }
+}
 
-    if (_controladorPesquisa.naoHaItensDisponiveis) {
-      return EstadoVazioPainelPesquisa(mensagem: widget.textoListaVazia);
-    }
+class _ConteudoPainelPesquisa<T> extends StatelessWidget {
+  final PainelPesquisa<T> painel;
+  final ControladorPainelPesquisa<T> controlador;
+  final ScrollController controladorRolagem;
+  final ValueChanged<T> aoTocarItem;
+  final VoidCallback aoConfirmarSelecaoMultipla;
 
-    final itensFiltrados = _controladorPesquisa.itensFiltrados;
+  const _ConteudoPainelPesquisa({
+    required this.painel,
+    required this.controlador,
+    required this.controladorRolagem,
+    required this.aoTocarItem,
+    required this.aoConfirmarSelecaoMultipla,
+  });
 
-    if (itensFiltrados.isEmpty) {
-      return EstadoVazioPainelPesquisa(mensagem: widget.textoSemResultados);
-    }
+  @override
+  Widget build(BuildContext context) {
+    return ListenableBuilder(
+      listenable: controlador,
+      builder: (contextoOuvinte, _) {
+        final itensFiltrados = controlador.itensFiltrados;
 
-    return ListView.builder(
-      controller: controladorRolagem,
-      padding: const EdgeInsets.only(bottom: 8),
-      itemCount: itensFiltrados.length,
-      // itemExtent não é usado pois os itens podem variar de altura
-      // (com ou sem subtítulo), porém o builder garante performance ao
-      // construir apenas os itens visíveis.
-      itemBuilder: (contextoItem, indice) {
-        final item = itensFiltrados[indice];
-        final textoExibicao = widget.obterTextoPesquisa(item);
-        final textoSubtitulo = widget.obterTextoSubtitulo?.call(item);
-        final iconeLideranca = widget.construirIconeLideranca?.call(item);
-
-        final contextoResultado = ContextoItemPesquisa<T>(
-          item: item,
-          termoPesquisa: _controladorPesquisa.termoPesquisa,
-          selecionado: _controladorPesquisa.itemEstaSelecionado(item),
-          controlador: _controladorPesquisa,
-        );
-        final itemCustomizado = widget.construirItem?.call(
-          contextoItem,
-          contextoResultado,
-        );
-
-        final conteudoItem = itemCustomizado ??
-            ItemPadraoPainelPesquisa<T>(
-              item: item,
-              textoExibicao: textoExibicao,
-              textoPesquisa: _controladorPesquisa.termoPesquisa,
-              estaSelecionado: _controladorPesquisa.itemEstaSelecionado(item),
-              modoSelecao: widget.modoSelecao,
-              aoTocarItem: () => _aoTocarItem(item),
-              estilo: widget.estilo,
-              textoSubtitulo: textoSubtitulo,
-              iconeLideranca: iconeLideranca,
-            );
-
-        return KeyedSubtree(
-          key: ValueKey(
-            widget.obterIdentificador?.call(item) ?? item,
-          ),
-          child: itemCustomizado == null ||
-                  !widget.gerenciarGestosItemCustomizado ||
-                  widget.modoSelecao == ModoInteracaoPainel.semSelecao
-              ? conteudoItem
-              : Semantics(
-                  selected: contextoResultado.selecionado,
-                  button: true,
-                  child: InkWell(
-                    onTap: () => _aoTocarItem(item),
-                    child: conteudoItem,
+        return Column(
+          children: [
+            Expanded(
+              child: switch (controlador) {
+                _ when controlador.estaCarregando => const Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(32),
+                      child: CircularProgressIndicator(),
+                    ),
                   ),
+                _ when controlador.mensagemErroCarregamento != null =>
+                  EstadoVazioPainelPesquisa(
+                    mensagem: controlador.mensagemErroCarregamento!,
+                    icone: PhosphorIcons.warningCircle,
+                  ),
+                _ when controlador.naoHaItensDisponiveis =>
+                  EstadoVazioPainelPesquisa(
+                    mensagem: painel.textoListaVazia,
+                  ),
+                _ when itensFiltrados.isEmpty => EstadoVazioPainelPesquisa(
+                    mensagem: painel.textoSemResultados,
+                  ),
+                _ => ListView.builder(
+                    controller: controladorRolagem,
+                    padding: const EdgeInsets.only(bottom: 8),
+                    itemCount: itensFiltrados.length,
+                    itemBuilder: (contextoItem, indice) {
+                      final item = itensFiltrados[indice];
+                      final textoExibicao = painel.obterTextoPesquisa(item);
+                      final textoSubtitulo =
+                          painel.obterTextoSubtitulo?.call(item);
+                      final iconeLideranca =
+                          painel.construirIconeLideranca?.call(item);
+                      final selecionado = controlador.itemEstaSelecionado(item);
+                      final contextoResultado = ContextoItemPesquisa<T>(
+                        item: item,
+                        termoPesquisa: controlador.termoPesquisa,
+                        selecionado: selecionado,
+                        controlador: controlador,
+                      );
+                      final itemCustomizado = painel.construirItem?.call(
+                        contextoItem,
+                        contextoResultado,
+                      );
+                      final conteudoItem = itemCustomizado ??
+                          ItemPadraoPainelPesquisa<T>(
+                            item: item,
+                            textoExibicao: textoExibicao,
+                            textoPesquisa: controlador.termoPesquisa,
+                            estaSelecionado: selecionado,
+                            modoSelecao: painel.modoSelecao,
+                            aoTocarItem: () => aoTocarItem(item),
+                            estilo: painel.estilo,
+                            textoSubtitulo: textoSubtitulo,
+                            iconeLideranca: iconeLideranca,
+                          );
+
+                      return KeyedSubtree(
+                        key: ValueKey(
+                          painel.obterIdentificador?.call(item) ?? item,
+                        ),
+                        child: itemCustomizado == null ||
+                                !painel.gerenciarGestosItemCustomizado ||
+                                painel.modoSelecao ==
+                                    ModoInteracaoPainel.semSelecao
+                            ? conteudoItem
+                            : Semantics(
+                                selected: contextoResultado.selecionado,
+                                button: true,
+                                child: InkWell(
+                                  onTap: () => aoTocarItem(item),
+                                  child: conteudoItem,
+                                ),
+                              ),
+                      );
+                    },
+                  ),
+              },
+            ),
+            if (painel.modoSelecao == ModoInteracaoPainel.multipla)
+              if (painel.construirRodape != null)
+                painel.construirRodape!(contextoOuvinte, controlador)
+              else if (painel.exibirRodapeConfirmacao)
+                RodapePainelPesquisa(
+                  quantidadeSelecionados: controlador.itensSelecionados.length,
+                  aoConfirmar: aoConfirmarSelecaoMultipla,
+                  textoBotaoConfirmar: painel.textoBotaoConfirmar,
                 ),
+          ],
         );
       },
     );

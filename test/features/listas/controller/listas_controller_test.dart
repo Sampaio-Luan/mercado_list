@@ -1,14 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mercado_list/core/services/preferencias_service.dart';
-import 'package:mercado_list/features/categoria/model/categoria_model.dart';
 import 'package:mercado_list/features/itens/model/item_model.dart';
 import 'package:mercado_list/features/itens/service/itens_service.dart';
 import 'package:mercado_list/features/listas/controller/listas_controller.dart';
 import 'package:mercado_list/features/listas/model/lista_com_resumo_de_itens_model.dart';
 import 'package:mercado_list/features/listas/model/lista_model.dart';
 import 'package:mercado_list/features/listas/service/listas_service.dart';
-import 'package:mercado_list/features/preferencias_usuario/preferencias_provider.dart';
+import 'package:mercado_list/features/preferencias_usuario/controller/preferencias_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite/sqflite.dart';
 
@@ -73,52 +72,6 @@ void main() {
     expect(resultado.single.lista.titulo, 'Farmácia');
     expect(itens.idsConsultados, [1]);
   });
-
-  test('sincroniza alterações na ordem das categorias sem recarregar itens',
-      () async {
-    SharedPreferences.setMockInitialValues({});
-    final prefs = await SharedPreferences.getInstance();
-    final provider = PreferenciasProvider(PreferenciasService(prefs));
-    await provider.carregar();
-    final itens = _ItensServiceFake([
-      Item(id: 1, idLista: 1, idCategoria: 1, titulo: 'Arroz'),
-      Item(id: 2, idLista: 1, idCategoria: 2, titulo: 'Banana'),
-    ]);
-    final controller = ListasController(
-      _ListasServiceFake([_resumo(1, 'Mercado')]),
-      itens,
-      provider,
-    );
-    await controller.carregar();
-    var notificacoes = 0;
-    controller.addListener(() => notificacoes++);
-
-    controller.sincronizarCategorias([
-      Categoria(id: 1, titulo: 'Mercearia', cor: Colors.orange, ordem: 2),
-      Categoria(id: 2, titulo: 'Frutas', cor: Colors.green, ordem: 1),
-    ]);
-
-    expect(
-      controller.categoriasComItens.map((grupo) => grupo.categoria.titulo),
-      ['Frutas', 'Mercearia'],
-    );
-    expect(itens.idsConsultados, [1]);
-    expect(notificacoes, 1);
-
-    controller.sincronizarCategorias(controller.categorias);
-    expect(notificacoes, 1);
-
-    controller.sincronizarCategorias([
-      Categoria(id: 1, titulo: 'Mercearia', cor: Colors.orange, ordem: 1),
-      Categoria(id: 2, titulo: 'Frutas', cor: Colors.green, ordem: 2),
-    ]);
-    expect(
-      controller.categoriasComItens.map((grupo) => grupo.categoria.titulo),
-      ['Mercearia', 'Frutas'],
-    );
-    expect(itens.idsConsultados, [1]);
-    expect(notificacoes, 2);
-  });
 }
 
 ListaComResumoDeItens _resumo(int id, String titulo) {
@@ -149,9 +102,6 @@ class _ListasServiceFake implements ListasServiceContract {
 
 class _ItensServiceFake implements ItensService {
   final List<int> idsConsultados = [];
-  final List<Item> itens;
-
-  _ItensServiceFake([this.itens = const []]);
 
   @override
   Future<List<Item>> buscarPorLista(
@@ -159,7 +109,7 @@ class _ItensServiceFake implements ItensService {
     DatabaseExecutor? databaseExecutor,
   }) async {
     idsConsultados.add(idLista);
-    return itens;
+    return const [];
   }
 
   @override

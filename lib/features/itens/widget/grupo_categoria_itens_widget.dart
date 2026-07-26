@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../core/utils/monetario_utils.dart';
 import '../model/categoria_com_itens_model.dart';
 import '../model/item_model.dart';
+
 import 'item_da_lista_widget.dart';
 
 class GrupoCategoriaItensWidget extends StatefulWidget {
@@ -44,7 +45,7 @@ class _GrupoCategoriaItensWidgetState extends State<GrupoCategoriaItensWidget> {
     final corCategoria = grupo.categoria.cor;
     final corSobreCategoria = _corSobre(corCategoria);
     return Card(
-      margin: const EdgeInsets.fromLTRB(8, 2, 8, 2),
+      margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       clipBehavior: Clip.antiAlias,
       color: tema.colorScheme.surface,
       child: ExpansionTile(
@@ -64,45 +65,58 @@ class _GrupoCategoriaItensWidgetState extends State<GrupoCategoriaItensWidget> {
         childrenPadding: EdgeInsets.zero,
         shape: const Border(),
         collapsedShape: const Border(),
-        backgroundColor: corCategoria,
-        collapsedBackgroundColor: corCategoria,
+        backgroundColor: corCategoria.withAlpha(210),
+        collapsedBackgroundColor: corCategoria.withAlpha(210),
         iconColor: corSobreCategoria,
         collapsedIconColor: corSobreCategoria,
-        leading: Container(
-          width: 6,
-          height: 34,
-          decoration: BoxDecoration(
-            color: corSobreCategoria.withAlpha(150),
-            borderRadius: BorderRadius.circular(12),
-          ),
-        ),
+        // leading: Container(
+        //   width: 6,
+        //   height: 14,
+        //   decoration: BoxDecoration(
+        //     color: corSobreCategoria.withAlpha(150),
+        //     borderRadius: BorderRadius.circular(12),
+        //   ),
+        // ),
         title: Text(
           grupo.categoria.titulo,
           style: TextStyle(
             color: corSobreCategoria,
             fontWeight: FontWeight.w700,
+            fontSize: Theme.of(context).textTheme.titleMedium?.fontSize,
           ),
         ),
-        subtitle: Padding(
-          padding: const EdgeInsets.only(top: 2),
-          child: Row(
-            children: [
-              Text(
-                '${grupo.quantidade} ${grupo.quantidade == 1 ? 'item' : 'itens'}',
-                style: TextStyle(color: corSobreCategoria.withAlpha(205)),
-              ),
-              if (!_expandido) ...[
-                const Spacer(),
-                Text(
-                  'Subtotal ${MonetarioUtils.formatarIntToMoeda(grupo.subtotal)}',
+        subtitle: Row(
+          children: [
+            Text(
+              '${grupo.quantidade} ${grupo.quantidade == 1 ? 'item' : 'itens'}',
+              style: TextStyle(color: corSobreCategoria.withAlpha(205)),
+            ),
+            if (!_expandido) ...[
+              const Spacer(),
+              RichText(
+                text: TextSpan(
+                  text: '',
                   style: TextStyle(
                     color: corSobreCategoria,
                     fontWeight: FontWeight.w600,
                   ),
+                  children: [
+                    TextSpan(
+                      text:
+                          '${MonetarioUtils.formatarIntToMoeda(grupo.subtotal)} / ',
+                      style: TextStyle(color: corSobreCategoria.withAlpha(130)),
+                    ),
+                    TextSpan(
+                      text: MonetarioUtils.formatarIntToMoeda(
+                        grupo.totalMarcado,
+                      ),
+                      style: TextStyle(color: corSobreCategoria),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ],
-          ),
+          ],
         ),
         children: [
           ColoredBox(
@@ -116,29 +130,40 @@ class _GrupoCategoriaItensWidgetState extends State<GrupoCategoriaItensWidget> {
             ),
           ),
           ColoredBox(
-            color: corCategoria,
+            color: corCategoria.withAlpha(10),
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 7, 16, 8),
+              padding: const EdgeInsets.only(
+                right: 40,
+                left: 15,
+                bottom: 5,
+                top: 5,
+              ),
               child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Expanded(
-                    child: _ValorRodape(
-                      rotulo: 'Subtotal',
-                      valor: grupo.subtotal,
-                      cor: corSobreCategoria,
-                      opaco: true,
-                    ),
-                  ),
-                  Container(
-                    width: .1,
-                    height: 26,
-                    color: corSobreCategoria.withAlpha(150),
-                  ),
-                  Expanded(
-                    child: _ValorRodape(
-                      rotulo: 'Total',
-                      valor: grupo.totalMarcado,
-                      cor: corSobreCategoria,
+                  Text('Total', style: TextStyle(color: corSobreCategoria)),
+                  RichText(
+                    text: TextSpan(
+                      text: '',
+                      style: TextStyle(
+                        color: corSobreCategoria,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      children: [
+                        TextSpan(
+                          text:
+                              '${MonetarioUtils.formatarIntToMoeda(grupo.subtotal)} / ',
+                          style: TextStyle(
+                            color: corSobreCategoria.withAlpha(130),
+                          ),
+                        ),
+                        TextSpan(
+                          text: MonetarioUtils.formatarIntToMoeda(
+                            grupo.totalMarcado,
+                          ),
+                          style: TextStyle(color: corSobreCategoria),
+                        ),
+                      ],
                     ),
                   ),
                 ],
@@ -218,7 +243,13 @@ class _ItensDaCategoriaState extends State<_ItensDaCategoria> {
         children: [
           const Divider(height: 1, thickness: .1),
           for (var indice = 0; indice < itens.length; indice++) ...[
-            _item(itens[indice]),
+            _ItemDaCategoria(
+              key: ValueKey(itens[indice].id ?? itens[indice]),
+              item: itens[indice],
+              corCategoria: widget.corCategoria,
+              aoAlterarMarcacao: widget.aoAlterarMarcacao,
+              aoEditar: widget.aoEditar,
+            ),
             if (indice < itens.length - 1)
               const Divider(height: 1, thickness: .1),
           ],
@@ -240,55 +271,47 @@ class _ItensDaCategoriaState extends State<_ItensDaCategoria> {
               key: PageStorageKey<String>(widget.chaveRolagem),
               controller: _controleRolagem,
               primary: false,
-              padding: EdgeInsets.zero,
+              padding: const EdgeInsets.all(0),
               physics: const ClampingScrollPhysics(),
               itemCount: itens.length,
               separatorBuilder: (_, _) =>
-                  const Divider(height: 1, thickness: .1),
-              itemBuilder: (_, indice) => _item(itens[indice]),
+                  const Divider(height: 2, thickness: .1),
+              itemBuilder: (_, indice) => _ItemDaCategoria(
+                key: ValueKey(itens[indice].id ?? itens[indice]),
+                item: itens[indice],
+                corCategoria: widget.corCategoria,
+                aoAlterarMarcacao: widget.aoAlterarMarcacao,
+                aoEditar: widget.aoEditar,
+              ),
             ),
           ),
         ),
       ],
     );
   }
-
-  Widget _item(Item item) {
-    return ItemDaListaWidget(
-      item: item,
-      corCategoria: widget.corCategoria,
-      aoAlterarMarcacao: (valor) => widget.aoAlterarMarcacao(item, valor),
-      aoEditar: () => widget.aoEditar(item),
-    );
-  }
 }
 
-class _ValorRodape extends StatelessWidget {
-  final String rotulo;
-  final int valor;
-  final Color cor;
-  final bool opaco;
+class _ItemDaCategoria extends StatelessWidget {
+  final Item item;
+  final Color corCategoria;
+  final void Function(Item item, bool marcado) aoAlterarMarcacao;
+  final ValueChanged<Item> aoEditar;
 
-  const _ValorRodape({
-    required this.rotulo,
-    required this.valor,
-    required this.cor,
-    this.opaco = false,
+  const _ItemDaCategoria({
+    super.key,
+    required this.item,
+    required this.corCategoria,
+    required this.aoAlterarMarcacao,
+    required this.aoEditar,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Opacity(
-      opacity: opaco ? .68 : 1,
-      child: Column(
-        children: [
-          Text(rotulo, style: TextStyle(color: cor, fontSize: 11)),
-          Text(
-            MonetarioUtils.formatarIntToMoeda(valor),
-            style: TextStyle(color: cor, fontWeight: FontWeight.w700),
-          ),
-        ],
-      ),
+    return ItemDaListaWidget(
+      item: item,
+      corCategoria: corCategoria,
+      aoAlterarMarcacao: (valor) => aoAlterarMarcacao(item, valor),
+      aoEditar: () => aoEditar(item),
     );
   }
 }

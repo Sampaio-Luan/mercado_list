@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 
 import '../../../core/constants/enums/prioridade.dart';
@@ -30,17 +31,18 @@ class ItemDaListaWidget extends StatelessWidget {
         child: IntrinsicHeight(
           child: Row(
             children: [
-              Container(width: 5, color: _corPrioridade(tema, item.prioridade)),
+              Container(width: 7, color: _corPrioridade(tema, item.prioridade)),
               Checkbox(
                 value: item.obtido,
                 activeColor: corCategoria,
+                side: BorderSide(color: corCategoria, width: 2),
                 checkColor: _corSobre(corCategoria),
                 visualDensity: VisualDensity.compact,
                 onChanged: (valor) => aoAlterarMarcacao(valor ?? false),
               ),
               Expanded(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 6),
+                  padding: const EdgeInsets.symmetric(vertical: 3),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     spacing: 3,
@@ -94,7 +96,10 @@ class ItemDaListaWidget extends StatelessWidget {
                 tooltip: 'Editar item',
                 onPressed: aoEditar,
                 visualDensity: VisualDensity.compact,
-                icon: const Icon(PhosphorIcons.pencilSimple),
+                icon: Icon(
+                  PhosphorIcons.pencilSimple,
+                  color: corCategoria,
+                ),
               ),
             ],
           ),

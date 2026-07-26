@@ -4,9 +4,10 @@ import 'package:provider/provider.dart';
 
 import '../../../core/constants/enums/tipo_medida.dart';
 import '../../../core/utils/texto_utils.dart';
+import '../../categoria/extensions/categorias_extension.dart';
+import '../../categoria/widget/seletor_categoria.dart';
+import '../../itens/controller/itens_controller.dart';
 import '../../itens/model/item_model.dart';
-import '../../itens/widget/seletor_categoria_modal.dart';
-import '../../listas/controller/listas_controller.dart';
 import '../model/item_recorrente_model.dart';
 import '../widget/item_recorrente_painel_widget.dart';
 
@@ -34,7 +35,7 @@ class _ItensRecorrentesDrawerState extends State<ItensRecorrentesDrawer> {
 
   @override
   Widget build(BuildContext context) {
-    final controller = context.watch<ListasController>();
+    final controller = context.watch<ItensController>();
     final lista = controller.listaSelecionada;
     final categorias = {
       for (final categoria in controller.categorias) categoria.id: categoria,
@@ -170,7 +171,9 @@ class _ItensRecorrentesDrawerState extends State<ItensRecorrentesDrawer> {
                         PhosphorIcons.tag,
                         color: categoriaSelecionada?.cor,
                       ),
-                      label: Text(_tituloCategoria(controller)),
+                      label: Text(
+                        controller.categorias.tituloPorId(_idCategoria),
+                      ),
                       style: OutlinedButton.styleFrom(
                         foregroundColor:
                             Theme.of(context).colorScheme.onSurface,
@@ -248,7 +251,7 @@ class _ItensRecorrentesDrawerState extends State<ItensRecorrentesDrawer> {
   }
 
   Future<void> _alternarItem(
-    ListasController controller,
+    ItensController controller,
     ItemRecorrente recorrente,
     Item? existente,
   ) async {
@@ -257,10 +260,10 @@ class _ItensRecorrentesDrawerState extends State<ItensRecorrentesDrawer> {
     setState(() => _alterando.add(id));
     try {
       if (existente != null) {
-        await controller.excluirItem(existente);
+        await controller.excluir(existente);
         _mensagem('Item removido da lista ativa.');
       } else {
-        await controller.criarItem(
+        await controller.criar(
           Item(
             idLista: controller.idListaSelecionada!,
             idCategoria: recorrente.idCategoria,
@@ -279,26 +282,18 @@ class _ItensRecorrentesDrawerState extends State<ItensRecorrentesDrawer> {
   }
 
   Future<void> _selecionarCategoria(
-    ListasController controller,
+    ItensController controller,
     Color corLista,
   ) async {
-    final id = await SeletorCategoriaModal.exibir(
+    final resultado = await SeletorCategoria.exibir(
       context,
       categorias: controller.categorias,
       idSelecionado: _idCategoria,
       corDestaque: corLista,
       permitirTodas: true,
     );
-    if (id == null || !mounted) return;
-    setState(() => _idCategoria = id == 0 ? null : id);
-  }
-
-  String _tituloCategoria(ListasController controller) {
-    if (_idCategoria == null) return 'Todas as categorias';
-    for (final categoria in controller.categorias) {
-      if (categoria.id == _idCategoria) return categoria.titulo;
-    }
-    return 'Todas as categorias';
+    if (resultado == null || !mounted) return;
+    setState(() => _idCategoria = resultado.idCategoria);
   }
 
   void _mensagem(String texto, {bool erro = false}) {

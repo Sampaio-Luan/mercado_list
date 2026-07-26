@@ -7,7 +7,7 @@ import '../repository/itens_repository.dart';
 
 class CriarItemService {
   final GerenciadorTransacoes _transacoes;
-  final ItensRepository _itensRepository;
+  final ItensRepositoryContract _itensRepository;
   final ItemRecorrenteRepository _recorrentesRepository;
 
   CriarItemService(
@@ -20,29 +20,38 @@ class CriarItemService {
     required Item item,
     required Iterable<ItemRecorrente> recorrentesExistentes,
   }) {
-    item.titulo = item.titulo.trim();
-    if (item.titulo.isEmpty) {
+    final novo = item.copia(titulo: item.titulo.trim());
+    if (novo.titulo.isEmpty) {
       throw ArgumentError('O título do item é obrigatório.');
     }
-    if (item.idLista <= 0 || item.idCategoria <= 0) {
-      throw ArgumentError('A lista e a categoria são obrigatórias.');
+    if (novo.idLista <= 0) {
+      throw ArgumentError('A lista é obrigatória.');
+    }
+    if (novo.quantidade != null && novo.quantidade! <= 0) {
+      throw ArgumentError('A quantidade deve ser positiva.');
+    }
+    if (novo.preco != null && novo.preco! < 0) {
+      throw ArgumentError('O preço não pode ser negativo.');
     }
     return _transacoes.executar((executor) async {
+      if (novo.idCategoria <= 0) {
+        novo.idCategoria = await _itensRepository.buscarIdCategoriaPadrao();
+      }
       final criado = await _itensRepository.criar(
-        item,
+        novo,
         databaseExecutor: executor,
       );
-      final titulo = TextoUtils.normalizarParaOrdenacao(item.titulo);
+      final titulo = TextoUtils.normalizarParaOrdenacao(novo.titulo);
       final existe = recorrentesExistentes.any((recorrente) =>
-          recorrente.idCategoria == item.idCategoria &&
-          recorrente.tipoMedida == item.tipoMedida &&
+          recorrente.idCategoria == novo.idCategoria &&
+          recorrente.tipoMedida == novo.tipoMedida &&
           TextoUtils.normalizarParaOrdenacao(recorrente.titulo) == titulo);
       if (!existe) {
         await _recorrentesRepository.criar(
           ItemRecorrente(
-            idCategoria: item.idCategoria,
-            titulo: item.titulo,
-            tipoMedida: item.tipoMedida,
+            idCategoria: novo.idCategoria,
+            titulo: novo.titulo,
+            tipoMedida: novo.tipoMedida,
           ),
           databaseExecutor: executor,
         );
