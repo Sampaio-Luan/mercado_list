@@ -10,6 +10,7 @@ import '../model/item_model.dart';
 class ItemDaListaWidget extends StatelessWidget {
   final Item item;
   final Color corCategoria;
+  final Color corAcao;
   final ValueChanged<bool> aoAlterarMarcacao;
   final VoidCallback aoEditar;
 
@@ -17,6 +18,7 @@ class ItemDaListaWidget extends StatelessWidget {
     super.key,
     required this.item,
     required this.corCategoria,
+    required this.corAcao,
     required this.aoAlterarMarcacao,
     required this.aoEditar,
   });
@@ -98,7 +100,7 @@ class ItemDaListaWidget extends StatelessWidget {
                 visualDensity: VisualDensity.compact,
                 icon: Icon(
                   PhosphorIcons.pencilSimple,
-                  color: corCategoria,
+                  color: corAcao,
                 ),
               ),
             ],

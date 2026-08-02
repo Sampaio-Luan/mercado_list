@@ -10,6 +10,7 @@ class GrupoCategoriaItensWidget extends StatefulWidget {
   final CategoriaComItens grupo;
   final String chaveEstado;
   final bool inicialmenteExpandido;
+  final Color corAcoes;
   final ValueChanged<bool> aoAlterarExpansao;
   final void Function(Item item, bool marcado) aoAlterarMarcacao;
   final ValueChanged<Item> aoEditar;
@@ -19,6 +20,7 @@ class GrupoCategoriaItensWidget extends StatefulWidget {
     required this.grupo,
     required this.chaveEstado,
     required this.inicialmenteExpandido,
+    required this.corAcoes,
     required this.aoAlterarExpansao,
     required this.aoAlterarMarcacao,
     required this.aoEditar,
@@ -125,6 +127,7 @@ class _GrupoCategoriaItensWidgetState extends State<GrupoCategoriaItensWidget> {
               itens: grupo.itens,
               chaveRolagem: 'rolagem-${widget.chaveEstado}',
               corCategoria: corCategoria,
+              corAcoes: widget.corAcoes,
               aoAlterarMarcacao: widget.aoAlterarMarcacao,
               aoEditar: widget.aoEditar,
             ),
@@ -189,6 +192,7 @@ class _ItensDaCategoria extends StatefulWidget {
   final List<Item> itens;
   final String chaveRolagem;
   final Color corCategoria;
+  final Color corAcoes;
   final void Function(Item item, bool marcado) aoAlterarMarcacao;
   final ValueChanged<Item> aoEditar;
 
@@ -196,6 +200,7 @@ class _ItensDaCategoria extends StatefulWidget {
     required this.itens,
     required this.chaveRolagem,
     required this.corCategoria,
+    required this.corAcoes,
     required this.aoAlterarMarcacao,
     required this.aoEditar,
   });
@@ -247,6 +252,7 @@ class _ItensDaCategoriaState extends State<_ItensDaCategoria> {
               key: ValueKey(itens[indice].id ?? itens[indice]),
               item: itens[indice],
               corCategoria: widget.corCategoria,
+              corAcoes: widget.corAcoes,
               aoAlterarMarcacao: widget.aoAlterarMarcacao,
               aoEditar: widget.aoEditar,
             ),
@@ -280,6 +286,7 @@ class _ItensDaCategoriaState extends State<_ItensDaCategoria> {
                 key: ValueKey(itens[indice].id ?? itens[indice]),
                 item: itens[indice],
                 corCategoria: widget.corCategoria,
+                corAcoes: widget.corAcoes,
                 aoAlterarMarcacao: widget.aoAlterarMarcacao,
                 aoEditar: widget.aoEditar,
               ),
@@ -294,6 +301,7 @@ class _ItensDaCategoriaState extends State<_ItensDaCategoria> {
 class _ItemDaCategoria extends StatelessWidget {
   final Item item;
   final Color corCategoria;
+  final Color corAcoes;
   final void Function(Item item, bool marcado) aoAlterarMarcacao;
   final ValueChanged<Item> aoEditar;
 
@@ -301,6 +309,7 @@ class _ItemDaCategoria extends StatelessWidget {
     super.key,
     required this.item,
     required this.corCategoria,
+    required this.corAcoes,
     required this.aoAlterarMarcacao,
     required this.aoEditar,
   });
@@ -310,6 +319,7 @@ class _ItemDaCategoria extends StatelessWidget {
     return ItemDaListaWidget(
       item: item,
       corCategoria: corCategoria,
+      corAcao: corAcoes,
       aoAlterarMarcacao: (valor) => aoAlterarMarcacao(item, valor),
       aoEditar: () => aoEditar(item),
     );

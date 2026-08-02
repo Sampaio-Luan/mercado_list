@@ -4,8 +4,6 @@ import 'package:flutter/services.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import 'package:provider/provider.dart';
 
-import '../../../core/constants/enums/ordem.dart';
-import '../../../core/constants/enums/ordenar_por.dart';
 import '../../../core/constants/enums/prioridade.dart';
 import '../../../core/constants/enums/tipo_medida.dart';
 import '../../../core/constants/enums/tipo_visualizacao_itens.dart';
@@ -17,15 +15,13 @@ import '../../../shared/widgets/painel_pesquisa/texto_destacado_pesquisa.dart';
 import '../../categoria/extensions/categorias_extension.dart';
 import '../../categoria/widget/seletor_categoria.dart';
 import '../controller/itens_controller.dart';
-import '../model/filtro_itens.dart';
+import '../extensions/opcoes_itens_apresentacao_extension.dart';
 import '../model/item_model.dart';
 import '../model/sugestao_item_recorrente.dart';
 
 class CompositorItemWidget extends StatefulWidget {
   final int idLista;
   final bool exibirSomenteAoEditar;
-  final VoidCallback aoFiltrar;
-  final VoidCallback aoOrdenar;
   final VoidCallback aoVisualizar;
   final VoidCallback aoItensRecorrentes;
   final bool categoriasExpandidas;
@@ -35,8 +31,6 @@ class CompositorItemWidget extends StatefulWidget {
     super.key,
     required this.idLista,
     this.exibirSomenteAoEditar = false,
-    required this.aoFiltrar,
-    required this.aoOrdenar,
     required this.aoVisualizar,
     required this.aoItensRecorrentes,
     required this.categoriasExpandidas,
@@ -227,7 +221,7 @@ class CompositorItemState extends State<CompositorItemWidget> {
                           tooltip:
                               editando ? 'Cancelar edição' : 'Cancelar criação',
                           onPressed: _limpar,
-                          icon: const Icon(PhosphorIcons.x),
+                          icon: Icon(PhosphorIcons.x, color: corLista),
                         ),
                       ),
                       Text(
@@ -392,7 +386,10 @@ class CompositorItemState extends State<CompositorItemWidget> {
                     IconButton(
                       tooltip: 'Ampliar formulário',
                       onPressed: () => setState(() => _expandido = true),
-                      icon: const Icon(PhosphorIcons.slidersHorizontal),
+                      icon: Icon(
+                        PhosphorIcons.slidersHorizontal,
+                        color: corLista,
+                      ),
                     ),
                   Expanded(
                     child: TextField(
@@ -428,22 +425,11 @@ class CompositorItemState extends State<CompositorItemWidget> {
                 _BarraAcoes(
                   habilitada: controller.possuiItens,
                   corLista: controller.listaSelecionada!.cor,
-                  filtroAtivo: controller.filtro.ativo,
-                  ordenacaoAtiva: controller.ordenarPor != OrdenarPor.nome ||
-                      controller.ordem != Ordem.ascendente,
                   visualizacao: controller.tipoVisualizacao,
-                  aoFiltrar: widget.aoFiltrar,
-                  aoOrdenar: widget.aoOrdenar,
                   aoVisualizar: widget.aoVisualizar,
                   aoItensRecorrentes: widget.aoItensRecorrentes,
                   categoriasExpandidas: widget.categoriasExpandidas,
                   aoAlternarCategorias: widget.aoAlternarCategorias,
-                  aoLimparFiltro: () =>
-                      controller.alterarFiltro(const FiltroItens()),
-                  aoLimparOrdenacao: () => controller.alterarOrdenacao(
-                    OrdenarPor.nome,
-                    Ordem.ascendente,
-                  ),
                 ),
               ],
             ],
@@ -712,7 +698,7 @@ class _SeletorPrioridadeCompacto extends StatelessWidget {
               .map(
                 (valor) => ButtonSegment(
                   value: valor,
-                  tooltip: _rotulo(valor),
+                  tooltip: valor.rotulo,
                   label: Text(_inicial(valor)),
                 ),
               )
@@ -743,7 +729,7 @@ class _SeletorPrioridadeCompacto extends StatelessWidget {
               .map(
                 (valor) => Expanded(
                   child: Text(
-                    _rotulo(valor),
+                    valor.rotulo,
                     textAlign: TextAlign.center,
                     maxLines: 1,
                     overflow: TextOverflow.fade,
@@ -769,51 +755,29 @@ class _SeletorPrioridadeCompacto extends StatelessWidget {
         Prioridade.media => 'M',
         Prioridade.alta => 'A',
       };
-
-  static String _rotulo(Prioridade prioridade) => switch (prioridade) {
-        Prioridade.neutra => 'Neutra',
-        Prioridade.baixa => 'Baixa',
-        Prioridade.media => 'Média',
-        Prioridade.alta => 'Alta',
-      };
 }
 
 class _BarraAcoes extends StatelessWidget {
   final bool habilitada;
   final Color corLista;
-  final bool filtroAtivo;
-  final bool ordenacaoAtiva;
   final TipoVisualizacaoItens visualizacao;
   final bool categoriasExpandidas;
-  final VoidCallback aoFiltrar;
-  final VoidCallback aoOrdenar;
   final VoidCallback aoVisualizar;
   final VoidCallback aoItensRecorrentes;
-  final VoidCallback aoLimparFiltro;
-  final VoidCallback aoLimparOrdenacao;
   final VoidCallback aoAlternarCategorias;
 
   const _BarraAcoes({
     required this.habilitada,
     required this.corLista,
-    required this.filtroAtivo,
-    required this.ordenacaoAtiva,
     required this.visualizacao,
     required this.categoriasExpandidas,
-    required this.aoFiltrar,
-    required this.aoOrdenar,
     required this.aoVisualizar,
     required this.aoItensRecorrentes,
-    required this.aoLimparFiltro,
-    required this.aoLimparOrdenacao,
     required this.aoAlternarCategorias,
   });
 
   @override
   Widget build(BuildContext context) {
-    final fundo = Theme.of(context).colorScheme.surfaceContainer;
-    final corIcones = _contraste(corLista, fundo) >= 3 ? corLista : null;
-
     return LayoutBuilder(
       builder: (context, restricoes) => SizedBox(
         height: 48,
@@ -825,29 +789,11 @@ class _BarraAcoes extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
                 _Acao(
-                  icone: PhosphorIcons.funnel,
-                  rotulo: 'Filtrar',
-                  ativa: filtroAtivo,
-                  corAtiva: corIcones,
-                  corIcone: corIcones,
-                  onTap: habilitada ? aoFiltrar : null,
-                  onDesativar: filtroAtivo ? aoLimparFiltro : null,
-                ),
-                _Acao(
-                  icone: PhosphorIcons.sortAscending,
-                  rotulo: 'Ordenar',
-                  ativa: ordenacaoAtiva,
-                  corAtiva: corIcones,
-                  corIcone: corIcones,
-                  onTap: habilitada ? aoOrdenar : null,
-                  onDesativar: ordenacaoAtiva ? aoLimparOrdenacao : null,
-                ),
-                _Acao(
                   icone: visualizacao == TipoVisualizacaoItens.categorias
                       ? PhosphorIcons.stack
                       : PhosphorIcons.table,
                   rotulo: 'Visualização',
-                  corIcone: corIcones,
+                  corIcone: corLista,
                   onTap: habilitada ? aoVisualizar : null,
                 ),
                 if (visualizacao == TipoVisualizacaoItens.categorias)
@@ -858,13 +804,13 @@ class _BarraAcoes extends StatelessWidget {
                     rotulo: categoriasExpandidas
                         ? 'Recolher categorias'
                         : 'Expandir categorias',
-                    corIcone: corIcones,
+                    corIcone: corLista,
                     onTap: habilitada ? aoAlternarCategorias : null,
                   ),
                 _Acao(
                   icone: PhosphorIcons.repeat,
                   rotulo: 'Itens recorrentes',
-                  corIcone: corIcones,
+                  corIcone: corLista,
                   onTap: aoItensRecorrentes,
                 ),
               ],
@@ -874,71 +820,23 @@ class _BarraAcoes extends StatelessWidget {
       ),
     );
   }
-
-  static double _contraste(Color primeira, Color segunda) {
-    final luminanciaPrimeira = primeira.computeLuminance();
-    final luminanciaSegunda = segunda.computeLuminance();
-    final maior = luminanciaPrimeira > luminanciaSegunda
-        ? luminanciaPrimeira
-        : luminanciaSegunda;
-    final menor = luminanciaPrimeira < luminanciaSegunda
-        ? luminanciaPrimeira
-        : luminanciaSegunda;
-    return (maior + 0.05) / (menor + 0.05);
-  }
 }
 
 class _Acao extends StatelessWidget {
   final IconData icone;
   final String rotulo;
-  final bool ativa;
-  final Color? corAtiva;
   final Color? corIcone;
   final VoidCallback? onTap;
-  final VoidCallback? onDesativar;
 
   const _Acao({
     required this.icone,
     required this.rotulo,
-    this.ativa = false,
-    this.corAtiva,
     this.corIcone,
     this.onTap,
-    this.onDesativar,
   });
 
   @override
   Widget build(BuildContext context) {
-    if (ativa) {
-      final cor = corAtiva ?? Theme.of(context).colorScheme.primary;
-      return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 5),
-        child: Tooltip(
-          message: onDesativar == null ? rotulo : 'Desativar $rotulo',
-          child: Material(
-            color: Colors.transparent,
-            child: InkWell(
-              onTap: onDesativar ?? onTap,
-              customBorder: const StadiumBorder(),
-              child: AnimatedContainer(
-                key: ValueKey('acao-ativa-$rotulo'),
-                duration: const Duration(milliseconds: 180),
-                width: 52,
-                height: 32,
-                decoration: ShapeDecoration(
-                  color: cor.withAlpha(38),
-                  shape: StadiumBorder(
-                    side: BorderSide(color: cor.withAlpha(128)),
-                  ),
-                ),
-                alignment: Alignment.center,
-                child: Icon(icone, size: 21, color: cor),
-              ),
-            ),
-          ),
-        ),
-      );
-    }
     final botao = IconButton(
       tooltip: rotulo,
       onPressed: onTap,

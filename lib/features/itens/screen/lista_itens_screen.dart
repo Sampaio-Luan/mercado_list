@@ -13,15 +13,16 @@ import '../../../core/constants/enums/tipo_visualizacao_itens.dart';
 import '../../../core/extensions/snackbar_extension.dart';
 import '../../../core/utils/monetario_utils.dart';
 import '../../../shared/widgets/campos_formulario/peso_field.dart';
-import '../../categoria/extensions/categorias_extension.dart';
 import '../../categoria/model/categoria_model.dart';
-import '../../categoria/widget/seletor_categoria.dart';
 import '../../listas/model/lista_model.dart';
 import '../controller/itens_controller.dart';
 import '../model/filtro_itens.dart';
 import '../model/item_model.dart';
+import '../widget/barra_filtros_ordenacao_itens.dart';
 import '../widget/compositor_item_widget.dart';
+import '../widget/filtro_itens_sheet.dart';
 import '../widget/grupo_categoria_itens_widget.dart';
+import '../widget/ordenacao_itens_sheet.dart';
 
 class ListaItensScreen extends StatefulWidget {
   final bool modoPesquisa;
@@ -77,6 +78,23 @@ class _ListaItensScreenState extends State<ListaItensScreen> {
         Scaffold.maybeOf(context)?.isEndDrawerOpen ?? false;
     return Column(
       children: [
+        Consumer<ItensController>(
+          builder: (context, estado, _) => BarraFiltrosOrdenacaoItens(
+            habilitada: estado.possuiItens,
+            filtro: estado.filtro,
+            categorias: estado.categorias,
+            ordenarPor: estado.ordenarPor,
+            ordem: estado.ordem,
+            corLista: lista.cor,
+            aoAbrirFiltros: () => _exibirFiltros(estado),
+            aoLimparFiltros: () => estado.alterarFiltro(const FiltroItens()),
+            aoAbrirOrdenacao: () => _exibirOrdenacao(estado),
+            aoLimparOrdenacao: () => estado.alterarOrdenacao(
+              OrdenarPor.nome,
+              Ordem.ascendente,
+            ),
+          ),
+        ),
         if (lista.orcamento != null)
           Container(
             width: double.infinity,
@@ -113,8 +131,6 @@ class _ListaItensScreenState extends State<ListaItensScreen> {
             key: _chaveCompositor,
             idLista: lista.id!,
             exibirSomenteAoEditar: widget.modoPesquisa,
-            aoFiltrar: () => _exibirFiltros(controller),
-            aoOrdenar: () => _exibirOrdenacao(controller),
             aoVisualizar: () => _alternarVisualizacao(controller),
             categoriasExpandidas: _categoriasExpandidas,
             aoAlternarCategorias: _alternarTodasCategorias,
@@ -159,7 +175,7 @@ class _ListaItensScreenState extends State<ListaItensScreen> {
             secondary: corLista,
           ),
         ),
-        child: _FiltroItensSheet(
+        child: FiltroItensSheet(
           filtroInicial: controller.filtro,
           categorias: controller.categorias,
           corLista: corLista,
@@ -170,12 +186,23 @@ class _ListaItensScreenState extends State<ListaItensScreen> {
   }
 
   Future<void> _exibirOrdenacao(ItensController controller) async {
+    final corLista = controller.listaSelecionada!.cor;
+    final tema = Theme.of(context);
     final resultado = await showModalBottomSheet<(OrdenarPor, Ordem)>(
       context: context,
       useSafeArea: true,
-      builder: (_) => _OrdenacaoItensSheet(
-        ordenarPor: controller.ordenarPor,
-        ordem: controller.ordem,
+      builder: (_) => Theme(
+        data: tema.copyWith(
+          colorScheme: tema.colorScheme.copyWith(
+            primary: corLista,
+            secondary: corLista,
+          ),
+        ),
+        child: OrdenacaoItensSheet(
+          ordenarPor: controller.ordenarPor,
+          ordem: controller.ordem,
+          corLista: corLista,
+        ),
       ),
     );
     if (resultado != null) {
@@ -305,6 +332,7 @@ class _VisualizacaoCategoriasItens extends StatelessWidget {
               aoAlterarExpansao(chaveExpansao, expandido),
           aoAlterarMarcacao: aoAlterarMarcacao,
           aoEditar: aoEditar,
+          corAcoes: controller.listaSelecionada!.cor,
         );
       },
     );
@@ -347,6 +375,9 @@ class _PesquisaItensScreenState extends State<_PesquisaItensScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final corLista = context.select<ItensController, Color>(
+      (controller) => controller.listaSelecionada!.cor,
+    );
     return Scaffold(
       resizeToAvoidBottomInset: false,
       appBar: AppBar(
@@ -369,7 +400,7 @@ class _PesquisaItensScreenState extends State<_PesquisaItensScreen> {
                     : IconButton(
                         tooltip: 'Limpar pesquisa',
                         onPressed: _limparPesquisa,
-                        icon: const Icon(PhosphorIcons.x),
+                        icon: Icon(PhosphorIcons.x, color: corLista),
                       ),
                 filled: true,
                 border: const OutlineInputBorder(),
@@ -391,9 +422,9 @@ class _PesquisaItensScreenState extends State<_PesquisaItensScreen> {
               onPressed: _fecharPesquisa,
               style: IconButton.styleFrom(
                 fixedSize: const Size.square(44),
-                backgroundColor:
-                    Theme.of(context).colorScheme.error.withAlpha(36),
-                foregroundColor: Theme.of(context).colorScheme.error,
+                backgroundColor: corLista.withAlpha(28),
+                foregroundColor: corLista,
+                side: BorderSide(color: corLista.withAlpha(180)),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
@@ -677,242 +708,6 @@ class _TabelaItensCompacta extends StatelessWidget {
         Prioridade.media => Colors.orange,
         Prioridade.alta => Theme.of(context).colorScheme.error,
       };
-}
-
-class _FiltroItensSheet extends StatefulWidget {
-  final FiltroItens filtroInicial;
-  final List<Categoria> categorias;
-  final Color corLista;
-  const _FiltroItensSheet(
-      {required this.filtroInicial,
-      required this.categorias,
-      required this.corLista});
-
-  @override
-  State<_FiltroItensSheet> createState() => _FiltroItensSheetState();
-}
-
-class _FiltroItensSheetState extends State<_FiltroItensSheet> {
-  late SituacaoItem situacao = widget.filtroInicial.situacao;
-  late int? idCategoria = widget.filtroInicial.idCategoria;
-  late Prioridade? prioridade = widget.filtroInicial.prioridade;
-  late bool? possuiPreco = widget.filtroInicial.possuiPreco;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        spacing: 12,
-        children: [
-          Text('Filtrar itens', style: Theme.of(context).textTheme.titleLarge),
-          SegmentedButton<SituacaoItem>(
-            segments: const [
-              ButtonSegment(value: SituacaoItem.todos, label: Text('Todos')),
-              ButtonSegment(
-                  value: SituacaoItem.pendentes, label: Text('Pendentes')),
-              ButtonSegment(
-                  value: SituacaoItem.marcados, label: Text('Marcados')),
-            ],
-            selected: {situacao},
-            style: _estiloSegmentado(corSelecionada: widget.corLista),
-            onSelectionChanged: (valor) =>
-                setState(() => situacao = valor.first),
-          ),
-          OutlinedButton.icon(
-            onPressed: _selecionarCategoria,
-            icon: const Icon(PhosphorIcons.tag),
-            label: Text(widget.categorias.tituloPorId(idCategoria)),
-          ),
-          Text('Prioridade', style: Theme.of(context).textTheme.labelLarge),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: SegmentedButton<Prioridade?>(
-              segments: [
-                const ButtonSegment<Prioridade?>(
-                  value: null,
-                  label: Text('Todas'),
-                ),
-                ...Prioridade.values.map(
-                  (valor) => ButtonSegment<Prioridade?>(
-                    value: valor,
-                    label: Text(_rotuloPrioridadeFiltro(valor)),
-                  ),
-                ),
-              ],
-              selected: {prioridade},
-              showSelectedIcon: false,
-              style: _estiloSegmentado().copyWith(
-                backgroundColor: WidgetStateProperty.resolveWith(
-                  (estados) => estados.contains(WidgetState.selected)
-                      ? _corPrioridadeFiltro(prioridade, widget.corLista)
-                      : null,
-                ),
-                foregroundColor: WidgetStateProperty.resolveWith(
-                  (estados) => estados.contains(WidgetState.selected)
-                      ? _corSobreFiltro(
-                          _corPrioridadeFiltro(prioridade, widget.corLista),
-                        )
-                      : null,
-                ),
-              ),
-              onSelectionChanged: (valor) =>
-                  setState(() => prioridade = valor.first),
-            ),
-          ),
-          Text('Preço', style: Theme.of(context).textTheme.labelLarge),
-          SizedBox(
-            width: double.infinity,
-            child: SegmentedButton<bool?>(
-              segments: const [
-                ButtonSegment<bool?>(value: null, label: Text('Todos')),
-                ButtonSegment<bool?>(value: true, label: Text('Com preço')),
-                ButtonSegment<bool?>(value: false, label: Text('Sem preço')),
-              ],
-              selected: {possuiPreco},
-              showSelectedIcon: false,
-              style: _estiloSegmentado(corSelecionada: widget.corLista),
-              onSelectionChanged: (valor) =>
-                  setState(() => possuiPreco = valor.first),
-            ),
-          ),
-          Row(
-            children: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, const FiltroItens()),
-                child: const Text('Limpar'),
-              ),
-              const Spacer(),
-              FilledButton(
-                onPressed: () => Navigator.pop(
-                    context,
-                    FiltroItens(
-                      situacao: situacao,
-                      idCategoria: idCategoria,
-                      prioridade: prioridade,
-                      possuiPreco: possuiPreco,
-                    )),
-                child: const Text('Aplicar'),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Future<void> _selecionarCategoria() async {
-    final resultado = await SeletorCategoria.exibir(
-      context,
-      categorias: widget.categorias,
-      idSelecionado: idCategoria,
-      corDestaque: Theme.of(context).colorScheme.primary,
-      permitirTodas: true,
-    );
-    if (resultado == null || !mounted) return;
-    setState(() => idCategoria = resultado.idCategoria);
-  }
-}
-
-class _OrdenacaoItensSheet extends StatefulWidget {
-  final OrdenarPor ordenarPor;
-  final Ordem ordem;
-  const _OrdenacaoItensSheet({required this.ordenarPor, required this.ordem});
-
-  @override
-  State<_OrdenacaoItensSheet> createState() => _OrdenacaoItensSheetState();
-}
-
-class _OrdenacaoItensSheetState extends State<_OrdenacaoItensSheet> {
-  late OrdenarPor ordenarPor = widget.ordenarPor;
-  late Ordem ordem = widget.ordem;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        spacing: 12,
-        children: [
-          Text('Ordenar itens', style: Theme.of(context).textTheme.titleLarge),
-          DropdownButtonFormField<OrdenarPor>(
-            initialValue: ordenarPor,
-            decoration: const InputDecoration(labelText: 'Ordenar por'),
-            items: OrdenarPor.values
-                .map((valor) => DropdownMenuItem(
-                      value: valor,
-                      child: Text(valor.name),
-                    ))
-                .toList(),
-            onChanged: (valor) {
-              if (valor != null) setState(() => ordenarPor = valor);
-            },
-          ),
-          SegmentedButton<Ordem>(
-            segments: const [
-              ButtonSegment(value: Ordem.ascendente, label: Text('Crescente')),
-              ButtonSegment(
-                  value: Ordem.descendente, label: Text('Decrescente')),
-            ],
-            selected: {ordem},
-            style: _estiloSegmentado(),
-            onSelectionChanged: (valor) => setState(() => ordem = valor.first),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, (ordenarPor, ordem)),
-            child: const Text('Aplicar'),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-ButtonStyle _estiloSegmentado({Color? corSelecionada}) {
-  return ButtonStyle(
-    shape: WidgetStatePropertyAll(
-      RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
-    ),
-    backgroundColor: corSelecionada == null
-        ? null
-        : WidgetStateProperty.resolveWith(
-            (estados) =>
-                estados.contains(WidgetState.selected) ? corSelecionada : null,
-          ),
-    foregroundColor: corSelecionada == null
-        ? null
-        : WidgetStateProperty.resolveWith(
-            (estados) => estados.contains(WidgetState.selected)
-                ? _corSobreFiltro(corSelecionada)
-                : null,
-          ),
-  );
-}
-
-String _rotuloPrioridadeFiltro(Prioridade prioridade) => switch (prioridade) {
-      Prioridade.neutra => 'Neutra',
-      Prioridade.baixa => 'Baixa',
-      Prioridade.media => 'Média',
-      Prioridade.alta => 'Alta',
-    };
-
-Color _corPrioridadeFiltro(Prioridade? prioridade, Color corLista) =>
-    switch (prioridade) {
-      null => corLista,
-      Prioridade.neutra => Colors.blueGrey,
-      Prioridade.baixa => Colors.green,
-      Prioridade.media => Colors.orange,
-      Prioridade.alta => Colors.red,
-    };
-
-Color _corSobreFiltro(Color fundo) {
-  return ThemeData.estimateBrightnessForColor(fundo) == Brightness.dark
-      ? Colors.white
-      : Colors.black;
 }
 
 class ListaVazia extends StatelessWidget {

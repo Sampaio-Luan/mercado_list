@@ -11,6 +11,7 @@ void main() {
   testWidgets('usa cor da categoria e exibe subtotal e total marcado no rodapé',
       (tester) async {
     const corCategoria = Colors.green;
+    const corAcoes = Colors.indigo;
     final grupo = CategoriaComItens(
       categoria: Categoria(
         id: 1,
@@ -35,6 +36,7 @@ void main() {
       home: Scaffold(
         body: GrupoCategoriaItensWidget(
           grupo: grupo,
+          corAcoes: corAcoes,
           chaveEstado: 'estado-expansao-v2-lista-1-categoria-1-versao-0',
           inicialmenteExpandido: true,
           aoAlterarExpansao: (_) {},
@@ -129,7 +131,7 @@ void main() {
             ),
           )
           .color,
-      corCategoria,
+      corAcoes,
     );
 
     await tester.tap(find.text('Hortifruti'));
@@ -167,6 +169,7 @@ void main() {
       home: Scaffold(
         body: GrupoCategoriaItensWidget(
           grupo: grupo,
+          corAcoes: Colors.indigo,
           chaveEstado: 'estado-expansao-v2-lista-1-categoria-2-versao-0',
           inicialmenteExpandido: true,
           aoAlterarExpansao: (_) {},

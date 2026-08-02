@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mercado_list/core/constants/enums/ordem.dart';
+import 'package:mercado_list/core/constants/enums/ordenar_por.dart';
 import 'package:mercado_list/core/constants/enums/tipo_medida.dart';
 import 'package:mercado_list/core/constants/enums/tipo_visualizacao_itens.dart';
 import 'package:mercado_list/core/services/preferencias_service.dart';
@@ -9,8 +11,10 @@ import 'package:mercado_list/features/categoria/service/categorias_service.dart'
 import 'package:mercado_list/features/itens_recorrentes/model/item_recorrente_model.dart';
 import 'package:mercado_list/features/itens_recorrentes/screen/itens_recorrentes_drawer.dart';
 import 'package:mercado_list/features/itens_recorrentes/service/item_recorrente_service.dart';
+import 'package:mercado_list/features/itens/model/filtro_itens.dart';
 import 'package:mercado_list/features/itens/model/item_model.dart';
 import 'package:mercado_list/features/itens/service/itens_service.dart';
+import 'package:mercado_list/features/itens/widget/barra_filtros_ordenacao_itens.dart';
 import 'package:mercado_list/features/itens/widget/compositor_item_widget.dart';
 import 'package:mercado_list/features/listas/controller/listas_controller.dart';
 import 'package:mercado_list/features/listas/model/lista_com_resumo_de_itens_model.dart';
@@ -190,62 +194,104 @@ void main() {
     expect(find.text('Sabonete').hitTestable(), findsOneWidget);
   });
 
-  testWidgets('atalho ativo usa cápsula com a cor da lista e desativa ao tocar',
+  testWidgets('chip exibe somente filtros ativos e volta para Todos',
       (tester) async {
     final ambiente = await _prepararAmbiente();
     await _montarApp(tester, ambiente);
 
-    await tester.tap(
-      find.widgetWithIcon(IconButton, PhosphorIcons.funnel),
-    );
+    final resumo = find.byKey(const ValueKey('resumo-filtros-itens'));
+    expect(resumo, findsOneWidget);
+    expect(find.text('Todos'), findsOneWidget);
+    expect(tester.widget<InputChip>(resumo).onDeleted, isNull);
+
+    await tester.tap(find.byKey(const ValueKey('mais-filtros-itens')));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Marcados'));
+    await tester.tap(find.text('Com preço'));
+    await tester.tap(find.text('Alta'));
     await tester.tap(find.text('Aplicar'));
     await tester.pumpAndSettle();
 
-    final indicador = find.byKey(const ValueKey('acao-ativa-Filtrar'));
-    expect(indicador, findsOneWidget);
-    final container = tester.widget<AnimatedContainer>(indicador);
-    final decoracao = container.decoration! as ShapeDecoration;
-    expect(decoracao.color, Colors.indigo.withAlpha(38));
-    expect(decoracao.shape, isA<StadiumBorder>());
+    expect(find.text('Marcados / Com preço / P: Alta'), findsOneWidget);
+    final chip = tester.widget<InputChip>(resumo);
+    expect(chip.backgroundColor, Colors.indigo.withAlpha(28));
+    expect(chip.side, BorderSide(color: Colors.indigo.withAlpha(210)));
 
-    await tester.tap(indicador);
-    await tester.pump();
+    await tester.tap(resumo);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Limpar'));
+    await tester.pumpAndSettle();
+
+    expect(resumo, findsOneWidget);
+    expect(find.text('Todos'), findsOneWidget);
+    expect(
+      ambiente.controller.itensController.filtro.situacao,
+      SituacaoItem.todos,
+    );
     expect(ambiente.controller.itensController.filtro.ativo, isFalse);
-    expect(indicador, findsNothing);
+    expect(tester.widget<InputChip>(resumo).onDeleted, isNull);
   });
 
-  testWidgets('ícones dos atalhos usam a cor da lista somente com contraste',
+  testWidgets('ações usam cor da lista e filtro e ordenação saem do rodapé',
       (tester) async {
     final ambiente = await _prepararAmbiente();
     await _montarApp(tester, ambiente);
 
+    final barra = find.byType(BarraFiltrosOrdenacaoItens);
     final compositor = find.byType(CompositorItemWidget);
-    final iconeFiltro = find.descendant(
-      of: compositor,
-      matching: find.byIcon(PhosphorIcons.funnel),
-    );
-    expect(tester.widget<Icon>(iconeFiltro).color, Colors.indigo);
-
-    final esquemaSemContraste = ColorScheme.fromSeed(
-      seedColor: Colors.blue,
-    ).copyWith(surfaceContainer: Colors.indigo);
-    final temaSemContraste = ThemeData(colorScheme: esquemaSemContraste);
-    expect(esquemaSemContraste.surfaceContainer, Colors.indigo);
-    expect(temaSemContraste.colorScheme.surfaceContainer, Colors.indigo);
-    await _montarApp(
-      tester,
-      ambiente,
-      tema: temaSemContraste,
-    );
-    await tester.pumpAndSettle();
-
+    expect(barra, findsOneWidget);
     expect(
-      Theme.of(tester.element(iconeFiltro)).colorScheme.surfaceContainer,
+      find.byKey(const ValueKey('divisor-filtro-ordenacao-itens')),
+      findsOneWidget,
+    );
+    expect(
+      tester
+          .widget<IconButton>(
+            find.byKey(const ValueKey('mais-filtros-itens')),
+          )
+          .style
+          ?.foregroundColor
+          ?.resolve({}),
       Colors.indigo,
     );
-    expect(tester.widget<Icon>(iconeFiltro).color, isNull);
+    expect(
+      tester
+          .widget<IconButton>(
+            find.byKey(const ValueKey('ordenar-itens')),
+          )
+          .style
+          ?.foregroundColor
+          ?.resolve({}),
+      Colors.indigo,
+    );
+    expect(
+      find.descendant(
+        of: compositor,
+        matching: find.byIcon(PhosphorIcons.funnel),
+      ),
+      findsNothing,
+    );
+    expect(
+      find.descendant(
+        of: compositor,
+        matching: find.byIcon(PhosphorIcons.sortAscending),
+      ),
+      findsNothing,
+    );
+    for (final icone in [
+      PhosphorIcons.stack,
+      PhosphorIcons.arrowsIn,
+      PhosphorIcons.repeat,
+    ]) {
+      expect(
+        tester
+            .widget<Icon>(
+              find.descendant(of: compositor, matching: find.byIcon(icone)),
+            )
+            .color,
+        Colors.indigo,
+      );
+    }
   });
 
   testWidgets('pesquisa, compartilhar e histórico ficam somente na AppBar',
@@ -254,6 +300,7 @@ void main() {
     await _montarApp(tester, ambiente);
 
     final appBar = find.byType(AppBar);
+    expect(tester.widget<AppBar>(appBar).iconTheme?.color, Colors.indigo);
     expect(
       find.descendant(
         of: appBar,
@@ -261,6 +308,19 @@ void main() {
       ),
       findsOneWidget,
     );
+    for (final icone in [
+      PhosphorIcons.magnifyingGlass,
+      PhosphorIcons.shareNetwork,
+    ]) {
+      expect(
+        tester
+            .widget<Icon>(
+              find.descendant(of: appBar, matching: find.byIcon(icone)),
+            )
+            .color,
+        Colors.indigo,
+      );
+    }
     expect(
       find.descendant(
         of: appBar,
@@ -567,13 +627,12 @@ void main() {
     expect((rodape.padding as EdgeInsets).bottom, 0);
   });
 
-  testWidgets('filtros usam controles segmentados com cantos discretos',
-      (tester) async {
+  testWidgets('folha reúne todos os filtros com cor da lista', (tester) async {
     final ambiente = await _prepararAmbiente();
     await _montarApp(tester, ambiente);
 
     await tester.tap(
-      find.widgetWithIcon(IconButton, PhosphorIcons.funnel),
+      find.byKey(const ValueKey('mais-filtros-itens')),
     );
     await tester.pumpAndSettle();
 
@@ -584,6 +643,10 @@ void main() {
     expect(find.byType(DropdownButtonFormField), findsNothing);
     expect(
         find.byKey(const ValueKey('selecionar-categoria-item')), findsNothing);
+    expect(
+      find.byKey(const ValueKey('selecionar-categoria-filtro-itens')),
+      findsOneWidget,
+    );
     expect(find.text('Todas as categorias'), findsOneWidget);
     final segmentos = tester
         .widgetList<Widget>(botoesSegmentados)
@@ -601,10 +664,13 @@ void main() {
       segmentos.first.style?.backgroundColor?.resolve({WidgetState.selected}),
       Colors.indigo,
     );
-    expect(
-      segmentos.last.style?.backgroundColor?.resolve({WidgetState.selected}),
-      Colors.indigo,
-    );
+    expect(segmentos, hasLength(3));
+    for (final segmentado in segmentos) {
+      expect(
+        segmentado.style?.backgroundColor?.resolve({WidgetState.selected}),
+        Colors.indigo,
+      );
+    }
 
     await tester.tap(find.text('Alta'));
     await tester.pump();
@@ -614,8 +680,43 @@ void main() {
         .elementAt(1);
     expect(
       prioridade.style?.backgroundColor?.resolve({WidgetState.selected}),
-      Colors.red,
+      Colors.indigo,
     );
+  });
+
+  testWidgets('ordenação permanece na folha e destaca ação personalizada',
+      (tester) async {
+    final ambiente = await _prepararAmbiente();
+    await _montarApp(tester, ambiente);
+
+    await tester.tap(find.byKey(const ValueKey('ordenar-itens')));
+    await tester.pumpAndSettle();
+    expect(find.text('Ordenar itens'), findsOneWidget);
+    expect(find.byType(DropdownButtonFormField<OrdenarPor>), findsNothing);
+    expect(
+      find.byWidgetPredicate((widget) => widget is SegmentedButton),
+      findsNWidgets(2),
+    );
+    expect(find.text('Data'), findsNothing);
+    expect(find.byIcon(PhosphorIcons.sortAscending), findsAtLeastNWidgets(2));
+    expect(find.byIcon(PhosphorIcons.sortDescending), findsOneWidget);
+
+    await tester.tap(find.text('Preço'));
+    await tester.tap(find.text('Decrescente'));
+    await tester.tap(find.text('Aplicar'));
+    await tester.pumpAndSettle();
+
+    expect(ambiente.controller.itensController.ordenarPor, OrdenarPor.preco);
+    expect(ambiente.controller.itensController.ordem, Ordem.descendente);
+    final botao = tester.widget<IconButton>(
+      find.byKey(const ValueKey('ordenar-itens')),
+    );
+    expect(
+      botao.style?.backgroundColor?.resolve({}),
+      Colors.indigo.withAlpha(28),
+    );
+    expect(find.text('Preço / Decrescente'), findsOneWidget);
+    expect(find.byIcon(PhosphorIcons.sortDescending), findsOneWidget);
   });
 
   testWidgets('separa fixadas e mantém contador grande fora do indicador',

@@ -28,6 +28,7 @@ class PrincipalScreen extends StatelessWidget {
       endDrawer: const ItensRecorrentesDrawer(),
       appBar: AppBar(
         title: Text(lista?.titulo ?? 'Mercado List'),
+        iconTheme: lista == null ? null : IconThemeData(color: lista.cor),
         actions: [
           Hero(
             tag: 'pesquisa-itens-hero',
@@ -38,7 +39,10 @@ class PrincipalScreen extends StatelessWidget {
                 onPressed: estadoItens.$1
                     ? () => ListaItensScreen.abrirPesquisa(context)
                     : null,
-                icon: const Icon(PhosphorIcons.magnifyingGlass),
+                icon: Icon(
+                  PhosphorIcons.magnifyingGlass,
+                  color: estadoItens.$1 ? lista?.cor : null,
+                ),
               ),
             ),
           ),
@@ -50,14 +54,20 @@ class PrincipalScreen extends StatelessWidget {
                       'versão.',
                     )
                 : null,
-            icon: const Icon(PhosphorIcons.shareNetwork),
+            icon: Icon(
+              PhosphorIcons.shareNetwork,
+              color: estadoItens.$1 ? lista?.cor : null,
+            ),
           ),
           IconButton(
             tooltip: 'Salvar no histórico',
             onPressed: estadoItens.$2
                 ? () => _salvarNoHistorico(context, itensController)
                 : null,
-            icon: const Icon(PhosphorIcons.clockCounterClockwise),
+            icon: Icon(
+              PhosphorIcons.clockCounterClockwise,
+              color: estadoItens.$2 ? lista?.cor : null,
+            ),
           ),
         ],
         scrolledUnderElevation: 0,
