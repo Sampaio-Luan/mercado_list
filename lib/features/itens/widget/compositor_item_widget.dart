@@ -424,12 +424,16 @@ class CompositorItemState extends State<CompositorItemWidget> {
                 const SizedBox(height: 3),
                 _BarraAcoes(
                   habilitada: controller.possuiItens,
+                  todosItensMarcados: controller.todosItensMarcados,
+                  alterandoMarcacaoTodos: controller.alterandoMarcacaoTodos,
                   corLista: controller.listaSelecionada!.cor,
                   visualizacao: controller.tipoVisualizacao,
                   aoVisualizar: widget.aoVisualizar,
                   aoItensRecorrentes: widget.aoItensRecorrentes,
                   categoriasExpandidas: widget.categoriasExpandidas,
                   aoAlternarCategorias: widget.aoAlternarCategorias,
+                  aoAlternarMarcacaoTodos: () =>
+                      _alternarMarcacaoTodos(controller),
                 ),
               ],
             ],
@@ -437,6 +441,16 @@ class CompositorItemState extends State<CompositorItemWidget> {
         ),
       ),
     );
+  }
+
+  Future<void> _alternarMarcacaoTodos(ItensController controller) async {
+    try {
+      await controller.alternarMarcacaoTodos();
+    } catch (_) {
+      if (mounted) {
+        context.mostrarErro('Não foi possível atualizar todos os itens.');
+      }
+    }
   }
 
   void _aplicarSugestao(SugestaoItemRecorrente sugestao) {
@@ -759,21 +773,27 @@ class _SeletorPrioridadeCompacto extends StatelessWidget {
 
 class _BarraAcoes extends StatelessWidget {
   final bool habilitada;
+  final bool todosItensMarcados;
+  final bool alterandoMarcacaoTodos;
   final Color corLista;
   final TipoVisualizacaoItens visualizacao;
   final bool categoriasExpandidas;
   final VoidCallback aoVisualizar;
   final VoidCallback aoItensRecorrentes;
   final VoidCallback aoAlternarCategorias;
+  final VoidCallback aoAlternarMarcacaoTodos;
 
   const _BarraAcoes({
     required this.habilitada,
+    required this.todosItensMarcados,
+    required this.alterandoMarcacaoTodos,
     required this.corLista,
     required this.visualizacao,
     required this.categoriasExpandidas,
     required this.aoVisualizar,
     required this.aoItensRecorrentes,
     required this.aoAlternarCategorias,
+    required this.aoAlternarMarcacaoTodos,
   });
 
   @override
@@ -788,6 +808,17 @@ class _BarraAcoes extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
+                _Acao(
+                  icone: todosItensMarcados
+                      ? PhosphorIcons.square
+                      : PhosphorIcons.checks,
+                  rotulo:
+                      todosItensMarcados ? 'Desmarcar todos' : 'Marcar todos',
+                  corIcone: corLista,
+                  onTap: habilitada && !alterandoMarcacaoTodos
+                      ? aoAlternarMarcacaoTodos
+                      : null,
+                ),
                 _Acao(
                   icone: visualizacao == TipoVisualizacaoItens.categorias
                       ? PhosphorIcons.stack

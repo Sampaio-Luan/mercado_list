@@ -11,7 +11,9 @@ import 'package:mercado_list/features/categoria/service/categorias_service.dart'
 import 'package:mercado_list/features/compartilhamento/model/compartilhamento_model.dart';
 import 'package:mercado_list/features/historico/controller/historico_controller.dart';
 import 'package:mercado_list/features/historico/model/historico_com_itens_model.dart';
+import 'package:mercado_list/features/historico/model/historico_model.dart';
 import 'package:mercado_list/features/historico/service/historico_service.dart';
+import 'package:mercado_list/features/historico/service/salvar_historico_service.dart';
 import 'package:mercado_list/features/itens_recorrentes/model/item_recorrente_model.dart';
 import 'package:mercado_list/features/itens_recorrentes/screen/itens_recorrentes_drawer.dart';
 import 'package:mercado_list/features/itens_recorrentes/service/item_recorrente_service.dart';
@@ -371,6 +373,61 @@ void main() {
       ),
       findsNothing,
     );
+  });
+
+  testWidgets(
+      'rodapé alterna todos e histórico habilita somente com item marcado',
+      (tester) async {
+    final ambiente = await _prepararAmbiente();
+    await _montarApp(tester, ambiente);
+    final salvarHistorico = find.ancestor(
+      of: find.byTooltip('Salvar no histórico'),
+      matching: find.byType(IconButton),
+    );
+
+    expect(tester.widget<IconButton>(salvarHistorico).onPressed, isNull);
+    expect(find.byTooltip('Marcar todos'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Marcar todos'));
+    await tester.pumpAndSettle();
+
+    expect(
+      tester.widget<IconButton>(salvarHistorico).onPressed,
+      isNotNull,
+    );
+    expect(find.byTooltip('Desmarcar todos'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Desmarcar todos'));
+    await tester.pumpAndSettle();
+
+    expect(tester.widget<IconButton>(salvarHistorico).onPressed, isNull);
+    expect(find.byTooltip('Marcar todos'), findsOneWidget);
+  });
+
+  testWidgets('ao salvar no histórico sugere desmarcar para reutilizar',
+      (tester) async {
+    final ambiente = await _prepararAmbiente();
+    await _montarApp(tester, ambiente);
+    await tester.tap(find.byTooltip('Marcar todos'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Salvar no histórico'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(DialogoBase), findsOneWidget);
+    expect(find.text('Compra salva'), findsOneWidget);
+    expect(
+      find.text('Deseja desmarcar os itens para reutilizar esta lista?'),
+      findsOneWidget,
+    );
+    expect(find.text('Manter marcados'), findsOneWidget);
+    expect(find.text('Desmarcar itens'), findsOneWidget);
+
+    await tester.tap(find.text('Desmarcar itens'));
+    await tester.pumpAndSettle();
+
+    expect(ambiente.controller.itensController.possuiItensMarcados, isFalse);
+    expect(find.byTooltip('Marcar todos'), findsOneWidget);
   });
 
   testWidgets('tabela usa cor da lista nos controles e alterna visualização',
@@ -841,6 +898,7 @@ Future<_Ambiente> _prepararAmbiente({bool comSugestoes = false}) async {
     preferencias,
     categoriasService: comSugestoes ? _CategoriasServiceFake() : null,
     itemRecorrenteService: comSugestoes ? _ItemRecorrenteServiceFake() : null,
+    salvarHistoricoService: _SalvarHistoricoServiceFake(),
   );
   await controller.carregar();
   return _Ambiente(
@@ -971,7 +1029,42 @@ class _ItensServiceFake implements ItensService {
   }
 
   @override
+  Future<Item> alterarObtido(Item item, bool obtido) async {
+    final indice = _itens.indexWhere((existente) => existente.id == item.id);
+    final alterado = item.copia(obtido: obtido);
+    if (indice >= 0) _itens[indice] = alterado;
+    return alterado;
+  }
+
+  @override
+  Future<int> alterarObtidoPorLista(int idLista, bool obtido) async {
+    var alterados = 0;
+    for (var indice = 0; indice < _itens.length; indice++) {
+      final item = _itens[indice];
+      if (item.idLista != idLista || item.obtido == obtido) continue;
+      _itens[indice] = item.copia(obtido: obtido);
+      alterados++;
+    }
+    return alterados;
+  }
+
+  @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+class _SalvarHistoricoServiceFake implements SalvarHistoricoServiceContract {
+  @override
+  Future<Historico> executar({
+    required Lista lista,
+    required Iterable<Item> itens,
+    required Map<int, String> titulosCategorias,
+  }) async {
+    return Historico(
+      id: 1,
+      titulo: lista.titulo,
+      dataCompra: DateTime.utc(2026, 8, 2),
+    );
+  }
 }
 
 class _CategoriasServiceFake implements CategoriasServiceContract {

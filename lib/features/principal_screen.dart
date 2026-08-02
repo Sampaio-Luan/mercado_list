@@ -3,6 +3,8 @@ import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import 'package:provider/provider.dart';
 
 import '../core/extensions/snackbar_extension.dart';
+import '../core/constants/enums/tipo_dialogo.dart';
+import '../core/services/dialogo_service.dart';
 import 'compartilhamento/service/compartilhamento_service.dart';
 import 'compartilhamento/widget/compartilhamento_sheet.dart';
 import 'itens/controller/itens_controller.dart';
@@ -20,8 +22,12 @@ class PrincipalScreen extends StatelessWidget {
     final lista = context.select<ListasController, Lista?>(
       (controller) => controller.listaSelecionada,
     );
-    final estadoItens = context.select<ItensController, (bool, bool)>(
-      (controller) => (controller.possuiItens, controller.possuiItensMarcados),
+    final estadoItens = context.select<ItensController, (bool, bool, bool)>(
+      (controller) => (
+        controller.possuiItens,
+        controller.possuiItensMarcados,
+        controller.salvandoHistorico,
+      ),
     );
     final itensController = context.read<ItensController>();
     return Scaffold(
@@ -60,12 +66,12 @@ class PrincipalScreen extends StatelessWidget {
           ),
           IconButton(
             tooltip: 'Salvar no histórico',
-            onPressed: estadoItens.$2
+            onPressed: estadoItens.$2 && !estadoItens.$3
                 ? () => _salvarNoHistorico(context, itensController)
                 : null,
             icon: Icon(
               PhosphorIcons.clockCounterClockwise,
-              color: estadoItens.$2 ? lista?.cor : null,
+              color: estadoItens.$2 && !estadoItens.$3 ? lista?.cor : null,
             ),
           ),
         ],
@@ -82,12 +88,39 @@ class PrincipalScreen extends StatelessWidget {
   ) async {
     try {
       await controller.salvarNoHistorico();
-      if (context.mounted) {
-        context.mostrarSucesso('Compra salva no histórico.');
-      }
     } catch (erro) {
       if (context.mounted) {
         context.mostrarErro('Não foi possível salvar: $erro');
+      }
+      return;
+    }
+    if (!context.mounted) return;
+    final resultado = await DialogoService.mostrar(
+      context: context,
+      tipo: TipoDialogo.sucesso,
+      titulo: 'Compra salva',
+      mensagem: 'Deseja desmarcar os itens para reutilizar esta lista?',
+      textoConfirmar: 'Desmarcar itens',
+      textoCancelar: 'Manter marcados',
+      exibirCancelar: true,
+    );
+    if (!context.mounted) return;
+    if (resultado != ResultadoDialogo.confirmar) {
+      context.mostrarSucesso('Compra salva no histórico.');
+      return;
+    }
+    try {
+      await controller.alterarMarcacaoTodos(false);
+      if (context.mounted) {
+        context.mostrarSucesso(
+          'Compra salva e itens desmarcados para reutilização.',
+        );
+      }
+    } catch (_) {
+      if (context.mounted) {
+        context.mostrarAviso(
+          'A compra foi salva, mas os itens não puderam ser desmarcados.',
+        );
       }
     }
   }

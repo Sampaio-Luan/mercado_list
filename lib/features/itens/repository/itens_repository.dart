@@ -37,6 +37,12 @@ abstract interface class ItensRepositoryContract {
     DatabaseExecutor? databaseExecutor,
   });
 
+  Future<int> alterarObtidoPorLista(
+    int idLista,
+    bool obtido, {
+    DatabaseExecutor? databaseExecutor,
+  });
+
   Future<int> excluirPorLista(
     int idLista, {
     required DateTime dataAlteracao,
@@ -247,6 +253,44 @@ class ItensRepository implements ItensRepositoryContract {
       whereArgs: [item.id],
     );
     return recuperar(item.id!, databaseExecutor: db);
+  }
+
+  @override
+  Future<int> alterarObtidoPorLista(
+    int idLista,
+    bool obtido, {
+    DatabaseExecutor? databaseExecutor,
+  }) {
+    return _executar(
+      'alterarObtidoPorLista',
+      'lista=$idLista, obtido=$obtido',
+      () => _alterarObtidoPorLista(
+        idLista,
+        obtido,
+        databaseExecutor: databaseExecutor,
+      ),
+    );
+  }
+
+  Future<int> _alterarObtidoPorLista(
+    int idLista,
+    bool obtido, {
+    DatabaseExecutor? databaseExecutor,
+  }) async {
+    final db = databaseExecutor ?? await _db;
+    final valor = obtido ? 1 : 0;
+    return db.update(
+      TbItem.nomeTabela,
+      {
+        TbItem.colunaObtido: valor,
+        TbItem.colunaDataAlteracao:
+            DataUtils.paraPersistencia(DataUtils.agoraUtc()),
+      },
+      where: '${TbItem.colunaIdLista} = ? '
+          'AND ${TbItem.colunaExcluido} = 0 '
+          'AND ${TbItem.colunaObtido} <> ?',
+      whereArgs: [idLista, valor],
+    );
   }
 
   @override

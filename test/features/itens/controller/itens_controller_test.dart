@@ -83,6 +83,37 @@ void main() {
     expect(controller.idListaSelecionada, 2);
     expect(controller.itens.map((item) => item.id), [2]);
   });
+
+  test('alterna todos os itens entre marcados e desmarcados', () async {
+    final preferencias = await _criarPreferencias();
+    final service = _ItensServiceFake([
+      Item(
+        id: 1,
+        idLista: 1,
+        idCategoria: 1,
+        titulo: 'Arroz',
+      ),
+      Item(
+        id: 2,
+        idLista: 1,
+        idCategoria: 1,
+        titulo: 'Feijão',
+        obtido: true,
+      ),
+    ]);
+    final controller = ItensController(service, preferencias);
+    await controller.selecionarLista(_lista(1, 'Mercado'));
+
+    await controller.alternarMarcacaoTodos();
+
+    expect(controller.todosItensMarcados, isTrue);
+    expect(service.marcacoesEmMassa, [(1, true)]);
+
+    await controller.alternarMarcacaoTodos();
+
+    expect(controller.possuiItensMarcados, isFalse);
+    expect(service.marcacoesEmMassa, [(1, true), (1, false)]);
+  });
 }
 
 Future<PreferenciasProvider> _criarPreferencias() async {
@@ -103,6 +134,7 @@ Lista _lista(int id, String titulo) => Lista(
 class _ItensServiceFake implements ItensServiceContract {
   final List<int> idsConsultados = [];
   final List<Item> itens;
+  final List<(int, bool)> marcacoesEmMassa = [];
 
   _ItensServiceFake(this.itens);
 
@@ -113,6 +145,18 @@ class _ItensServiceFake implements ItensServiceContract {
   }) async {
     idsConsultados.add(idLista);
     return itens;
+  }
+
+  @override
+  Future<int> alterarObtidoPorLista(int idLista, bool obtido) async {
+    marcacoesEmMassa.add((idLista, obtido));
+    var alterados = 0;
+    for (final item in itens.where((item) => item.idLista == idLista)) {
+      if (item.obtido == obtido) continue;
+      item.obtido = obtido;
+      alterados++;
+    }
+    return alterados;
   }
 
   @override

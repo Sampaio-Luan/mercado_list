@@ -37,7 +37,7 @@ class ItensController extends ChangeNotifier {
   final CategoriasServiceContract? _categoriasService;
   final ItemRecorrenteService? _itemRecorrenteService;
   final CriarItemService? _criarItemService;
-  final SalvarHistoricoService? _salvarHistoricoService;
+  final SalvarHistoricoServiceContract? _salvarHistoricoService;
   final PrepararConteudoCompartilhamentoService?
       _prepararConteudoCompartilhamentoService;
   final ValueChanged<List<ItemRecorrente>>? _aoSincronizarItensRecorrentes;
@@ -51,7 +51,7 @@ class ItensController extends ChangeNotifier {
     CategoriasServiceContract? categoriasService,
     ItemRecorrenteService? itemRecorrenteService,
     CriarItemService? criarItemService,
-    SalvarHistoricoService? salvarHistoricoService,
+    SalvarHistoricoServiceContract? salvarHistoricoService,
     PrepararConteudoCompartilhamentoService?
         prepararConteudoCompartilhamentoService,
     ValueChanged<List<ItemRecorrente>>? aoSincronizarItensRecorrentes,
@@ -71,6 +71,8 @@ class ItensController extends ChangeNotifier {
   String pesquisa = '';
   Lista? _listaSelecionada;
   int _versaoCarregamento = 0;
+  bool alterandoMarcacaoTodos = false;
+  bool salvandoHistorico = false;
 
   UnmodifiableListView<Item> get itens => UnmodifiableListView(_itens);
   UnmodifiableListView<Categoria> get categorias =>
@@ -88,6 +90,8 @@ class ItensController extends ChangeNotifier {
 
   bool get possuiItens => _itens.isNotEmpty;
   bool get possuiItensMarcados => _itens.any((item) => item.obtido);
+  bool get todosItensMarcados =>
+      _itens.isNotEmpty && _itens.every((item) => item.obtido);
 
   ConteudoCompartilhamento prepararConteudoCompartilhamento() {
     final lista = _listaSelecionada;
@@ -283,6 +287,42 @@ class ItensController extends ChangeNotifier {
     }
   }
 
+  Future<void> alternarMarcacaoTodos() =>
+      alterarMarcacaoTodos(!todosItensMarcados);
+
+  Future<void> alterarMarcacaoTodos(bool obtido) async {
+    final idLista = idListaSelecionada;
+    if (idLista == null ||
+        _itens.isEmpty ||
+        alterandoMarcacaoTodos ||
+        !_itens.any((item) => item.obtido != obtido)) {
+      return;
+    }
+    final anteriores = List<Item>.of(_itens);
+    alterandoMarcacaoTodos = true;
+    for (var indice = 0; indice < _itens.length; indice++) {
+      _itens[indice] = _itens[indice].copia(obtido: obtido);
+    }
+    notifyListeners();
+    try {
+      await _itensService.alterarObtidoPorLista(idLista, obtido);
+      if (idListaSelecionada == idLista) {
+        await _notificarAlteracaoPersistida();
+      }
+    } catch (erro, stackTrace) {
+      if (idListaSelecionada == idLista) {
+        _itens
+          ..clear()
+          ..addAll(anteriores);
+      }
+      _registrarErro('alterarMarcacaoTodos', erro, stackTrace);
+      rethrow;
+    } finally {
+      alterandoMarcacaoTodos = false;
+      notifyListeners();
+    }
+  }
+
   Future<Item> criar(Item item) async {
     final idLista = idListaSelecionada;
     if (idLista == null) throw StateError('Nenhuma lista está selecionada.');
@@ -358,13 +398,23 @@ class ItensController extends ChangeNotifier {
     if (service == null || lista == null) {
       throw StateError('O histórico não está disponível.');
     }
-    return service.executar(
-      lista: lista,
-      itens: _itens,
-      titulosCategorias: {
-        for (final categoria in _categorias) categoria.id!: categoria.titulo,
-      },
-    );
+    if (salvandoHistorico) {
+      throw StateError('A compra já está sendo salva no histórico.');
+    }
+    salvandoHistorico = true;
+    notifyListeners();
+    try {
+      return await service.executar(
+        lista: lista,
+        itens: _itens,
+        titulosCategorias: {
+          for (final categoria in _categorias) categoria.id!: categoria.titulo,
+        },
+      );
+    } finally {
+      salvandoHistorico = false;
+      notifyListeners();
+    }
   }
 
   Future<void> _recarregarItensSelecionados() async {

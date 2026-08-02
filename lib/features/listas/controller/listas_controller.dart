@@ -35,7 +35,7 @@ class ListasController extends ChangeNotifier {
     CategoriasServiceContract? categoriasService,
     ItemRecorrenteService? itemRecorrenteService,
     CriarItemService? criarItemService,
-    SalvarHistoricoService? salvarHistoricoService,
+    SalvarHistoricoServiceContract? salvarHistoricoService,
     PrepararConteudoCompartilhamentoService?
         prepararConteudoCompartilhamentoService,
     ValueChanged<List<ItemRecorrente>>? aoSincronizarItensRecorrentes,

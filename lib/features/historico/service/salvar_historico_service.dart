@@ -3,11 +3,20 @@ import '../../listas/model/lista_model.dart';
 import '../model/historico_model.dart';
 import '../repository/historico_repository.dart';
 
-class SalvarHistoricoService {
+abstract interface class SalvarHistoricoServiceContract {
+  Future<Historico> executar({
+    required Lista lista,
+    required Iterable<Item> itens,
+    required Map<int, String> titulosCategorias,
+  });
+}
+
+class SalvarHistoricoService implements SalvarHistoricoServiceContract {
   final HistoricoRepository _repository;
 
   SalvarHistoricoService(this._repository);
 
+  @override
   Future<Historico> executar({
     required Lista lista,
     required Iterable<Item> itens,

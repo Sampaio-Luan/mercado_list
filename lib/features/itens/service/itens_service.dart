@@ -20,6 +20,8 @@ abstract interface class ItensServiceContract {
 
   Future<Item> alterarObtido(Item item, bool obtido);
 
+  Future<int> alterarObtidoPorLista(int idLista, bool obtido);
+
   Future<int> excluirPorLista(
     int idLista, {
     required DateTime dataAlteracao,
@@ -111,6 +113,18 @@ class ItensService implements ItensServiceContract {
       () {
         final alterado = item.copia(obtido: obtido);
         return _repository.alterarObtido(alterado);
+      },
+    );
+  }
+
+  @override
+  Future<int> alterarObtidoPorLista(int idLista, bool obtido) {
+    return _executar(
+      'alterarObtidoPorLista',
+      'lista=$idLista, obtido=$obtido',
+      () {
+        if (idLista <= 0) throw ArgumentError.value(idLista, 'idLista');
+        return _repository.alterarObtidoPorLista(idLista, obtido);
       },
     );
   }

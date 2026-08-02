@@ -46,6 +46,29 @@ void main() {
     expect(item.titulo, '  Arroz  ');
     expect(repository.edicoes, 1);
   });
+
+  test('altera a marcação da lista inteira em uma única operação', () async {
+    final repository = _ItensRepositoryFake();
+    final service = ItensService(repository);
+
+    final alterados = await service.alterarObtidoPorLista(7, true);
+
+    expect(alterados, 3);
+    expect(repository.idListaMarcada, 7);
+    expect(repository.valorMarcacao, isTrue);
+  });
+
+  test('rejeita lista inválida ao alterar todas as marcações', () async {
+    final repository = _ItensRepositoryFake();
+    final service = ItensService(repository);
+
+    await expectLater(
+      service.alterarObtidoPorLista(0, true),
+      throwsArgumentError,
+    );
+
+    expect(repository.idListaMarcada, isNull);
+  });
 }
 
 Item _item({int? id}) => Item(
@@ -60,6 +83,8 @@ Item _item({int? id}) => Item(
 class _ItensRepositoryFake implements ItensRepositoryContract {
   int criacoes = 0;
   int edicoes = 0;
+  int? idListaMarcada;
+  bool? valorMarcacao;
 
   @override
   Future<Item> criar(
@@ -78,6 +103,17 @@ class _ItensRepositoryFake implements ItensRepositoryContract {
 
   @override
   Future<int> buscarIdCategoriaPadrao() async => 1;
+
+  @override
+  Future<int> alterarObtidoPorLista(
+    int idLista,
+    bool obtido, {
+    DatabaseExecutor? databaseExecutor,
+  }) async {
+    idListaMarcada = idLista;
+    valorMarcacao = obtido;
+    return 3;
+  }
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
