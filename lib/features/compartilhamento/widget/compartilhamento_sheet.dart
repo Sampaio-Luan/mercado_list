@@ -150,7 +150,11 @@ class _CompartilhamentoSheetState extends State<CompartilhamentoSheet> {
                                   ? (_) {}
                                   : (_) => _controller.alternarCampo(campo),
                               avatar: obrigatorio
-                                  ? const Icon(Icons.lock_outline, size: 16)
+                                  ? Icon(
+                                      Icons.lock_outline,
+                                      size: 16,
+                                      color: corAcao,
+                                    )
                                   : null,
                               selectedColor: widget.corDestaque.withValues(
                                 alpha: .16,
@@ -170,9 +174,7 @@ class _CompartilhamentoSheetState extends State<CompartilhamentoSheet> {
                                   avatar: Icon(
                                     _iconeFormato(formato),
                                     size: 18,
-                                    color: _controller.formato == formato
-                                        ? corAcao
-                                        : tema.colorScheme.onSurfaceVariant,
+                                    color: corAcao,
                                   ),
                                   label: Text(formato.rotulo),
                                   selected: _controller.formato == formato,
@@ -239,6 +241,7 @@ class _CompartilhamentoSheetState extends State<CompartilhamentoSheet> {
   }
 
   IconData _iconeFormato(FormatoCompartilhamento formato) => switch (formato) {
+        FormatoCompartilhamento.texto => Icons.notes_outlined,
         FormatoCompartilhamento.imagem => Icons.image_outlined,
         FormatoCompartilhamento.pdf => Icons.picture_as_pdf_outlined,
         FormatoCompartilhamento.csv => Icons.table_rows_outlined,

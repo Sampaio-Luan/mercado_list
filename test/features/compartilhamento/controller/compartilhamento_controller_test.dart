@@ -53,6 +53,28 @@ void main() {
     expect(resultado, ShareResultStatus.success);
     expect(gerador.configuracao?.escopo, EscopoCompartilhamento.pendentes);
     expect(compartilhador.arquivos.single.nome, 'lista.json');
+    expect(compartilhador.texto, contains('Mercado List'));
+  });
+
+  test('formato texto compartilha mensagem sem criar anexo', () async {
+    final compartilhador = _CompartilhadorFake();
+    final controller = CompartilhamentoController(
+      conteudo,
+      CompartilhamentoService(
+        compartilhador: compartilhador,
+        geradores: [GeradorTextoCompartilhamento()],
+      ),
+    );
+    controller.selecionarFormato(FormatoCompartilhamento.texto);
+    controller.alternarCampo(CampoCompartilhamento.status);
+
+    final resultado = await controller.compartilhar();
+
+    expect(resultado, ShareResultStatus.success);
+    expect(compartilhador.arquivos, isEmpty);
+    expect(compartilhador.texto, contains('• Arroz'));
+    expect(compartilhador.texto, contains('Status: Marcado'));
+    expect(compartilhador.texto, contains('Baixe o app:'));
   });
 }
 
@@ -79,14 +101,17 @@ class _GeradorFake implements GeradorArquivoCompartilhamento {
 
 class _CompartilhadorFake implements CompartilhadorArquivosContract {
   List<ArquivoCompartilhamento> arquivos = [];
+  String? texto;
 
   @override
   Future<ShareResultStatus> compartilhar({
     required String titulo,
     required List<ArquivoCompartilhamento> arquivos,
+    required String texto,
     Rect? origem,
   }) async {
     this.arquivos = arquivos;
+    this.texto = texto;
     return ShareResultStatus.success;
   }
 }

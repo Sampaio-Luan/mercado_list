@@ -9,6 +9,7 @@ import 'package:pdf/widgets.dart' as pw;
 
 import '../../../core/utils/monetario_utils.dart';
 import '../model/compartilhamento_model.dart';
+import '../model/identidade_compartilhamento.dart';
 import 'tabela_compartilhamento.dart';
 
 abstract interface class GeradorArquivoCompartilhamento {
@@ -17,6 +18,42 @@ abstract interface class GeradorArquivoCompartilhamento {
   Future<List<ArquivoCompartilhamento>> gerar(
     ConfiguracaoCompartilhamento configuracao,
   );
+}
+
+class GeradorTextoCompartilhamento implements GeradorArquivoCompartilhamento {
+  @override
+  FormatoCompartilhamento get formato => FormatoCompartilhamento.texto;
+
+  @override
+  Future<List<ArquivoCompartilhamento>> gerar(
+    ConfiguracaoCompartilhamento configuracao,
+  ) async {
+    final tabela = TabelaCompartilhamento(configuracao);
+    final texto = StringBuffer()
+      ..writeln(tabela.conteudo.titulo)
+      ..writeln('Escopo: ${tabela.escopo.rotulo}');
+    if (tabela.conteudo.descricao?.trim().isNotEmpty == true) {
+      texto.writeln(tabela.conteudo.descricao!.trim());
+    }
+    for (final item in tabela.itens) {
+      texto.writeln('\n• ${item.titulo}');
+      for (final campo in tabela.campos) {
+        if (campo == CampoCompartilhamento.titulo) continue;
+        final valor = tabela.valorFormatado(item, campo);
+        if (valor.isNotEmpty) texto.writeln('  ${campo.rotulo}: $valor');
+      }
+    }
+    texto
+      ..writeln()
+      ..write(IdentidadeCompartilhamento.mensagem);
+    return [
+      ArquivoCompartilhamento(
+        nome: '${_nomeBase(tabela)}.txt',
+        mimeType: formato.mimeType,
+        bytes: utf8.encode(texto.toString()),
+      ),
+    ];
+  }
 }
 
 class GeradorJsonCompartilhamento implements GeradorArquivoCompartilhamento {
@@ -30,6 +67,9 @@ class GeradorJsonCompartilhamento implements GeradorArquivoCompartilhamento {
     final tabela = TabelaCompartilhamento(configuracao);
     final dados = <String, Object?>{
       'titulo': tabela.conteudo.titulo,
+      'mensagem_compartilhamento': IdentidadeCompartilhamento.mensagem,
+      'compartilhado_pelo_app': IdentidadeCompartilhamento.nomeApp,
+      'link_para_baixar': IdentidadeCompartilhamento.linkDownload,
       if (tabela.conteudo.descricao?.trim().isNotEmpty == true)
         'descricao': tabela.conteudo.descricao,
       if (tabela.conteudo.data != null)
@@ -71,6 +111,8 @@ class GeradorCsvCompartilhamento implements GeradorArquivoCompartilhamento {
       ...tabela.linhas.map(
         (linha) => linha.map(_protegerCelulaCsv).toList(growable: false),
       ),
+      const [],
+      [IdentidadeCompartilhamento.rodape],
     ];
     final conteudo = csv_lib.excel.encode(linhas);
     return [
@@ -102,6 +144,9 @@ class GeradorExcelCompartilhamento implements GeradorArquivoCompartilhamento {
     for (final linha in tabela.linhas) {
       planilha.appendRow(linha.map(excel_lib.TextCellValue.new).toList());
     }
+    planilha.appendRow([
+      excel_lib.TextCellValue(IdentidadeCompartilhamento.rodape),
+    ]);
     final bytes = pasta.save();
     if (bytes == null) {
       throw StateError('Não foi possível gerar a planilha.');
@@ -181,12 +226,27 @@ class GeradorPdfCompartilhamento implements GeradorArquivoCompartilhamento {
             border: pw.TableBorder.all(color: PdfColors.grey500, width: .5),
           ),
         ],
-        footer: (context) => pw.Align(
-          alignment: pw.Alignment.centerRight,
-          child: pw.Text(
-            '${context.pageNumber} / ${context.pagesCount}',
-            style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey700),
-          ),
+        footer: (context) => pw.Row(
+          mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+          children: [
+            pw.UrlLink(
+              destination: IdentidadeCompartilhamento.linkDownload,
+              child: pw.Text(
+                IdentidadeCompartilhamento.rodape,
+                style: const pw.TextStyle(
+                  fontSize: 8,
+                  color: PdfColors.blue700,
+                ),
+              ),
+            ),
+            pw.Text(
+              '${context.pageNumber} / ${context.pagesCount}',
+              style: const pw.TextStyle(
+                fontSize: 9,
+                color: PdfColors.grey700,
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -295,7 +355,7 @@ class GeradorImagemCompartilhamento implements GeradorArquivoCompartilhamento {
     final altura = (inicioItens +
             alturaItens +
             espacamento * (blocos.length - 1).clamp(0, blocos.length) +
-            margem)
+            110)
         .ceil()
         .clamp(480, 8192);
     final gravador = ui.PictureRecorder();
@@ -344,6 +404,13 @@ class GeradorImagemCompartilhamento implements GeradorArquivoCompartilhamento {
       );
       topo += bloco.altura + espacamento;
     }
+    final rodape = _criarParagrafoImagem(
+      IdentidadeCompartilhamento.rodape,
+      tamanho: 19,
+      cor: const ui.Color(0xFF4F378B),
+      largura: largura - margem * 2,
+    );
+    canvas.drawParagraph(rodape, ui.Offset(margem, topo + 10));
 
     final desenho = gravador.endRecording();
     final imagem = await desenho.toImage(largura, altura);
@@ -352,6 +419,7 @@ class GeradorImagemCompartilhamento implements GeradorArquivoCompartilhamento {
     desenho.dispose();
     titulo.dispose();
     subtitulo.dispose();
+    rodape.dispose();
     for (final bloco in blocos) {
       bloco.paragrafo.dispose();
     }

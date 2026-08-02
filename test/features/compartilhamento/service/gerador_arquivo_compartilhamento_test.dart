@@ -6,6 +6,7 @@ import 'package:csv/csv.dart' as csv_lib;
 import 'package:excel/excel.dart' as excel_lib;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mercado_list/features/compartilhamento/model/compartilhamento_model.dart';
+import 'package:mercado_list/features/compartilhamento/model/identidade_compartilhamento.dart';
 import 'package:mercado_list/features/compartilhamento/service/gerador_arquivo_compartilhamento.dart';
 
 void main() {
@@ -55,6 +56,23 @@ void main() {
     expect(itens.single['preco_centavos'], 1250);
     expect(itens.single['marcado'], isTrue);
     expect(itens.single.containsKey('quantidade'), isFalse);
+    expect(json['compartilhado_pelo_app'], 'Mercado List');
+    expect(json['link_para_baixar'], IdentidadeCompartilhamento.linkDownload);
+    expect(
+      json['mensagem_compartilhamento'],
+      IdentidadeCompartilhamento.mensagem,
+    );
+  });
+
+  test('texto contém os itens, campos selecionados e link do app', () async {
+    final arquivo =
+        (await GeradorTextoCompartilhamento().gerar(configuracao)).single;
+    final texto = utf8.decode(arquivo.bytes);
+
+    expect(texto, contains('• Café'));
+    expect(texto, contains('Categoria: Mercearia'));
+    expect(texto, contains(r'Preço: R$ 12,50'));
+    expect(texto, contains(IdentidadeCompartilhamento.mensagem));
   });
 
   test('CSV é compatível com Excel e preserva acentos', () async {
@@ -66,6 +84,7 @@ void main() {
     expect(texto, contains('Título;Categoria;Preço;Status'));
     expect(texto, contains('Café;Mercearia;'));
     expect(texto, isNot(contains('Pão')));
+    expect(texto, contains(IdentidadeCompartilhamento.rodape));
   });
 
   test('CSV preserva emojis e formata o Real sem espaço especial', () async {
@@ -127,9 +146,13 @@ void main() {
     final pasta = excel_lib.Excel.decodeBytes(arquivo.bytes);
     final planilha = pasta.tables['Itens']!;
 
-    expect(planilha.rows, hasLength(2));
+    expect(planilha.rows, hasLength(3));
     expect(planilha.rows.first.first?.value.toString(), 'Título');
     expect(planilha.rows[1].first?.value.toString(), 'Café');
+    expect(
+      planilha.rows.last.first?.value.toString(),
+      IdentidadeCompartilhamento.rodape,
+    );
   });
 
   test('PDF gera documento válido com os dados filtrados', () async {

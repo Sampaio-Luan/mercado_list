@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'dart:ui';
 
@@ -6,12 +7,14 @@ import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../model/compartilhamento_model.dart';
+import '../model/identidade_compartilhamento.dart';
 import 'gerador_arquivo_compartilhamento.dart';
 
 abstract interface class CompartilhadorArquivosContract {
   Future<ShareResultStatus> compartilhar({
     required String titulo,
     required List<ArquivoCompartilhamento> arquivos,
+    required String texto,
     Rect? origem,
   });
 }
@@ -21,32 +24,39 @@ class SharePlusCompartilhador implements CompartilhadorArquivosContract {
   Future<ShareResultStatus> compartilhar({
     required String titulo,
     required List<ArquivoCompartilhamento> arquivos,
+    required String texto,
     Rect? origem,
   }) async {
-    final temporario = await getTemporaryDirectory();
-    final diretorio = Directory(
-      path.join(temporario.path, 'mercado_list_compartilhamento'),
-    );
-    await diretorio.create(recursive: true);
-    await _limparArquivosAnteriores(diretorio);
     final arquivosTemporarios = <File>[];
-
-    for (final arquivo in arquivos) {
-      final destino = File(path.join(diretorio.path, arquivo.nome));
-      await destino.writeAsBytes(arquivo.bytes, flush: true);
-      arquivosTemporarios.add(destino);
+    if (arquivos.isNotEmpty) {
+      final temporario = await getTemporaryDirectory();
+      final diretorio = Directory(
+        path.join(temporario.path, 'mercado_list_compartilhamento'),
+      );
+      await diretorio.create(recursive: true);
+      await _limparArquivosAnteriores(diretorio);
+      for (final arquivo in arquivos) {
+        final destino = File(path.join(diretorio.path, arquivo.nome));
+        await destino.writeAsBytes(arquivo.bytes, flush: true);
+        arquivosTemporarios.add(destino);
+      }
     }
     final resultado = await SharePlus.instance.share(
       ShareParams(
         title: titulo,
         subject: titulo,
-        files: [
-          for (var indice = 0; indice < arquivosTemporarios.length; indice++)
-            XFile(
-              arquivosTemporarios[indice].path,
-              mimeType: arquivos[indice].mimeType,
-            ),
-        ],
+        text: texto,
+        files: arquivosTemporarios.isEmpty
+            ? null
+            : [
+                for (var indice = 0;
+                    indice < arquivosTemporarios.length;
+                    indice++)
+                  XFile(
+                    arquivosTemporarios[indice].path,
+                    mimeType: arquivos[indice].mimeType,
+                  ),
+              ],
         sharePositionOrigin: origem,
       ),
     );
@@ -71,6 +81,7 @@ class CompartilhamentoService {
         };
 
   static final List<GeradorArquivoCompartilhamento> _geradoresPadrao = [
+    GeradorTextoCompartilhamento(),
     GeradorImagemCompartilhamento(),
     GeradorPdfCompartilhamento(),
     GeradorCsvCompartilhamento(),
@@ -93,9 +104,14 @@ class CompartilhamentoService {
       throw UnsupportedError('Formato de compartilhamento não suportado.');
     }
     final arquivos = await gerador.gerar(configuracao);
+    final compartilharSomenteTexto =
+        configuracao.formato == FormatoCompartilhamento.texto;
     return _compartilhador.compartilhar(
       titulo: configuracao.conteudo.titulo,
-      arquivos: arquivos,
+      arquivos: compartilharSomenteTexto ? const [] : arquivos,
+      texto: compartilharSomenteTexto
+          ? utf8.decode(arquivos.single.bytes)
+          : IdentidadeCompartilhamento.mensagem,
       origem: origem,
     );
   }
