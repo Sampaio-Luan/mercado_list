@@ -29,7 +29,7 @@ enum CampoCompartilhamento {
 enum FormatoCompartilhamento {
   imagem('Imagem', 'png', 'image/png'),
   pdf('PDF', 'pdf', 'application/pdf'),
-  csv('CSV', 'csv', 'text/csv'),
+  csv('CSV', 'csv', 'text/csv; charset=utf-8'),
   excel(
     'Excel',
     'xlsx',

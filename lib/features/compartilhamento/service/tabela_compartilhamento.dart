@@ -91,6 +91,7 @@ class TabelaCompartilhamento {
     return quantidade.toString();
   }
 
-  String _formatarMoeda(int? valor) =>
-      valor == null ? '' : MonetarioUtils.formatarIntToMoeda(valor);
+  String _formatarMoeda(int? valor) => valor == null
+      ? ''
+      : MonetarioUtils.formatarIntToMoeda(valor).replaceAll('\u00A0', ' ');
 }

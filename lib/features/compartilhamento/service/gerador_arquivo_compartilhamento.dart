@@ -1,11 +1,11 @@
 import 'dart:convert';
 import 'dart:typed_data';
+import 'dart:ui' as ui;
 
 import 'package:csv/csv.dart' as csv_lib;
 import 'package:excel/excel.dart' as excel_lib;
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
-import 'package:printing/printing.dart';
 
 import '../../../core/utils/monetario_utils.dart';
 import '../model/compartilhamento_model.dart';
@@ -72,15 +72,12 @@ class GeradorCsvCompartilhamento implements GeradorArquivoCompartilhamento {
         (linha) => linha.map(_protegerCelulaCsv).toList(growable: false),
       ),
     ];
-    final conteudo = csv_lib.Csv(
-      fieldDelimiter: ';',
-      lineDelimiter: '\r\n',
-    ).encode(linhas);
+    final conteudo = csv_lib.excel.encode(linhas);
     return [
       ArquivoCompartilhamento(
         nome: '${_nomeBase(tabela)}.csv',
         mimeType: formato.mimeType,
-        bytes: utf8.encode('\ufeff$conteudo'),
+        bytes: utf8.encode(conteudo),
       ),
     ];
   }
@@ -198,11 +195,6 @@ class GeradorPdfCompartilhamento implements GeradorArquivoCompartilhamento {
 }
 
 class GeradorImagemCompartilhamento implements GeradorArquivoCompartilhamento {
-  GeradorImagemCompartilhamento({GeradorPdfCompartilhamento? geradorPdf})
-      : _geradorPdf = geradorPdf ?? GeradorPdfCompartilhamento();
-
-  final GeradorPdfCompartilhamento _geradorPdf;
-
   @override
   FormatoCompartilhamento get formato => FormatoCompartilhamento.imagem;
 
@@ -211,24 +203,184 @@ class GeradorImagemCompartilhamento implements GeradorArquivoCompartilhamento {
     ConfiguracaoCompartilhamento configuracao,
   ) async {
     final tabela = TabelaCompartilhamento(configuracao);
-    final pdf = await _geradorPdf.gerarBytes(tabela);
+    final paginas = _paginarImagem(tabela);
     final arquivos = <ArquivoCompartilhamento>[];
-    var pagina = 1;
-    await for (final raster in Printing.raster(pdf, dpi: 144)) {
+    for (var indice = 0; indice < paginas.length; indice++) {
+      final bytes = await _renderizarPaginaImagem(
+        tabela,
+        paginas[indice],
+        numeroPagina: indice + 1,
+        totalPaginas: paginas.length,
+      );
       arquivos.add(
         ArquivoCompartilhamento(
-          nome: '${_nomeBase(tabela)}_${pagina.toString().padLeft(2, '0')}.png',
+          nome:
+              '${_nomeBase(tabela)}_${(indice + 1).toString().padLeft(2, '0')}.png',
           mimeType: formato.mimeType,
-          bytes: await raster.toPng(),
+          bytes: bytes,
         ),
       );
-      pagina++;
-    }
-    if (arquivos.isEmpty) {
-      throw StateError('Não foi possível gerar a imagem.');
     }
     return arquivos;
   }
+
+  List<List<_BlocoItemImagem>> _paginarImagem(
+    TabelaCompartilhamento tabela,
+  ) {
+    const alturaDisponivel = 1580.0;
+    const espacamento = 18.0;
+    final paginas = <List<_BlocoItemImagem>>[];
+    var paginaAtual = <_BlocoItemImagem>[];
+    var alturaUsada = 0.0;
+
+    for (final item in tabela.itens) {
+      final bloco = _criarBlocoItemImagem(tabela, item);
+      final alturaAdicional =
+          bloco.altura + (paginaAtual.isEmpty ? 0 : espacamento);
+      if (paginaAtual.isNotEmpty &&
+          alturaUsada + alturaAdicional > alturaDisponivel) {
+        paginas.add(paginaAtual);
+        paginaAtual = [];
+        alturaUsada = 0;
+      }
+      paginaAtual.add(bloco);
+      alturaUsada += bloco.altura + (paginaAtual.length == 1 ? 0 : espacamento);
+    }
+    if (paginaAtual.isNotEmpty) paginas.add(paginaAtual);
+    return paginas;
+  }
+
+  _BlocoItemImagem _criarBlocoItemImagem(
+    TabelaCompartilhamento tabela,
+    ItemCompartilhamento item,
+  ) {
+    final construtor = ui.ParagraphBuilder(
+      ui.ParagraphStyle(textDirection: ui.TextDirection.ltr),
+    )..pushStyle(
+        ui.TextStyle(
+          color: const ui.Color(0xFF1C1B1F),
+          fontSize: 32,
+          fontWeight: ui.FontWeight.w700,
+        ),
+      );
+    construtor.addText(item.titulo);
+    construtor.pop();
+    construtor.pushStyle(
+      ui.TextStyle(color: const ui.Color(0xFF49454F), fontSize: 24),
+    );
+    for (final campo in tabela.campos) {
+      if (campo == CampoCompartilhamento.titulo) continue;
+      final valor = tabela.valorFormatado(item, campo);
+      if (valor.isNotEmpty) construtor.addText('\n${campo.rotulo}: $valor');
+    }
+    final paragrafo = construtor.build()
+      ..layout(const ui.ParagraphConstraints(width: 920));
+    return _BlocoItemImagem(paragrafo, paragrafo.height + 40);
+  }
+
+  Future<Uint8List> _renderizarPaginaImagem(
+    TabelaCompartilhamento tabela,
+    List<_BlocoItemImagem> blocos, {
+    required int numeroPagina,
+    required int totalPaginas,
+  }) async {
+    const largura = 1080;
+    const margem = 48.0;
+    const inicioItens = 250.0;
+    const espacamento = 18.0;
+    final alturaItens = blocos.fold<double>(
+      0,
+      (total, bloco) => total + bloco.altura,
+    );
+    final altura = (inicioItens +
+            alturaItens +
+            espacamento * (blocos.length - 1).clamp(0, blocos.length) +
+            margem)
+        .ceil()
+        .clamp(480, 8192);
+    final gravador = ui.PictureRecorder();
+    final canvas = ui.Canvas(gravador);
+    canvas.drawRect(
+      ui.Rect.fromLTWH(0, 0, largura.toDouble(), altura.toDouble()),
+      ui.Paint()..color = const ui.Color(0xFFFFFFFF),
+    );
+    canvas.drawRect(
+      ui.Rect.fromLTWH(0, 0, 14, altura.toDouble()),
+      ui.Paint()..color = const ui.Color(0xFF6750A4),
+    );
+
+    final titulo = _criarParagrafoImagem(
+      tabela.conteudo.titulo,
+      tamanho: 46,
+      peso: ui.FontWeight.w700,
+      largura: largura - margem * 2,
+    );
+    canvas.drawParagraph(titulo, const ui.Offset(margem, 42));
+    final subtitulo = _criarParagrafoImagem(
+      '${tabela.escopo.rotulo} • ${tabela.itens.length} itens'
+      '${totalPaginas > 1 ? ' • $numeroPagina/$totalPaginas' : ''}',
+      tamanho: 25,
+      cor: const ui.Color(0xFF49454F),
+      largura: largura - margem * 2,
+    );
+    canvas.drawParagraph(
+      subtitulo,
+      ui.Offset(margem, 58 + titulo.height),
+    );
+
+    var topo = inicioItens;
+    for (final bloco in blocos) {
+      final area = ui.RRect.fromRectAndRadius(
+        ui.Rect.fromLTWH(margem, topo, largura - margem * 2, bloco.altura),
+        const ui.Radius.circular(20),
+      );
+      canvas.drawRRect(
+        area,
+        ui.Paint()..color = const ui.Color(0xFFF4F0F7),
+      );
+      canvas.drawParagraph(
+        bloco.paragrafo,
+        ui.Offset(margem + 28, topo + 20),
+      );
+      topo += bloco.altura + espacamento;
+    }
+
+    final desenho = gravador.endRecording();
+    final imagem = await desenho.toImage(largura, altura);
+    final dados = await imagem.toByteData(format: ui.ImageByteFormat.png);
+    imagem.dispose();
+    desenho.dispose();
+    titulo.dispose();
+    subtitulo.dispose();
+    for (final bloco in blocos) {
+      bloco.paragrafo.dispose();
+    }
+    if (dados == null) {
+      throw StateError('Não foi possível gerar a imagem.');
+    }
+    return dados.buffer.asUint8List(dados.offsetInBytes, dados.lengthInBytes);
+  }
+
+  ui.Paragraph _criarParagrafoImagem(
+    String texto, {
+    required double tamanho,
+    required double largura,
+    ui.FontWeight peso = ui.FontWeight.w400,
+    ui.Color cor = const ui.Color(0xFF1C1B1F),
+  }) {
+    final construtor = ui.ParagraphBuilder(
+      ui.ParagraphStyle(textDirection: ui.TextDirection.ltr),
+    )..pushStyle(ui.TextStyle(color: cor, fontSize: tamanho, fontWeight: peso));
+    construtor.addText(texto);
+    return construtor.build()..layout(ui.ParagraphConstraints(width: largura));
+  }
+}
+
+class _BlocoItemImagem {
+  const _BlocoItemImagem(this.paragrafo, this.altura);
+
+  final ui.Paragraph paragrafo;
+  final double altura;
 }
 
 String _nomeBase(TabelaCompartilhamento tabela) {

@@ -28,31 +28,34 @@ class SharePlusCompartilhador implements CompartilhadorArquivosContract {
       path.join(temporario.path, 'mercado_list_compartilhamento'),
     );
     await diretorio.create(recursive: true);
+    await _limparArquivosAnteriores(diretorio);
     final arquivosTemporarios = <File>[];
 
-    try {
-      for (final arquivo in arquivos) {
-        final destino = File(path.join(diretorio.path, arquivo.nome));
-        await destino.writeAsBytes(arquivo.bytes, flush: true);
-        arquivosTemporarios.add(destino);
-      }
-      final resultado = await SharePlus.instance.share(
-        ShareParams(
-          title: titulo,
-          subject: titulo,
-          files: arquivosTemporarios
-              .map((arquivo) => XFile(arquivo.path))
-              .toList(growable: false),
-          sharePositionOrigin: origem,
-        ),
-      );
-      return resultado.status;
-    } finally {
-      for (final arquivo in arquivosTemporarios) {
-        if (await arquivo.exists()) {
-          await arquivo.delete();
-        }
-      }
+    for (final arquivo in arquivos) {
+      final destino = File(path.join(diretorio.path, arquivo.nome));
+      await destino.writeAsBytes(arquivo.bytes, flush: true);
+      arquivosTemporarios.add(destino);
+    }
+    final resultado = await SharePlus.instance.share(
+      ShareParams(
+        title: titulo,
+        subject: titulo,
+        files: [
+          for (var indice = 0; indice < arquivosTemporarios.length; indice++)
+            XFile(
+              arquivosTemporarios[indice].path,
+              mimeType: arquivos[indice].mimeType,
+            ),
+        ],
+        sharePositionOrigin: origem,
+      ),
+    );
+    return resultado.status;
+  }
+
+  Future<void> _limparArquivosAnteriores(Directory diretorio) async {
+    await for (final entidade in diretorio.list()) {
+      if (entidade is File) await entidade.delete();
     }
   }
 }

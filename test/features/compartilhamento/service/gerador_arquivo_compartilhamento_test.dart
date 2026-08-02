@@ -1,5 +1,8 @@
 import 'dart:convert';
+import 'dart:typed_data';
+import 'dart:ui' as ui;
 
+import 'package:csv/csv.dart' as csv_lib;
 import 'package:excel/excel.dart' as excel_lib;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mercado_list/features/compartilhamento/model/compartilhamento_model.dart';
@@ -65,6 +68,38 @@ void main() {
     expect(texto, isNot(contains('Pão')));
   });
 
+  test('CSV preserva emojis e formata o Real sem espaço especial', () async {
+    final configuracaoUnicode = ConfiguracaoCompartilhamento(
+      conteudo: const ConteudoCompartilhamento(
+        contexto: ContextoCompartilhamento.lista,
+        titulo: 'Compras 🛒',
+        itens: [
+          ItemCompartilhamento(
+            titulo: 'Café ☕',
+            preco: 1250,
+            marcado: true,
+          ),
+        ],
+      ),
+      escopo: EscopoCompartilhamento.todos,
+      campos: const {
+        CampoCompartilhamento.titulo,
+        CampoCompartilhamento.preco,
+        CampoCompartilhamento.status,
+      },
+      formato: FormatoCompartilhamento.csv,
+    );
+    final arquivo = (await GeradorCsvCompartilhamento().gerar(
+      configuracaoUnicode,
+    ))
+        .single;
+    final linhas = csv_lib.excel.decode(utf8.decode(arquivo.bytes));
+
+    expect(arquivo.mimeType, 'text/csv; charset=utf-8');
+    expect(linhas[1], ['Café ☕', r'R$ 12,50', 'Marcado']);
+    expect(utf8.decode(arquivo.bytes), isNot(contains('\u00A0')));
+  });
+
   test('CSV neutraliza conteúdo que poderia ser executado como fórmula',
       () async {
     final configuracaoInsegura = ConfiguracaoCompartilhamento(
@@ -104,4 +139,47 @@ void main() {
     expect(arquivo.bytes, isNotEmpty);
     expect(ascii.decode(arquivo.bytes.take(4).toList()), '%PDF');
   });
+
+  test('imagem renderiza os itens abaixo do cabeçalho', () async {
+    final arquivo =
+        (await GeradorImagemCompartilhamento().gerar(configuracao)).single;
+    final codec = await ui.instantiateImageCodec(
+      Uint8List.fromList(arquivo.bytes),
+    );
+    final frame = await codec.getNextFrame();
+    final pixels = await frame.image.toByteData(
+      format: ui.ImageByteFormat.rawRgba,
+    );
+
+    expect(arquivo.mimeType, 'image/png');
+    expect(frame.image.width, 1080);
+    expect(frame.image.height, greaterThan(400));
+    expect(
+      _possuiPixelDeTextoNosItens(
+        pixels!,
+        largura: frame.image.width,
+        altura: frame.image.height,
+      ),
+      isTrue,
+    );
+    frame.image.dispose();
+    codec.dispose();
+  });
+}
+
+bool _possuiPixelDeTextoNosItens(
+  ByteData pixels, {
+  required int largura,
+  required int altura,
+}) {
+  for (var y = 270; y < altura; y += 2) {
+    for (var x = 70; x < largura - 70; x += 2) {
+      final indice = (y * largura + x) * 4;
+      final vermelho = pixels.getUint8(indice);
+      final verde = pixels.getUint8(indice + 1);
+      final azul = pixels.getUint8(indice + 2);
+      if (vermelho < 100 && verde < 100 && azul < 100) return true;
+    }
+  }
+  return false;
 }
