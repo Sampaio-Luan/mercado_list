@@ -3,6 +3,8 @@ import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import 'package:provider/provider.dart';
 
 import '../core/extensions/snackbar_extension.dart';
+import 'compartilhamento/service/compartilhamento_service.dart';
+import 'compartilhamento/widget/compartilhamento_sheet.dart';
 import 'itens/controller/itens_controller.dart';
 import 'itens/screen/lista_itens_screen.dart';
 import 'itens_recorrentes/screen/itens_recorrentes_drawer.dart';
@@ -49,10 +51,7 @@ class PrincipalScreen extends StatelessWidget {
           IconButton(
             tooltip: 'Compartilhar lista',
             onPressed: estadoItens.$1
-                ? () => context.mostrarInfo(
-                      'O compartilhamento estará disponível em uma próxima '
-                      'versão.',
-                    )
+                ? () => _compartilhar(context, itensController)
                 : null,
             icon: Icon(
               PhosphorIcons.shareNetwork,
@@ -89,6 +88,25 @@ class PrincipalScreen extends StatelessWidget {
     } catch (erro) {
       if (context.mounted) {
         context.mostrarErro('Não foi possível salvar: $erro');
+      }
+    }
+  }
+
+  Future<void> _compartilhar(
+    BuildContext context,
+    ItensController controller,
+  ) async {
+    try {
+      final conteudo = controller.prepararConteudoCompartilhamento();
+      await CompartilhamentoSheet.exibir(
+        context,
+        conteudo: conteudo,
+        corDestaque: controller.listaSelecionada!.cor,
+        service: context.read<CompartilhamentoService>(),
+      );
+    } catch (erro) {
+      if (context.mounted) {
+        context.mostrarErro('Não foi possível compartilhar: $erro');
       }
     }
   }

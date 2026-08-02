@@ -12,6 +12,9 @@ import 'features/categoria/mapper/categoria_mapper.dart';
 import 'features/categoria/repository/categoria_repository.dart';
 import 'features/categoria/service/categorias_service.dart';
 import 'features/categoria/service/excluir_categoria_service.dart';
+import 'features/compartilhamento/service/compartilhamento_service.dart';
+import 'features/compartilhamento/service/preparar_conteudo_compartilhamento_service.dart';
+import 'features/historico/controller/historico_controller.dart';
 import 'features/itens_recorrentes/mapper/item_recorrente_mapper.dart';
 import 'features/itens_recorrentes/repository/item_recorrente_repository.dart';
 import 'features/itens_recorrentes/service/item_recorrente_service.dart';
@@ -21,6 +24,7 @@ import 'features/itens/repository/itens_repository.dart';
 import 'features/itens/service/criar_item_service.dart';
 import 'features/itens/service/itens_service.dart';
 import 'features/historico/repository/historico_repository.dart';
+import 'features/historico/service/historico_service.dart';
 import 'features/historico/service/salvar_historico_service.dart';
 import 'features/listas/controller/listas_controller.dart';
 import 'features/listas/mapper/lista_mapper.dart';
@@ -65,9 +69,15 @@ void main() async {
     itensRepository,
     itemRecorrentesRepository,
   );
-  final salvarHistoricoService = SalvarHistoricoService(
-    HistoricoRepository(BancoLocal.instancia),
+  final historicoRepository = HistoricoRepository(BancoLocal.instancia);
+  final salvarHistoricoService = SalvarHistoricoService(historicoRepository);
+  final historicoService = HistoricoService(historicoRepository);
+  final prepararConteudoCompartilhamentoService =
+      PrepararConteudoCompartilhamentoService(
+    itensService,
+    categoriasService,
   );
+  final compartilhamentoService = CompartilhamentoService();
   final listaRepository = ListaRepository(
     bancoLocal: BancoLocal.instancia,
     listaMapper: ListaMapper(),
@@ -83,6 +93,11 @@ void main() async {
       providers: [
         // 0. Preferências primeiro (serviço base)
         ChangeNotifierProvider.value(value: preferenciasProvider),
+        Provider.value(value: compartilhamentoService),
+        ChangeNotifierProvider(
+          create: (_) => HistoricoController(historicoService)..carregar(),
+          lazy: false,
+        ),
         ChangeNotifierProvider(
           create: (context) => CategoriasController(
             categoriasService,
@@ -100,6 +115,8 @@ void main() async {
             itemRecorrenteService: itemRecorrenteService,
             criarItemService: criarItemService,
             salvarHistoricoService: salvarHistoricoService,
+            prepararConteudoCompartilhamentoService:
+                prepararConteudoCompartilhamentoService,
             aoSincronizarItensRecorrentes: context
                 .read<CategoriasController>()
                 .sincronizarItensRecorrentes,

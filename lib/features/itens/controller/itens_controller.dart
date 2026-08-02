@@ -15,6 +15,8 @@ import '../../../core/utils/texto_utils.dart';
 import '../../../shared/widgets/painel_pesquisa/similaridade_texto.dart';
 import '../../categoria/model/categoria_model.dart';
 import '../../categoria/service/categorias_service.dart';
+import '../../compartilhamento/model/compartilhamento_model.dart';
+import '../../compartilhamento/service/preparar_conteudo_compartilhamento_service.dart';
 import '../../historico/model/historico_model.dart';
 import '../../historico/service/salvar_historico_service.dart';
 import '../../itens_recorrentes/model/item_recorrente_model.dart';
@@ -36,6 +38,8 @@ class ItensController extends ChangeNotifier {
   final ItemRecorrenteService? _itemRecorrenteService;
   final CriarItemService? _criarItemService;
   final SalvarHistoricoService? _salvarHistoricoService;
+  final PrepararConteudoCompartilhamentoService?
+      _prepararConteudoCompartilhamentoService;
   final ValueChanged<List<ItemRecorrente>>? _aoSincronizarItensRecorrentes;
   final List<Item> _itens = [];
   final List<Categoria> _categorias = [];
@@ -48,11 +52,15 @@ class ItensController extends ChangeNotifier {
     ItemRecorrenteService? itemRecorrenteService,
     CriarItemService? criarItemService,
     SalvarHistoricoService? salvarHistoricoService,
+    PrepararConteudoCompartilhamentoService?
+        prepararConteudoCompartilhamentoService,
     ValueChanged<List<ItemRecorrente>>? aoSincronizarItensRecorrentes,
   })  : _categoriasService = categoriasService,
         _itemRecorrenteService = itemRecorrenteService,
         _criarItemService = criarItemService,
         _salvarHistoricoService = salvarHistoricoService,
+        _prepararConteudoCompartilhamentoService =
+            prepararConteudoCompartilhamentoService,
         _aoSincronizarItensRecorrentes = aoSincronizarItensRecorrentes;
 
   Future<void> Function()? aoAlterarItensPersistidos;
@@ -80,6 +88,19 @@ class ItensController extends ChangeNotifier {
 
   bool get possuiItens => _itens.isNotEmpty;
   bool get possuiItensMarcados => _itens.any((item) => item.obtido);
+
+  ConteudoCompartilhamento prepararConteudoCompartilhamento() {
+    final lista = _listaSelecionada;
+    final service = _prepararConteudoCompartilhamentoService;
+    if (lista == null || service == null) {
+      throw StateError('A lista ainda não está pronta para compartilhar.');
+    }
+    return service.prepararComDados(
+      lista,
+      itens: _itens,
+      categorias: _categorias,
+    );
+  }
 
   List<Item> get itensVisiveis {
     final termo = TextoUtils.normalizarParaOrdenacao(pesquisa);

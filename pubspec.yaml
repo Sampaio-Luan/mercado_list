@@ -40,8 +40,14 @@ dependencies:
   intl: ^0.20.2
   path: ^1.9.1
   provider: ^6.1.5+1
-  lottie: ^3.5.1
+  lottie: ^3.3.0
   percent_indicator: ^4.2.5
+  share_plus: ^13.3.0
+  pdf: ^3.11.3
+  printing: ^5.14.2
+  csv: ^8.0.0
+  excel: ^4.0.6
+  path_provider: ^2.1.6
   flutter_localizations:
     sdk: flutter
 

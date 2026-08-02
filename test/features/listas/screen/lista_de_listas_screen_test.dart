@@ -8,6 +8,10 @@ import 'package:mercado_list/core/services/preferencias_service.dart';
 import 'package:mercado_list/features/categoria/model/categoria_model.dart';
 import 'package:mercado_list/features/itens/controller/itens_controller.dart';
 import 'package:mercado_list/features/categoria/service/categorias_service.dart';
+import 'package:mercado_list/features/compartilhamento/model/compartilhamento_model.dart';
+import 'package:mercado_list/features/historico/controller/historico_controller.dart';
+import 'package:mercado_list/features/historico/model/historico_com_itens_model.dart';
+import 'package:mercado_list/features/historico/service/historico_service.dart';
 import 'package:mercado_list/features/itens_recorrentes/model/item_recorrente_model.dart';
 import 'package:mercado_list/features/itens_recorrentes/screen/itens_recorrentes_drawer.dart';
 import 'package:mercado_list/features/itens_recorrentes/service/item_recorrente_service.dart';
@@ -771,21 +775,16 @@ void main() {
     expect(ambiente.itensService.idsConsultados, [1]);
   });
 
-  testWidgets('snackbar do drawer é exibido dentro de sua própria camada',
-      (tester) async {
+  testWidgets('atalho do drawer abre o histórico de compras', (tester) async {
     final ambiente = await _prepararAmbiente();
     await _montarApp(tester, ambiente);
     await _abrirDrawer(tester);
 
     await tester.tap(find.text('Histórico de Compras'));
-    await tester.pump();
+    await tester.pumpAndSettle();
 
-    final snackbar = find.byType(SnackBar);
-    expect(snackbar, findsOneWidget);
-    expect(
-      find.ancestor(of: snackbar, matching: find.byType(Drawer)),
-      findsOneWidget,
-    );
+    expect(find.text('Histórico de compras'), findsOneWidget);
+    expect(find.text('As compras salvas aparecerão aqui.'), findsOneWidget);
   });
 
   testWidgets('diálogo usa overlay raiz acima do drawer', (tester) async {
@@ -864,6 +863,10 @@ Future<void> _montarApp(
         ChangeNotifierProvider<ItensController>.value(
           value: ambiente.controller.itensController,
         ),
+        ChangeNotifierProvider(
+          create: (_) =>
+              HistoricoController(_HistoricoServiceFake())..carregar(),
+        ),
       ],
       child: MaterialApp(
         theme: tema,
@@ -871,6 +874,17 @@ Future<void> _montarApp(
       ),
     ),
   );
+}
+
+class _HistoricoServiceFake implements HistoricoServiceContract {
+  @override
+  ConteudoCompartilhamento prepararCompartilhamento(
+    HistoricoComItens compra,
+  ) =>
+      throw UnimplementedError();
+
+  @override
+  Future<List<HistoricoComItens>> recuperarTodos() async => const [];
 }
 
 Future<void> _abrirDrawer(WidgetTester tester) async {

@@ -11,6 +11,10 @@ import '../../../core/extensions/dialogo_extension.dart';
 import '../../../core/services/snackbar_service.dart';
 import '../../../core/utils/monetario_utils.dart';
 import '../../categoria/screen/categorias_screen.dart';
+import '../../compartilhamento/service/compartilhamento_service.dart';
+import '../../compartilhamento/widget/compartilhamento_sheet.dart';
+import '../../historico/screen/historico_screen.dart';
+import '../../historico/controller/historico_controller.dart';
 import '../../preferencias_usuario/controller/preferencias_provider.dart';
 import '../controller/listas_controller.dart';
 import '../form/lista_formulario.dart';
@@ -145,10 +149,7 @@ class _ListaDeListasScreenState extends State<ListaDeListasScreen> {
                     color: Colors.blue,
                   ),
                   title: const Text('Histórico de Compras'),
-                  onTap: () => _mostrarFeedback(
-                    'O histórico de compras estará disponível em breve.',
-                    TipoSnackbar.informacao,
-                  ),
+                  onTap: _abrirHistorico,
                 ),
               ],
             ),
@@ -161,6 +162,17 @@ class _ListaDeListasScreenState extends State<ListaDeListasScreen> {
   Future<void> _selecionar(Lista lista) async {
     await context.read<ListasController>().selecionar(lista.id!);
     if (mounted) Navigator.pop(context);
+  }
+
+  Future<void> _abrirHistorico() async {
+    final navigator = Navigator.of(context);
+    final historicoController = context.read<HistoricoController>();
+    navigator.pop();
+    await historicoController.carregar();
+    if (!mounted) return;
+    await navigator.push(
+      MaterialPageRoute<void>(builder: (_) => const HistoricoScreen()),
+    );
   }
 
   Future<void> _reordenar(
@@ -226,12 +238,16 @@ class _ListaDeListasScreenState extends State<ListaDeListasScreen> {
             );
           }
         case _AcaoLista.compartilhar:
-          if (mounted) {
-            _mostrarFeedback(
-              'O compartilhamento estará disponível em breve.',
-              TipoSnackbar.informacao,
-            );
-          }
+          final conteudo = await controller.prepararConteudoCompartilhamento(
+            lista,
+          );
+          if (!mounted) return;
+          await CompartilhamentoSheet.exibir(
+            context,
+            conteudo: conteudo,
+            corDestaque: lista.cor,
+            service: context.read<CompartilhamentoService>(),
+          );
         case _AcaoLista.excluir:
           await _confirmarExclusao(lista);
       }

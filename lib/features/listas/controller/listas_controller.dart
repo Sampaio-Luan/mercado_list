@@ -7,6 +7,8 @@ import '../../../core/constants/enums/estado_de_tela.dart';
 import '../../../core/constants/logs/logs.dart';
 import '../../../core/utils/texto_utils.dart';
 import '../../categoria/service/categorias_service.dart';
+import '../../compartilhamento/model/compartilhamento_model.dart';
+import '../../compartilhamento/service/preparar_conteudo_compartilhamento_service.dart';
 import '../../historico/service/salvar_historico_service.dart';
 import '../../itens/controller/itens_controller.dart';
 import '../../itens/service/criar_item_service.dart';
@@ -21,6 +23,8 @@ import '../service/listas_service.dart';
 class ListasController extends ChangeNotifier {
   final ListasServiceContract _listasService;
   final PreferenciasProvider _preferencias;
+  final PrepararConteudoCompartilhamentoService?
+      _prepararConteudoCompartilhamentoService;
   final List<ListaComResumoDeItens> _listas = [];
   late final ItensController itensController;
 
@@ -32,8 +36,11 @@ class ListasController extends ChangeNotifier {
     ItemRecorrenteService? itemRecorrenteService,
     CriarItemService? criarItemService,
     SalvarHistoricoService? salvarHistoricoService,
+    PrepararConteudoCompartilhamentoService?
+        prepararConteudoCompartilhamentoService,
     ValueChanged<List<ItemRecorrente>>? aoSincronizarItensRecorrentes,
-  }) {
+  }) : _prepararConteudoCompartilhamentoService =
+            prepararConteudoCompartilhamentoService {
     itensController = ItensController(
       itensService,
       _preferencias,
@@ -41,6 +48,8 @@ class ListasController extends ChangeNotifier {
       itemRecorrenteService: itemRecorrenteService,
       criarItemService: criarItemService,
       salvarHistoricoService: salvarHistoricoService,
+      prepararConteudoCompartilhamentoService:
+          prepararConteudoCompartilhamentoService,
       aoSincronizarItensRecorrentes: aoSincronizarItensRecorrentes,
     )..aoAlterarItensPersistidos = _atualizarResumosAposItens;
   }
@@ -60,6 +69,16 @@ class ListasController extends ChangeNotifier {
       if (resumo.lista.id == _idListaSelecionada) return resumo.lista;
     }
     return null;
+  }
+
+  Future<ConteudoCompartilhamento> prepararConteudoCompartilhamento(
+    Lista lista,
+  ) {
+    final service = _prepararConteudoCompartilhamentoService;
+    if (service == null) {
+      throw StateError('O compartilhamento ainda não está disponível.');
+    }
+    return service.prepararLista(lista);
   }
 
   List<ListaComResumoDeItens> pesquisar(String termo) {
