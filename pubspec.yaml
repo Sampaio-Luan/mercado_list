@@ -51,6 +51,11 @@ dependencies:
   flutter_localizations:
     sdk: flutter
 
+# Evita o hook objective_c 9.x, que não trata corretamente caminhos do SDK
+# Flutter com espaços no Windows.
+dependency_overrides:
+  path_provider_foundation: 2.4.3
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
