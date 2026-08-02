@@ -50,6 +50,14 @@ void main() {
           .selected,
       isTrue,
     );
+    final chipTodos = tester.widget<ChoiceChip>(
+      find.byKey(const ValueKey('situacao-itens-todos')),
+    );
+    expect(chipTodos.padding, const EdgeInsets.symmetric(horizontal: 2));
+    expect(
+      chipTodos.visualDensity,
+      const VisualDensity(horizontal: -3, vertical: -3),
+    );
     expect(find.text('Pendentes'), findsOneWidget);
     expect(find.text('Marcados'), findsOneWidget);
     expect(find.byKey(const ValueKey('resumo-filtros-itens')), findsNothing);
@@ -61,6 +69,10 @@ void main() {
     expect(chipOrdenacao.backgroundColor, Colors.transparent);
     expect(chipOrdenacao.side, const BorderSide(color: Colors.indigo));
     expect(chipOrdenacao.labelStyle?.color, Colors.indigo);
+    expect(
+      chipOrdenacao.padding,
+      const EdgeInsets.symmetric(horizontal: 2),
+    );
 
     await tester.tap(find.byKey(const ValueKey('situacao-itens-pendentes')));
     await tester.tap(find.byKey(const ValueKey('mais-filtros-itens')));
@@ -118,6 +130,10 @@ void main() {
       find.text('Pendentes / Com preço / P: Alta / Cat: Higiene'),
       findsOneWidget,
     );
+    expect(
+      tester.widget<InputChip>(resumoFiltro).padding,
+      const EdgeInsets.symmetric(horizontal: 2),
+    );
     expect(find.text('Preço'), findsOneWidget);
     expect(find.textContaining('Decrescente'), findsNothing);
     expect(find.byIcon(PhosphorIcons.sortDescending), findsOneWidget);
@@ -131,7 +147,7 @@ void main() {
     expect(limpouFiltros, isTrue);
   });
 
-  testWidgets('substitui cor clara sem contraste pela cor sobre a superfície',
+  testWidgets('aplica contraste adaptativo somente na ordenação',
       (tester) async {
     final tema = ThemeData.light().copyWith(
       colorScheme: ThemeData.light().colorScheme.copyWith(
@@ -167,7 +183,7 @@ void main() {
           .style
           ?.foregroundColor
           ?.resolve({}),
-      Colors.black,
+      Colors.yellow,
     );
     final ordenacao = tester.widget<InputChip>(
       find.byKey(const ValueKey('ordenar-itens')),

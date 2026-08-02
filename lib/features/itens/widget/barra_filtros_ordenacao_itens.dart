@@ -37,7 +37,7 @@ class BarraFiltrosOrdenacaoItens extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final corComContraste = corLista.paraPrimeiroPlano(Theme.of(context));
+    final corOrdenacao = corLista.paraPrimeiroPlano(Theme.of(context));
     return Material(
       key: const ValueKey('barra-filtros-ordenacao-itens'),
       color: Theme.of(context).colorScheme.surface,
@@ -57,7 +57,7 @@ class BarraFiltrosOrdenacaoItens extends StatelessWidget {
               _BotaoMaisFiltros(
                 habilitado: habilitada,
                 ativo: filtro.possuiFiltrosAdicionais,
-                cor: corComContraste,
+                cor: corLista,
                 aoPressionar: aoAbrirFiltros,
               ),
               Expanded(
@@ -70,14 +70,14 @@ class BarraFiltrosOrdenacaoItens extends StatelessWidget {
                           habilitado: habilitada,
                           filtro: filtro,
                           categorias: categorias,
-                          cor: corComContraste,
+                          cor: corLista,
                           aoPressionar: aoAbrirFiltros,
                           aoLimpar: aoLimparFiltros,
                         )
                       : _ChipsSituacaoItens(
                           habilitados: habilitada,
                           situacao: filtro.situacao,
-                          cor: corComContraste,
+                          cor: corLista,
                           aoAlterar: aoAlterarSituacao,
                         ),
                 ),
@@ -96,7 +96,7 @@ class BarraFiltrosOrdenacaoItens extends StatelessWidget {
                   habilitado: habilitada,
                   ordenarPor: ordenarPor,
                   ordem: ordem,
-                  cor: corComContraste,
+                  cor: corOrdenacao,
                   aoPressionar: aoAbrirOrdenacao,
                 ),
               ),
@@ -182,9 +182,9 @@ class _ChipsSituacaoItens extends StatelessWidget {
                   fontSize: 12,
                 ),
               ),
-              padding: EdgeInsets.zero,
-              labelPadding: const EdgeInsets.symmetric(horizontal: 4),
-              visualDensity: const VisualDensity(horizontal: -4, vertical: -4),
+              padding: const EdgeInsets.symmetric(horizontal: 2),
+              labelPadding: const EdgeInsets.symmetric(horizontal: 6),
+              visualDensity: const VisualDensity(horizontal: -3, vertical: -3),
               materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
               onSelected: habilitados ? (_) => aoAlterar(valor) : null,
             ),
@@ -223,9 +223,9 @@ class _ResumoFiltrosChip extends StatelessWidget {
       backgroundColor: cor.withAlpha(28),
       side: BorderSide(color: cor.withAlpha(210)),
       labelStyle: TextStyle(color: cor, fontWeight: FontWeight.w700),
-      padding: EdgeInsets.zero,
-      labelPadding: const EdgeInsets.symmetric(horizontal: 4),
-      visualDensity: const VisualDensity(horizontal: -4, vertical: -4),
+      padding: const EdgeInsets.symmetric(horizontal: 2),
+      labelPadding: const EdgeInsets.symmetric(horizontal: 6),
+      visualDensity: const VisualDensity(horizontal: -3, vertical: -3),
       materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
       onPressed: habilitado ? aoPressionar : null,
       onDeleted: habilitado ? aoLimpar : null,
@@ -286,9 +286,9 @@ class _OrdenacaoChip extends StatelessWidget {
       backgroundColor: Colors.transparent,
       side: BorderSide(color: cor),
       labelStyle: TextStyle(color: cor, fontWeight: FontWeight.w600),
-      padding: EdgeInsets.zero,
-      labelPadding: const EdgeInsets.only(left: 2, right: 5),
-      visualDensity: const VisualDensity(horizontal: -4, vertical: -4),
+      padding: const EdgeInsets.symmetric(horizontal: 2),
+      labelPadding: const EdgeInsets.only(left: 4, right: 7),
+      visualDensity: const VisualDensity(horizontal: -3, vertical: -3),
       materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
       onPressed: habilitado ? aoPressionar : null,
     );

@@ -11,7 +11,6 @@ import '../../../core/constants/enums/prioridade.dart';
 import '../../../core/constants/enums/tipo_medida.dart';
 import '../../../core/constants/enums/tipo_visualizacao_itens.dart';
 import '../../../core/extensions/snackbar_extension.dart';
-import '../../../core/extensions/cor_contraste_extension.dart';
 import '../../../core/utils/monetario_utils.dart';
 import '../../../shared/widgets/campos_formulario/peso_field.dart';
 import '../../categoria/model/categoria_model.dart';
@@ -377,7 +376,6 @@ class _PesquisaItensScreenState extends State<_PesquisaItensScreen> {
     final corLista = context.select<ItensController, Color>(
       (controller) => controller.listaSelecionada!.cor,
     );
-    final corAcoes = corLista.paraPrimeiroPlano(Theme.of(context));
     return Scaffold(
       resizeToAvoidBottomInset: false,
       appBar: AppBar(
@@ -400,7 +398,7 @@ class _PesquisaItensScreenState extends State<_PesquisaItensScreen> {
                     : IconButton(
                         tooltip: 'Limpar pesquisa',
                         onPressed: _limparPesquisa,
-                        icon: Icon(PhosphorIcons.x, color: corAcoes),
+                        icon: Icon(PhosphorIcons.x, color: corLista),
                       ),
                 filled: true,
                 border: const OutlineInputBorder(),
@@ -422,9 +420,9 @@ class _PesquisaItensScreenState extends State<_PesquisaItensScreen> {
               onPressed: _fecharPesquisa,
               style: IconButton.styleFrom(
                 fixedSize: const Size.square(44),
-                backgroundColor: corAcoes.withAlpha(28),
-                foregroundColor: corAcoes,
-                side: BorderSide(color: corAcoes.withAlpha(180)),
+                backgroundColor: corLista.withAlpha(28),
+                foregroundColor: corLista,
+                side: BorderSide(color: corLista.withAlpha(180)),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
@@ -477,7 +475,6 @@ class _TabelaItensCompacta extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tema = Theme.of(context);
-    final corListaComContraste = corLista.paraPrimeiroPlano(tema);
     return LayoutBuilder(
       builder: (context, restricoes) {
         final mostrarTotalSeparado = restricoes.maxWidth >= 430;
@@ -526,12 +523,11 @@ class _TabelaItensCompacta extends StatelessWidget {
                   final item = itens[indice];
                   final categoria = categorias[item.idCategoria];
                   final total = item.valorTotal;
-                  final corCategoriaComContraste =
-                      categoria?.cor.paraPrimeiroPlano(tema) ??
-                          tema.colorScheme.outline;
+                  final corCategoria =
+                      categoria?.cor ?? tema.colorScheme.outline;
                   return Material(
                     color: item.obtido
-                        ? corListaComContraste.withAlpha(28)
+                        ? corLista.withAlpha(28)
                         : Colors.transparent,
                     child: InkWell(
                       onTap: () => aoAlterarMarcacao(item, !item.obtido),
@@ -549,12 +545,18 @@ class _TabelaItensCompacta extends StatelessWidget {
                               width: 45,
                               child: Checkbox(
                                 value: item.obtido,
-                                activeColor: corListaComContraste,
+                                activeColor: corLista,
                                 side: BorderSide(
-                                  color: corListaComContraste,
+                                  color: corLista,
                                   width: 2,
                                 ),
-                                checkColor: corListaComContraste.corSobre,
+                                checkColor:
+                                    ThemeData.estimateBrightnessForColor(
+                                              corLista,
+                                            ) ==
+                                            Brightness.dark
+                                        ? Colors.white
+                                        : Colors.black,
                                 visualDensity: VisualDensity.compact,
                                 onChanged: (valor) => aoAlterarMarcacao(
                                   item,
@@ -589,7 +591,7 @@ class _TabelaItensCompacta extends StatelessWidget {
                                               const EdgeInsets.only(right: 4),
                                           decoration: BoxDecoration(
                                             shape: BoxShape.circle,
-                                            color: corCategoriaComContraste,
+                                            color: corCategoria,
                                           ),
                                         ),
                                         Expanded(
@@ -672,7 +674,7 @@ class _TabelaItensCompacta extends StatelessWidget {
                                 icon: Icon(
                                   PhosphorIcons.pencilSimple,
                                   size: 20,
-                                  color: corListaComContraste,
+                                  color: corLista,
                                 ),
                               ),
                             ),

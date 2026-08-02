@@ -4,7 +4,6 @@ import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 
 import '../../../core/constants/enums/prioridade.dart';
 import '../../../core/constants/enums/tipo_medida.dart';
-import '../../../core/extensions/cor_contraste_extension.dart';
 import '../../../core/utils/monetario_utils.dart';
 import '../model/item_model.dart';
 
@@ -27,8 +26,6 @@ class ItemDaListaWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tema = Theme.of(context);
-    final corCategoriaComContraste = corCategoria.paraPrimeiroPlano(tema);
-    final corAcaoComContraste = corAcao.paraPrimeiroPlano(tema);
     return Material(
       color: item.obtido ? corCategoria.withAlpha(28) : Colors.transparent,
       child: InkWell(
@@ -39,9 +36,9 @@ class ItemDaListaWidget extends StatelessWidget {
               Container(width: 7, color: _corPrioridade(tema, item.prioridade)),
               Checkbox(
                 value: item.obtido,
-                activeColor: corCategoriaComContraste,
-                side: BorderSide(color: corCategoriaComContraste, width: 2),
-                checkColor: corCategoriaComContraste.corSobre,
+                activeColor: corCategoria,
+                side: BorderSide(color: corCategoria, width: 2),
+                checkColor: _corSobre(corCategoria),
                 visualDensity: VisualDensity.compact,
                 onChanged: (valor) => aoAlterarMarcacao(valor ?? false),
               ),
@@ -103,7 +100,7 @@ class ItemDaListaWidget extends StatelessWidget {
                 visualDensity: VisualDensity.compact,
                 icon: Icon(
                   PhosphorIcons.pencilSimple,
-                  color: corAcaoComContraste,
+                  color: corAcao,
                 ),
               ),
             ],
@@ -134,4 +131,10 @@ class ItemDaListaWidget extends StatelessWidget {
         Prioridade.media => Colors.orange,
         Prioridade.alta => tema.colorScheme.error,
       };
+
+  Color _corSobre(Color fundo) {
+    return ThemeData.estimateBrightnessForColor(fundo) == Brightness.dark
+        ? Colors.white
+        : Colors.black;
+  }
 }

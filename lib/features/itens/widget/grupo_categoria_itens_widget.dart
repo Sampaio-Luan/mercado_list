@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../../core/extensions/cor_contraste_extension.dart';
 import '../../../core/utils/monetario_utils.dart';
 import '../model/categoria_com_itens_model.dart';
 import '../model/item_model.dart';
@@ -44,8 +43,7 @@ class _GrupoCategoriaItensWidgetState extends State<GrupoCategoriaItensWidget> {
     final tema = Theme.of(context);
     final grupo = widget.grupo;
     final corCategoria = grupo.categoria.cor;
-    final corSobreCategoria = corCategoria.corSobre;
-    final corCategoriaComContraste = corCategoria.paraPrimeiroPlano(tema);
+    final corSobreCategoria = _corSobre(corCategoria);
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       clipBehavior: Clip.antiAlias,
@@ -143,15 +141,12 @@ class _GrupoCategoriaItensWidgetState extends State<GrupoCategoriaItensWidget> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    'Total',
-                    style: TextStyle(color: corCategoriaComContraste),
-                  ),
+                  Text('Total', style: TextStyle(color: corSobreCategoria)),
                   RichText(
                     text: TextSpan(
                       text: '',
                       style: TextStyle(
-                        color: corCategoriaComContraste,
+                        color: corSobreCategoria,
                         fontWeight: FontWeight.w600,
                       ),
                       children: [
@@ -159,14 +154,14 @@ class _GrupoCategoriaItensWidgetState extends State<GrupoCategoriaItensWidget> {
                           text:
                               '${MonetarioUtils.formatarIntToMoeda(grupo.subtotal)} / ',
                           style: TextStyle(
-                            color: corCategoriaComContraste.withAlpha(150),
+                            color: corSobreCategoria.withAlpha(130),
                           ),
                         ),
                         TextSpan(
                           text: MonetarioUtils.formatarIntToMoeda(
                             grupo.totalMarcado,
                           ),
-                          style: TextStyle(color: corCategoriaComContraste),
+                          style: TextStyle(color: corSobreCategoria),
                         ),
                       ],
                     ),
@@ -178,6 +173,12 @@ class _GrupoCategoriaItensWidgetState extends State<GrupoCategoriaItensWidget> {
         ],
       ),
     );
+  }
+
+  Color _corSobre(Color fundo) {
+    return ThemeData.estimateBrightnessForColor(fundo) == Brightness.dark
+        ? Colors.white
+        : Colors.black;
   }
 }
 

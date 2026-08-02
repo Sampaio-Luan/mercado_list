@@ -59,10 +59,7 @@ class _FiltroItensSheetState extends State<FiltroItensSheet> {
                   .toList(growable: false),
               selected: {situacao},
               showSelectedIcon: false,
-              style: EstiloSelecaoItens.segmentado(
-                widget.corLista,
-                Theme.of(context),
-              ),
+              style: EstiloSelecaoItens.segmentado(widget.corLista),
               onSelectionChanged: (valor) {
                 setState(() => situacao = valor.first);
               },
@@ -92,10 +89,7 @@ class _FiltroItensSheetState extends State<FiltroItensSheet> {
               ],
               selected: {prioridade},
               showSelectedIcon: false,
-              style: EstiloSelecaoItens.segmentado(
-                widget.corLista,
-                Theme.of(context),
-              ),
+              style: EstiloSelecaoItens.segmentado(widget.corLista),
               onSelectionChanged: (valor) {
                 setState(() => prioridade = valor.first);
               },
@@ -112,10 +106,7 @@ class _FiltroItensSheetState extends State<FiltroItensSheet> {
               ],
               selected: {possuiPreco},
               showSelectedIcon: false,
-              style: EstiloSelecaoItens.segmentado(
-                widget.corLista,
-                Theme.of(context),
-              ),
+              style: EstiloSelecaoItens.segmentado(widget.corLista),
               onSelectionChanged: (valor) {
                 setState(() => possuiPreco = valor.first);
               },

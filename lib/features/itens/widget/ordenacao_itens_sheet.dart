@@ -55,10 +55,7 @@ class _OrdenacaoItensSheetState extends State<OrdenacaoItensSheet> {
               ],
               selected: {ordenarPor},
               showSelectedIcon: false,
-              style: EstiloSelecaoItens.segmentado(
-                widget.corLista,
-                Theme.of(context),
-              ),
+              style: EstiloSelecaoItens.segmentado(widget.corLista),
               onSelectionChanged: (valor) {
                 setState(() => ordenarPor = valor.first);
               },
@@ -79,10 +76,7 @@ class _OrdenacaoItensSheetState extends State<OrdenacaoItensSheet> {
             ],
             selected: {ordem},
             showSelectedIcon: false,
-            style: EstiloSelecaoItens.segmentado(
-              widget.corLista,
-              Theme.of(context),
-            ),
+            style: EstiloSelecaoItens.segmentado(widget.corLista),
             onSelectionChanged: (valor) {
               setState(() => ordem = valor.first);
             },

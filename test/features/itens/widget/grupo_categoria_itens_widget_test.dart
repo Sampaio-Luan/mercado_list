@@ -211,7 +211,7 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('usa onSurface quando a categoria não contrasta com o tema',
+  testWidgets('mantém a cor da categoria mesmo quando ela é clara',
       (tester) async {
     final tema = ThemeData.light().copyWith(
       colorScheme: ThemeData.light().colorScheme.copyWith(
@@ -258,12 +258,12 @@ void main() {
             ),
           )
           .color,
-      Colors.black,
+      Colors.yellow,
     );
     final checkbox = tester.widget<Checkbox>(
       find.descendant(of: item, matching: find.byType(Checkbox)),
     );
-    expect(checkbox.activeColor, Colors.black);
-    expect(checkbox.side, const BorderSide(color: Colors.black, width: 2));
+    expect(checkbox.activeColor, Colors.yellow);
+    expect(checkbox.side, const BorderSide(color: Colors.yellow, width: 2));
   });
 }
