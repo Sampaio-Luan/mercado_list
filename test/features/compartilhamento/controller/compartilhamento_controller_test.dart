@@ -26,6 +26,7 @@ void main() {
     controller.alternarCampo(CampoCompartilhamento.titulo);
     controller.alternarCampo(CampoCompartilhamento.status);
 
+    expect(controller.formato, FormatoCompartilhamento.texto);
     expect(
       controller.camposSelecionados,
       containsAll([
@@ -65,15 +66,15 @@ void main() {
         geradores: [GeradorTextoCompartilhamento()],
       ),
     );
-    controller.selecionarFormato(FormatoCompartilhamento.texto);
     controller.alternarCampo(CampoCompartilhamento.status);
 
     final resultado = await controller.compartilhar();
 
     expect(resultado, ShareResultStatus.success);
     expect(compartilhador.arquivos, isEmpty);
-    expect(compartilhador.texto, contains('• Arroz'));
-    expect(compartilhador.texto, contains('Status: Marcado'));
+    expect(compartilhador.texto, contains('1. Arroz ✅'));
+    expect(compartilhador.texto, contains('2. Feijão\n'));
+    expect(compartilhador.texto, isNot(contains('Status:')));
     expect(compartilhador.texto, contains('Baixe o app:'));
   });
 }

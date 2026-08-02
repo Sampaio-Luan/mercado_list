@@ -69,18 +69,20 @@ void main() {
         (await GeradorTextoCompartilhamento().gerar(configuracao)).single;
     final texto = utf8.decode(arquivo.bytes);
 
-    expect(texto, contains('• Café'));
-    expect(texto, contains('Categoria: Mercearia'));
-    expect(texto, contains(r'Preço: R$ 12,50'));
+    expect(
+      texto,
+      contains(r'1. Café • Categoria: Mercearia • Preço: R$ 12,50 ✅'),
+    );
+    expect(texto, isNot(contains('Status:')));
     expect(texto, contains(IdentidadeCompartilhamento.mensagem));
   });
 
   test('CSV é compatível com Excel e preserva acentos', () async {
     final arquivo =
         (await GeradorCsvCompartilhamento().gerar(configuracao)).single;
-    final texto = utf8.decode(arquivo.bytes);
+    final texto = _decodificarUtf16Le(arquivo.bytes);
 
-    expect(arquivo.bytes.take(3), [0xEF, 0xBB, 0xBF]);
+    expect(arquivo.bytes.take(2), [0xFF, 0xFE]);
     expect(texto, contains('Título;Categoria;Preço;Status'));
     expect(texto, contains('Café;Mercearia;'));
     expect(texto, isNot(contains('Pão')));
@@ -112,11 +114,14 @@ void main() {
       configuracaoUnicode,
     ))
         .single;
-    final linhas = csv_lib.excel.decode(utf8.decode(arquivo.bytes));
+    final texto = _decodificarUtf16Le(arquivo.bytes);
+    final linhas = const csv_lib.CsvDecoder(
+      fieldDelimiter: ';',
+    ).convert(texto);
 
-    expect(arquivo.mimeType, 'text/csv; charset=utf-8');
+    expect(arquivo.mimeType, 'text/csv; charset=utf-16le');
     expect(linhas[1], ['Café ☕', r'R$ 12,50', 'Marcado']);
-    expect(utf8.decode(arquivo.bytes), isNot(contains('\u00A0')));
+    expect(texto, isNot(contains('\u00A0')));
   });
 
   test('CSV neutraliza conteúdo que poderia ser executado como fórmula',
@@ -137,7 +142,7 @@ void main() {
     ))
         .single;
 
-    expect(utf8.decode(arquivo.bytes), contains("'=1+1"));
+    expect(_decodificarUtf16Le(arquivo.bytes), contains("'=1+1"));
   });
 
   test('Excel cria uma planilha válida com cabeçalho e dados', () async {
@@ -188,6 +193,14 @@ void main() {
     frame.image.dispose();
     codec.dispose();
   });
+}
+
+String _decodificarUtf16Le(List<int> bytes) {
+  final unidades = <int>[];
+  for (var indice = 2; indice + 1 < bytes.length; indice += 2) {
+    unidades.add(bytes[indice] | (bytes[indice + 1] << 8));
+  }
+  return String.fromCharCodes(unidades);
 }
 
 bool _possuiPixelDeTextoNosItens(

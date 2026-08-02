@@ -35,13 +35,18 @@ class GeradorTextoCompartilhamento implements GeradorArquivoCompartilhamento {
     if (tabela.conteudo.descricao?.trim().isNotEmpty == true) {
       texto.writeln(tabela.conteudo.descricao!.trim());
     }
-    for (final item in tabela.itens) {
-      texto.writeln('\n• ${item.titulo}');
+    for (final (indice, item) in tabela.itens.indexed) {
+      final linha = StringBuffer('${indice + 1}. ${item.titulo}');
       for (final campo in tabela.campos) {
-        if (campo == CampoCompartilhamento.titulo) continue;
+        if (campo == CampoCompartilhamento.titulo ||
+            campo == CampoCompartilhamento.status) {
+          continue;
+        }
         final valor = tabela.valorFormatado(item, campo);
-        if (valor.isNotEmpty) texto.writeln('  ${campo.rotulo}: $valor');
+        if (valor.isNotEmpty) linha.write(' • ${campo.rotulo}: $valor');
       }
+      if (item.marcado == true) linha.write(' ✅');
+      texto.writeln(linha);
     }
     texto
       ..writeln()
@@ -114,12 +119,15 @@ class GeradorCsvCompartilhamento implements GeradorArquivoCompartilhamento {
       const [],
       [IdentidadeCompartilhamento.rodape],
     ];
-    final conteudo = csv_lib.excel.encode(linhas);
+    final conteudo = const csv_lib.CsvEncoder(
+      fieldDelimiter: ';',
+      lineDelimiter: '\r\n',
+    ).convert(linhas);
     return [
       ArquivoCompartilhamento(
         nome: '${_nomeBase(tabela)}.csv',
         mimeType: formato.mimeType,
-        bytes: utf8.encode(conteudo),
+        bytes: _codificarUtf16LeComBom(conteudo),
       ),
     ];
   }
@@ -461,4 +469,17 @@ String _nomeBase(TabelaCompartilhamento tabela) {
 
 String _protegerCelulaCsv(String valor) {
   return RegExp(r'^[=+\-@\t\r]').hasMatch(valor) ? "'$valor" : valor;
+}
+
+Uint8List _codificarUtf16LeComBom(String texto) {
+  final unidades = texto.codeUnits;
+  final bytes = Uint8List(2 + unidades.length * 2)
+    ..[0] = 0xFF
+    ..[1] = 0xFE;
+  var indice = 2;
+  for (final unidade in unidades) {
+    bytes[indice++] = unidade & 0xFF;
+    bytes[indice++] = unidade >> 8;
+  }
+  return bytes;
 }

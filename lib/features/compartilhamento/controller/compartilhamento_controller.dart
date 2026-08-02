@@ -14,7 +14,7 @@ class CompartilhamentoController extends ChangeNotifier {
   final CompartilhamentoService _service;
 
   EscopoCompartilhamento escopo = EscopoCompartilhamento.todos;
-  FormatoCompartilhamento formato = FormatoCompartilhamento.pdf;
+  FormatoCompartilhamento formato = FormatoCompartilhamento.texto;
   Set<CampoCompartilhamento> camposSelecionados;
   bool compartilhando = false;
   String? mensagemErro;

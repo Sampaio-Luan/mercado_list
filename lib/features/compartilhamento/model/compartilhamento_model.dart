@@ -30,7 +30,7 @@ enum FormatoCompartilhamento {
   texto('Texto', 'txt', 'text/plain; charset=utf-8'),
   imagem('Imagem', 'png', 'image/png'),
   pdf('PDF', 'pdf', 'application/pdf'),
-  csv('CSV', 'csv', 'text/csv; charset=utf-8'),
+  csv('CSV', 'csv', 'text/csv; charset=utf-16le'),
   excel(
     'Excel',
     'xlsx',
