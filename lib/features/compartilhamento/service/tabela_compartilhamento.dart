@@ -86,7 +86,7 @@ class TabelaCompartilhamento {
     final quantidade = item.quantidade;
     if (quantidade == null) return '';
     if (item.unidade == 'kg') {
-      return NumberFormat.decimalPattern('pt_BR').format(quantidade / 1000);
+      return NumberFormat('0.000', 'pt_BR').format(quantidade / 1000);
     }
     return quantidade.toString();
   }

@@ -71,10 +71,101 @@ void main() {
 
     expect(
       texto,
-      contains(r'1. Café • Categoria: Mercearia • Preço: R$ 12,50 ✅'),
+      contains(r'Preço: R$ 12,50 • Café ✅ • Categoria: Mercearia'),
     );
     expect(texto, isNot(contains('Status:')));
     expect(texto, contains(IdentidadeCompartilhamento.mensagem));
+  });
+
+  test('texto monta cálculo, prioridade e status na ordem selecionada',
+      () async {
+    final configuracaoCompleta = ConfiguracaoCompartilhamento(
+      conteudo: const ConteudoCompartilhamento(
+        contexto: ContextoCompartilhamento.lista,
+        titulo: 'Mercado',
+        itens: [
+          ItemCompartilhamento(
+            titulo: 'Macarrão',
+            quantidade: 3,
+            unidade: 'und',
+            preco: 363,
+            total: 1089,
+            prioridade: 'Alta',
+            marcado: true,
+          ),
+          ItemCompartilhamento(
+            titulo: 'Batata',
+            quantidade: 1500,
+            unidade: 'kg',
+            preco: 1000,
+            total: 1500,
+            prioridade: 'Neutra',
+            marcado: false,
+          ),
+        ],
+      ),
+      escopo: EscopoCompartilhamento.todos,
+      campos: const {
+        CampoCompartilhamento.titulo,
+        CampoCompartilhamento.quantidade,
+        CampoCompartilhamento.unidade,
+        CampoCompartilhamento.preco,
+        CampoCompartilhamento.total,
+        CampoCompartilhamento.prioridade,
+        CampoCompartilhamento.status,
+      },
+      formato: FormatoCompartilhamento.texto,
+    );
+
+    final arquivo = (await GeradorTextoCompartilhamento().gerar(
+      configuracaoCompleta,
+    ))
+        .single;
+    final texto = utf8.decode(arquivo.bytes);
+
+    expect(
+      texto,
+      contains(r'3 und x 3,63 = R$ 10,89 • Macarrão (A) ✅'),
+    );
+    expect(
+      texto,
+      contains(r'1,500 kg x 10,00 = R$ 15,00 • Batata (N)'),
+    );
+  });
+
+  test('texto não exibe campos nem operadores que não foram selecionados',
+      () async {
+    final configuracaoMinima = ConfiguracaoCompartilhamento(
+      conteudo: const ConteudoCompartilhamento(
+        contexto: ContextoCompartilhamento.lista,
+        titulo: 'Mercado',
+        itens: [
+          ItemCompartilhamento(
+            titulo: 'Macarrão',
+            quantidade: 3,
+            unidade: 'und',
+            preco: 363,
+            total: 1089,
+            prioridade: 'Alta',
+            marcado: true,
+          ),
+        ],
+      ),
+      escopo: EscopoCompartilhamento.todos,
+      campos: const {CampoCompartilhamento.titulo},
+      formato: FormatoCompartilhamento.texto,
+    );
+
+    final arquivo = (await GeradorTextoCompartilhamento().gerar(
+      configuracaoMinima,
+    ))
+        .single;
+    final linhaItem = utf8
+        .decode(arquivo.bytes)
+        .split('\n')
+        .firstWhere((linha) => linha.contains('Macarrão'));
+
+    expect(linhaItem, 'Macarrão');
   });
 
   test('CSV é compatível com Excel e preserva acentos', () async {

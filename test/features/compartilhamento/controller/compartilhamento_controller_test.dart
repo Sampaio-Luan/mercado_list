@@ -72,8 +72,8 @@ void main() {
 
     expect(resultado, ShareResultStatus.success);
     expect(compartilhador.arquivos, isEmpty);
-    expect(compartilhador.texto, contains('1. Arroz ✅'));
-    expect(compartilhador.texto, contains('2. Feijão\n'));
+    expect(compartilhador.texto, contains('Arroz ✅'));
+    expect(compartilhador.texto, contains('Feijão\n'));
     expect(compartilhador.texto, isNot(contains('Status:')));
     expect(compartilhador.texto, contains('Baixe o app:'));
   });

@@ -35,18 +35,8 @@ class GeradorTextoCompartilhamento implements GeradorArquivoCompartilhamento {
     if (tabela.conteudo.descricao?.trim().isNotEmpty == true) {
       texto.writeln(tabela.conteudo.descricao!.trim());
     }
-    for (final (indice, item) in tabela.itens.indexed) {
-      final linha = StringBuffer('${indice + 1}. ${item.titulo}');
-      for (final campo in tabela.campos) {
-        if (campo == CampoCompartilhamento.titulo ||
-            campo == CampoCompartilhamento.status) {
-          continue;
-        }
-        final valor = tabela.valorFormatado(item, campo);
-        if (valor.isNotEmpty) linha.write(' • ${campo.rotulo}: $valor');
-      }
-      if (item.marcado == true) linha.write(' ✅');
-      texto.writeln(linha);
+    for (final item in tabela.itens) {
+      texto.writeln(_formatarLinhaItem(tabela, item));
     }
     texto
       ..writeln()
@@ -59,6 +49,69 @@ class GeradorTextoCompartilhamento implements GeradorArquivoCompartilhamento {
       ),
     ];
   }
+
+  String _formatarLinhaItem(
+    TabelaCompartilhamento tabela,
+    ItemCompartilhamento item,
+  ) {
+    bool selecionado(CampoCompartilhamento campo) =>
+        tabela.campos.contains(campo);
+    String valor(CampoCompartilhamento campo) =>
+        tabela.valorFormatado(item, campo);
+
+    final quantidade = selecionado(CampoCompartilhamento.quantidade)
+        ? valor(CampoCompartilhamento.quantidade)
+        : '';
+    final unidade = selecionado(CampoCompartilhamento.unidade)
+        ? valor(CampoCompartilhamento.unidade)
+        : '';
+    final preco = selecionado(CampoCompartilhamento.preco)
+        ? valor(CampoCompartilhamento.preco)
+        : '';
+    final total = selecionado(CampoCompartilhamento.total)
+        ? valor(CampoCompartilhamento.total)
+        : '';
+    final medida = [
+      quantidade,
+      unidade,
+    ].where((parte) => parte.isNotEmpty).join(' ');
+    final partes = <String>[];
+
+    if (medida.isNotEmpty && preco.isNotEmpty) {
+      final calculo = StringBuffer('$medida x ${_removerSimboloReal(preco)}');
+      if (total.isNotEmpty) calculo.write(' = $total');
+      partes.add(calculo.toString());
+    } else {
+      if (medida.isNotEmpty) partes.add(medida);
+      if (preco.isNotEmpty) partes.add('Preço: $preco');
+      if (total.isNotEmpty) partes.add('Total: $total');
+    }
+
+    final titulo = StringBuffer(item.titulo);
+    if (selecionado(CampoCompartilhamento.prioridade)) {
+      final prioridade = valor(CampoCompartilhamento.prioridade).trim();
+      if (prioridade.isNotEmpty) {
+        titulo.write(' (${prioridade.substring(0, 1).toUpperCase()})');
+      }
+    }
+    if (selecionado(CampoCompartilhamento.status) && item.marcado == true) {
+      titulo.write(' ✅');
+    }
+    partes.add(titulo.toString());
+
+    for (final campo in const [
+      CampoCompartilhamento.categoria,
+      CampoCompartilhamento.observacao,
+    ]) {
+      if (!selecionado(campo)) continue;
+      final conteudo = valor(campo);
+      if (conteudo.isNotEmpty) partes.add('${campo.rotulo}: $conteudo');
+    }
+    return partes.join(' • ');
+  }
+
+  String _removerSimboloReal(String valor) =>
+      valor.replaceFirst(RegExp(r'^R\$\s*'), '');
 }
 
 class GeradorJsonCompartilhamento implements GeradorArquivoCompartilhamento {
