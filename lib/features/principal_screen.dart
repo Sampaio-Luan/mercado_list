@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import 'package:provider/provider.dart';
 
+import '../core/extensions/cor_contraste_extension.dart';
 import '../core/extensions/snackbar_extension.dart';
 import 'itens/controller/itens_controller.dart';
 import 'itens/screen/lista_itens_screen.dart';
@@ -22,13 +23,14 @@ class PrincipalScreen extends StatelessWidget {
       (controller) => (controller.possuiItens, controller.possuiItensMarcados),
     );
     final itensController = context.read<ItensController>();
+    final corAcoes = lista?.cor.paraPrimeiroPlano(Theme.of(context));
     return Scaffold(
       resizeToAvoidBottomInset: false,
       drawer: const ListaDeListasScreen(),
       endDrawer: const ItensRecorrentesDrawer(),
       appBar: AppBar(
         title: Text(lista?.titulo ?? 'Mercado List'),
-        iconTheme: lista == null ? null : IconThemeData(color: lista.cor),
+        iconTheme: corAcoes == null ? null : IconThemeData(color: corAcoes),
         actions: [
           Hero(
             tag: 'pesquisa-itens-hero',
@@ -41,7 +43,7 @@ class PrincipalScreen extends StatelessWidget {
                     : null,
                 icon: Icon(
                   PhosphorIcons.magnifyingGlass,
-                  color: estadoItens.$1 ? lista?.cor : null,
+                  color: estadoItens.$1 ? corAcoes : null,
                 ),
               ),
             ),
@@ -56,7 +58,7 @@ class PrincipalScreen extends StatelessWidget {
                 : null,
             icon: Icon(
               PhosphorIcons.shareNetwork,
-              color: estadoItens.$1 ? lista?.cor : null,
+              color: estadoItens.$1 ? corAcoes : null,
             ),
           ),
           IconButton(
@@ -66,7 +68,7 @@ class PrincipalScreen extends StatelessWidget {
                 : null,
             icon: Icon(
               PhosphorIcons.clockCounterClockwise,
-              color: estadoItens.$2 ? lista?.cor : null,
+              color: estadoItens.$2 ? corAcoes : null,
             ),
           ),
         ],

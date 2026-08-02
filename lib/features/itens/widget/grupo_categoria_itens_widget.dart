@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/extensions/cor_contraste_extension.dart';
 import '../../../core/utils/monetario_utils.dart';
 import '../model/categoria_com_itens_model.dart';
 import '../model/item_model.dart';
@@ -10,7 +11,6 @@ class GrupoCategoriaItensWidget extends StatefulWidget {
   final CategoriaComItens grupo;
   final String chaveEstado;
   final bool inicialmenteExpandido;
-  final Color corAcoes;
   final ValueChanged<bool> aoAlterarExpansao;
   final void Function(Item item, bool marcado) aoAlterarMarcacao;
   final ValueChanged<Item> aoEditar;
@@ -20,7 +20,6 @@ class GrupoCategoriaItensWidget extends StatefulWidget {
     required this.grupo,
     required this.chaveEstado,
     required this.inicialmenteExpandido,
-    required this.corAcoes,
     required this.aoAlterarExpansao,
     required this.aoAlterarMarcacao,
     required this.aoEditar,
@@ -45,7 +44,8 @@ class _GrupoCategoriaItensWidgetState extends State<GrupoCategoriaItensWidget> {
     final tema = Theme.of(context);
     final grupo = widget.grupo;
     final corCategoria = grupo.categoria.cor;
-    final corSobreCategoria = _corSobre(corCategoria);
+    final corSobreCategoria = corCategoria.corSobre;
+    final corCategoriaComContraste = corCategoria.paraPrimeiroPlano(tema);
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       clipBehavior: Clip.antiAlias,
@@ -127,7 +127,6 @@ class _GrupoCategoriaItensWidgetState extends State<GrupoCategoriaItensWidget> {
               itens: grupo.itens,
               chaveRolagem: 'rolagem-${widget.chaveEstado}',
               corCategoria: corCategoria,
-              corAcoes: widget.corAcoes,
               aoAlterarMarcacao: widget.aoAlterarMarcacao,
               aoEditar: widget.aoEditar,
             ),
@@ -144,12 +143,15 @@ class _GrupoCategoriaItensWidgetState extends State<GrupoCategoriaItensWidget> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('Total', style: TextStyle(color: corSobreCategoria)),
+                  Text(
+                    'Total',
+                    style: TextStyle(color: corCategoriaComContraste),
+                  ),
                   RichText(
                     text: TextSpan(
                       text: '',
                       style: TextStyle(
-                        color: corSobreCategoria,
+                        color: corCategoriaComContraste,
                         fontWeight: FontWeight.w600,
                       ),
                       children: [
@@ -157,14 +159,14 @@ class _GrupoCategoriaItensWidgetState extends State<GrupoCategoriaItensWidget> {
                           text:
                               '${MonetarioUtils.formatarIntToMoeda(grupo.subtotal)} / ',
                           style: TextStyle(
-                            color: corSobreCategoria.withAlpha(130),
+                            color: corCategoriaComContraste.withAlpha(150),
                           ),
                         ),
                         TextSpan(
                           text: MonetarioUtils.formatarIntToMoeda(
                             grupo.totalMarcado,
                           ),
-                          style: TextStyle(color: corSobreCategoria),
+                          style: TextStyle(color: corCategoriaComContraste),
                         ),
                       ],
                     ),
@@ -177,12 +179,6 @@ class _GrupoCategoriaItensWidgetState extends State<GrupoCategoriaItensWidget> {
       ),
     );
   }
-
-  Color _corSobre(Color fundo) {
-    return ThemeData.estimateBrightnessForColor(fundo) == Brightness.dark
-        ? Colors.white
-        : Colors.black;
-  }
 }
 
 class _ItensDaCategoria extends StatefulWidget {
@@ -192,7 +188,6 @@ class _ItensDaCategoria extends StatefulWidget {
   final List<Item> itens;
   final String chaveRolagem;
   final Color corCategoria;
-  final Color corAcoes;
   final void Function(Item item, bool marcado) aoAlterarMarcacao;
   final ValueChanged<Item> aoEditar;
 
@@ -200,7 +195,6 @@ class _ItensDaCategoria extends StatefulWidget {
     required this.itens,
     required this.chaveRolagem,
     required this.corCategoria,
-    required this.corAcoes,
     required this.aoAlterarMarcacao,
     required this.aoEditar,
   });
@@ -252,7 +246,6 @@ class _ItensDaCategoriaState extends State<_ItensDaCategoria> {
               key: ValueKey(itens[indice].id ?? itens[indice]),
               item: itens[indice],
               corCategoria: widget.corCategoria,
-              corAcoes: widget.corAcoes,
               aoAlterarMarcacao: widget.aoAlterarMarcacao,
               aoEditar: widget.aoEditar,
             ),
@@ -286,7 +279,6 @@ class _ItensDaCategoriaState extends State<_ItensDaCategoria> {
                 key: ValueKey(itens[indice].id ?? itens[indice]),
                 item: itens[indice],
                 corCategoria: widget.corCategoria,
-                corAcoes: widget.corAcoes,
                 aoAlterarMarcacao: widget.aoAlterarMarcacao,
                 aoEditar: widget.aoEditar,
               ),
@@ -301,7 +293,6 @@ class _ItensDaCategoriaState extends State<_ItensDaCategoria> {
 class _ItemDaCategoria extends StatelessWidget {
   final Item item;
   final Color corCategoria;
-  final Color corAcoes;
   final void Function(Item item, bool marcado) aoAlterarMarcacao;
   final ValueChanged<Item> aoEditar;
 
@@ -309,7 +300,6 @@ class _ItemDaCategoria extends StatelessWidget {
     super.key,
     required this.item,
     required this.corCategoria,
-    required this.corAcoes,
     required this.aoAlterarMarcacao,
     required this.aoEditar,
   });
@@ -319,7 +309,7 @@ class _ItemDaCategoria extends StatelessWidget {
     return ItemDaListaWidget(
       item: item,
       corCategoria: corCategoria,
-      corAcao: corAcoes,
+      corAcao: corCategoria,
       aoAlterarMarcacao: (valor) => aoAlterarMarcacao(item, valor),
       aoEditar: () => aoEditar(item),
     );

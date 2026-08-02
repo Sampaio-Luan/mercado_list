@@ -21,6 +21,9 @@ class FiltroItens {
       prioridade != null ||
       possuiPreco != null;
 
+  bool get possuiFiltrosAdicionais =>
+      idCategoria != null || prioridade != null || possuiPreco != null;
+
   FiltroItens copyWith({
     SituacaoItem? situacao,
     int? idCategoria,

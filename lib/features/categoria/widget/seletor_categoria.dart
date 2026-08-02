@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import 'package:provider/provider.dart';
 
+import '../../../core/extensions/cor_contraste_extension.dart';
 import '../../../core/extensions/snackbar_extension.dart';
 import '../../../shared/widgets/painel_pesquisa/painel_pesquisa_exportacoes.dart';
 import '../controller/categorias_controller.dart';
@@ -49,8 +50,9 @@ abstract final class SeletorCategoria {
           ? permitirTodas && idSelecionado == null
           : opcao.idCategoria == idSelecionado;
     }).toList(growable: false);
-    final cor = corDestaque ?? Theme.of(context).colorScheme.primary;
     final temaBase = Theme.of(context);
+    final cor = (corDestaque ?? temaBase.colorScheme.primary)
+        .paraPrimeiroPlano(temaBase);
 
     final resposta = await PainelPesquisa.exibir<ResultadoSelecaoCategoria>(
       context: context,

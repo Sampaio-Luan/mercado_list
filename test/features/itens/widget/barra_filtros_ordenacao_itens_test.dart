@@ -6,14 +6,16 @@ import 'package:mercado_list/core/constants/enums/prioridade.dart';
 import 'package:mercado_list/features/categoria/model/categoria_model.dart';
 import 'package:mercado_list/features/itens/model/filtro_itens.dart';
 import 'package:mercado_list/features/itens/widget/barra_filtros_ordenacao_itens.dart';
+import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 
 void main() {
-  testWidgets('exibe resumos padrão compactos e ações nas extremidades',
+  testWidgets('exibe situações rápidas e ordenação em um único controle',
       (tester) async {
     tester.view.physicalSize = const Size(360, 800);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
+    SituacaoItem? situacaoSelecionada;
     var abriuFiltros = false;
     var abriuOrdenacao = false;
 
@@ -29,58 +31,49 @@ void main() {
               ordenarPor: OrdenarPor.nome,
               ordem: Ordem.ascendente,
               corLista: Colors.indigo,
+              aoAlterarSituacao: (valor) => situacaoSelecionada = valor,
               aoAbrirFiltros: () => abriuFiltros = true,
               aoLimparFiltros: () {},
               aoAbrirOrdenacao: () => abriuOrdenacao = true,
-              aoLimparOrdenacao: () {},
             ),
           ),
         ),
       ),
     );
 
-    final resumoFiltro = find.byKey(
-      const ValueKey('resumo-filtros-itens'),
-    );
-    final resumoOrdenacao = find.byKey(
-      const ValueKey('resumo-ordenacao-itens'),
-    );
-    expect(find.text('Todos'), findsOneWidget);
-    expect(find.text('Nome / Crescente'), findsOneWidget);
-    expect(find.byType(ChoiceChip), findsNothing);
-    for (final finder in [resumoFiltro, resumoOrdenacao]) {
-      final chip = tester.widget<InputChip>(finder);
-      expect(chip.padding, EdgeInsets.zero);
-      expect(
-        chip.visualDensity,
-        const VisualDensity(horizontal: -4, vertical: -4),
-      );
-      expect(chip.materialTapTargetSize, MaterialTapTargetSize.shrinkWrap);
-      expect(chip.onDeleted, isNull);
-    }
-
-    final filtro = find.byKey(const ValueKey('mais-filtros-itens'));
-    final divisor = find.byKey(
-      const ValueKey('divisor-filtro-ordenacao-itens'),
-    );
-    final ordenacao = find.byKey(const ValueKey('ordenar-itens'));
-    expect(tester.getCenter(filtro).dx, lessThan(tester.getCenter(divisor).dx));
+    expect(find.byType(ChoiceChip), findsNWidgets(3));
     expect(
-      tester.getCenter(divisor).dx,
-      lessThan(tester.getCenter(ordenacao).dx),
+      tester
+          .widget<ChoiceChip>(
+            find.byKey(const ValueKey('situacao-itens-todos')),
+          )
+          .selected,
+      isTrue,
     );
+    expect(find.text('Pendentes'), findsOneWidget);
+    expect(find.text('Marcados'), findsOneWidget);
+    expect(find.byKey(const ValueKey('resumo-filtros-itens')), findsNothing);
 
-    await tester.tap(resumoFiltro);
-    await tester.tap(resumoOrdenacao);
+    final ordenacao = find.byKey(const ValueKey('ordenar-itens'));
+    final chipOrdenacao = tester.widget<InputChip>(ordenacao);
+    expect(find.text('Nome'), findsOneWidget);
+    expect(find.byIcon(PhosphorIcons.sortAscending), findsOneWidget);
+    expect(chipOrdenacao.backgroundColor, Colors.transparent);
+    expect(chipOrdenacao.side, const BorderSide(color: Colors.indigo));
+    expect(chipOrdenacao.labelStyle?.color, Colors.indigo);
+
+    await tester.tap(find.byKey(const ValueKey('situacao-itens-pendentes')));
+    await tester.tap(find.byKey(const ValueKey('mais-filtros-itens')));
+    await tester.tap(ordenacao);
+    expect(situacaoSelecionada, SituacaoItem.pendentes);
     expect(abriuFiltros, isTrue);
     expect(abriuOrdenacao, isTrue);
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('consolida filtros e ordenação e permite restaurar ambos',
+  testWidgets('consolida filtros adicionais e mantém ordenação delineada',
       (tester) async {
     var limpouFiltros = false;
-    var limpouOrdenacao = false;
     final filtro = FiltroItens(
       situacao: SituacaoItem.pendentes,
       idCategoria: 1,
@@ -107,10 +100,10 @@ void main() {
               ordenarPor: OrdenarPor.preco,
               ordem: Ordem.descendente,
               corLista: Colors.indigo,
+              aoAlterarSituacao: (_) {},
               aoAbrirFiltros: () {},
               aoLimparFiltros: () => limpouFiltros = true,
               aoAbrirOrdenacao: () {},
-              aoLimparOrdenacao: () => limpouOrdenacao = true,
             ),
           ),
         ),
@@ -120,30 +113,66 @@ void main() {
     final resumoFiltro = find.byKey(
       const ValueKey('resumo-filtros-itens'),
     );
-    final resumoOrdenacao = find.byKey(
-      const ValueKey('resumo-ordenacao-itens'),
-    );
+    expect(find.byType(ChoiceChip), findsNothing);
     expect(
       find.text('Pendentes / Com preço / P: Alta / Cat: Higiene'),
       findsOneWidget,
     );
-    expect(find.text('Preço / Decrescente'), findsOneWidget);
-
-    tester.widget<InputChip>(resumoFiltro).onDeleted!();
-    tester.widget<InputChip>(resumoOrdenacao).onDeleted!();
-    expect(limpouFiltros, isTrue);
-    expect(limpouOrdenacao, isTrue);
-
-    final ordenar = tester.widget<IconButton>(
+    expect(find.text('Preço'), findsOneWidget);
+    expect(find.textContaining('Decrescente'), findsNothing);
+    expect(find.byIcon(PhosphorIcons.sortDescending), findsOneWidget);
+    final ordenacao = tester.widget<InputChip>(
       find.byKey(const ValueKey('ordenar-itens')),
     );
-    expect(
-      ordenar.style?.backgroundColor?.resolve({}),
-      Colors.indigo.withAlpha(28),
+    expect(ordenacao.backgroundColor, Colors.transparent);
+    expect(ordenacao.side, const BorderSide(color: Colors.indigo));
+
+    tester.widget<InputChip>(resumoFiltro).onDeleted!();
+    expect(limpouFiltros, isTrue);
+  });
+
+  testWidgets('substitui cor clara sem contraste pela cor sobre a superfície',
+      (tester) async {
+    final tema = ThemeData.light().copyWith(
+      colorScheme: ThemeData.light().colorScheme.copyWith(
+            surface: Colors.white,
+            onSurface: Colors.black,
+          ),
     );
-    expect(
-      ordenar.style?.side?.resolve({}),
-      BorderSide(color: Colors.indigo.withAlpha(180)),
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: tema,
+        home: Scaffold(
+          body: BarraFiltrosOrdenacaoItens(
+            habilitada: true,
+            filtro: const FiltroItens(),
+            categorias: const [],
+            ordenarPor: OrdenarPor.nome,
+            ordem: Ordem.ascendente,
+            corLista: Colors.yellow,
+            aoAlterarSituacao: (_) {},
+            aoAbrirFiltros: () {},
+            aoLimparFiltros: () {},
+            aoAbrirOrdenacao: () {},
+          ),
+        ),
+      ),
     );
+
+    expect(
+      tester
+          .widget<IconButton>(
+            find.byKey(const ValueKey('mais-filtros-itens')),
+          )
+          .style
+          ?.foregroundColor
+          ?.resolve({}),
+      Colors.black,
+    );
+    final ordenacao = tester.widget<InputChip>(
+      find.byKey(const ValueKey('ordenar-itens')),
+    );
+    expect(ordenacao.side, const BorderSide(color: Colors.black));
+    expect(ordenacao.labelStyle?.color, Colors.black);
   });
 }

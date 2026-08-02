@@ -194,19 +194,26 @@ void main() {
     expect(find.text('Sabonete').hitTestable(), findsOneWidget);
   });
 
-  testWidgets('chip exibe somente filtros ativos e volta para Todos',
+  testWidgets('situações rápidas viram resumo com filtros adicionais',
       (tester) async {
     final ambiente = await _prepararAmbiente();
     await _montarApp(tester, ambiente);
 
     final resumo = find.byKey(const ValueKey('resumo-filtros-itens'));
-    expect(resumo, findsOneWidget);
-    expect(find.text('Todos'), findsOneWidget);
-    expect(tester.widget<InputChip>(resumo).onDeleted, isNull);
+    expect(resumo, findsNothing);
+    expect(find.byType(ChoiceChip), findsNWidgets(3));
+    expect(
+      tester
+          .widget<ChoiceChip>(
+            find.byKey(const ValueKey('situacao-itens-todos')),
+          )
+          .selected,
+      isTrue,
+    );
 
     await tester.tap(find.byKey(const ValueKey('mais-filtros-itens')));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Marcados'));
+    await tester.tap(find.text('Marcados').last);
     await tester.tap(find.text('Com preço'));
     await tester.tap(find.text('Alta'));
     await tester.tap(find.text('Aplicar'));
@@ -222,14 +229,21 @@ void main() {
     await tester.tap(find.text('Limpar'));
     await tester.pumpAndSettle();
 
-    expect(resumo, findsOneWidget);
-    expect(find.text('Todos'), findsOneWidget);
+    expect(resumo, findsNothing);
+    expect(find.byType(ChoiceChip), findsNWidgets(3));
     expect(
       ambiente.controller.itensController.filtro.situacao,
       SituacaoItem.todos,
     );
     expect(ambiente.controller.itensController.filtro.ativo, isFalse);
-    expect(tester.widget<InputChip>(resumo).onDeleted, isNull);
+    expect(
+      tester
+          .widget<ChoiceChip>(
+            find.byKey(const ValueKey('situacao-itens-todos')),
+          )
+          .selected,
+      isTrue,
+    );
   });
 
   testWidgets('ações usam cor da lista e filtro e ordenação saem do rodapé',
@@ -256,12 +270,9 @@ void main() {
     );
     expect(
       tester
-          .widget<IconButton>(
-            find.byKey(const ValueKey('ordenar-itens')),
-          )
-          .style
-          ?.foregroundColor
-          ?.resolve({}),
+          .widget<InputChip>(find.byKey(const ValueKey('ordenar-itens')))
+          .labelStyle
+          ?.color,
       Colors.indigo,
     );
     expect(
@@ -708,14 +719,13 @@ void main() {
 
     expect(ambiente.controller.itensController.ordenarPor, OrdenarPor.preco);
     expect(ambiente.controller.itensController.ordem, Ordem.descendente);
-    final botao = tester.widget<IconButton>(
+    final botao = tester.widget<InputChip>(
       find.byKey(const ValueKey('ordenar-itens')),
     );
-    expect(
-      botao.style?.backgroundColor?.resolve({}),
-      Colors.indigo.withAlpha(28),
-    );
-    expect(find.text('Preço / Decrescente'), findsOneWidget);
+    expect(botao.backgroundColor, Colors.transparent);
+    expect(botao.side, const BorderSide(color: Colors.indigo));
+    expect(botao.labelStyle?.color, Colors.indigo);
+    expect(find.text('Preço'), findsOneWidget);
     expect(find.byIcon(PhosphorIcons.sortDescending), findsOneWidget);
   });
 

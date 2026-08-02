@@ -10,8 +10,7 @@ import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 void main() {
   testWidgets('usa cor da categoria e exibe subtotal e total marcado no rodapé',
       (tester) async {
-    const corCategoria = Colors.green;
-    const corAcoes = Colors.indigo;
+    const corCategoria = Colors.indigo;
     final grupo = CategoriaComItens(
       categoria: Categoria(
         id: 1,
@@ -36,7 +35,6 @@ void main() {
       home: Scaffold(
         body: GrupoCategoriaItensWidget(
           grupo: grupo,
-          corAcoes: corAcoes,
           chaveEstado: 'estado-expansao-v2-lista-1-categoria-1-versao-0',
           inicialmenteExpandido: true,
           aoAlterarExpansao: (_) {},
@@ -131,7 +129,7 @@ void main() {
             ),
           )
           .color,
-      corAcoes,
+      corCategoria,
     );
 
     await tester.tap(find.text('Hortifruti'));
@@ -169,7 +167,6 @@ void main() {
       home: Scaffold(
         body: GrupoCategoriaItensWidget(
           grupo: grupo,
-          corAcoes: Colors.indigo,
           chaveEstado: 'estado-expansao-v2-lista-1-categoria-2-versao-0',
           inicialmenteExpandido: true,
           aoAlterarExpansao: (_) {},
@@ -212,5 +209,61 @@ void main() {
     await tester.tap(find.text('Mercearia'));
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('usa onSurface quando a categoria não contrasta com o tema',
+      (tester) async {
+    final tema = ThemeData.light().copyWith(
+      colorScheme: ThemeData.light().colorScheme.copyWith(
+            surface: Colors.white,
+            onSurface: Colors.black,
+          ),
+    );
+    final grupo = CategoriaComItens(
+      categoria: Categoria(
+        id: 3,
+        titulo: 'Padaria',
+        cor: Colors.yellow,
+        ordem: 3,
+      ),
+      itens: [
+        Item(id: 20, idLista: 1, idCategoria: 3, titulo: 'Pão'),
+      ],
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: tema,
+        home: Scaffold(
+          body: GrupoCategoriaItensWidget(
+            grupo: grupo,
+            chaveEstado: 'categoria-clara',
+            inicialmenteExpandido: true,
+            aoAlterarExpansao: (_) {},
+            aoAlterarMarcacao: (_, _) {},
+            aoEditar: (_) {},
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final item = find.byType(ItemDaListaWidget);
+    expect(
+      tester
+          .widget<Icon>(
+            find.descendant(
+              of: item,
+              matching: find.byIcon(PhosphorIcons.pencilSimple),
+            ),
+          )
+          .color,
+      Colors.black,
+    );
+    final checkbox = tester.widget<Checkbox>(
+      find.descendant(of: item, matching: find.byType(Checkbox)),
+    );
+    expect(checkbox.activeColor, Colors.black);
+    expect(checkbox.side, const BorderSide(color: Colors.black, width: 2));
   });
 }

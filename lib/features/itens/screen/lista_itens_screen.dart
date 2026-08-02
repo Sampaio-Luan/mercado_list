@@ -11,6 +11,7 @@ import '../../../core/constants/enums/prioridade.dart';
 import '../../../core/constants/enums/tipo_medida.dart';
 import '../../../core/constants/enums/tipo_visualizacao_itens.dart';
 import '../../../core/extensions/snackbar_extension.dart';
+import '../../../core/extensions/cor_contraste_extension.dart';
 import '../../../core/utils/monetario_utils.dart';
 import '../../../shared/widgets/campos_formulario/peso_field.dart';
 import '../../categoria/model/categoria_model.dart';
@@ -86,13 +87,12 @@ class _ListaItensScreenState extends State<ListaItensScreen> {
             ordenarPor: estado.ordenarPor,
             ordem: estado.ordem,
             corLista: lista.cor,
+            aoAlterarSituacao: (situacao) => estado.alterarFiltro(
+              estado.filtro.copyWith(situacao: situacao),
+            ),
             aoAbrirFiltros: () => _exibirFiltros(estado),
             aoLimparFiltros: () => estado.alterarFiltro(const FiltroItens()),
             aoAbrirOrdenacao: () => _exibirOrdenacao(estado),
-            aoLimparOrdenacao: () => estado.alterarOrdenacao(
-              OrdenarPor.nome,
-              Ordem.ascendente,
-            ),
           ),
         ),
         if (lista.orcamento != null)
@@ -332,7 +332,6 @@ class _VisualizacaoCategoriasItens extends StatelessWidget {
               aoAlterarExpansao(chaveExpansao, expandido),
           aoAlterarMarcacao: aoAlterarMarcacao,
           aoEditar: aoEditar,
-          corAcoes: controller.listaSelecionada!.cor,
         );
       },
     );
@@ -378,6 +377,7 @@ class _PesquisaItensScreenState extends State<_PesquisaItensScreen> {
     final corLista = context.select<ItensController, Color>(
       (controller) => controller.listaSelecionada!.cor,
     );
+    final corAcoes = corLista.paraPrimeiroPlano(Theme.of(context));
     return Scaffold(
       resizeToAvoidBottomInset: false,
       appBar: AppBar(
@@ -400,7 +400,7 @@ class _PesquisaItensScreenState extends State<_PesquisaItensScreen> {
                     : IconButton(
                         tooltip: 'Limpar pesquisa',
                         onPressed: _limparPesquisa,
-                        icon: Icon(PhosphorIcons.x, color: corLista),
+                        icon: Icon(PhosphorIcons.x, color: corAcoes),
                       ),
                 filled: true,
                 border: const OutlineInputBorder(),
@@ -422,9 +422,9 @@ class _PesquisaItensScreenState extends State<_PesquisaItensScreen> {
               onPressed: _fecharPesquisa,
               style: IconButton.styleFrom(
                 fixedSize: const Size.square(44),
-                backgroundColor: corLista.withAlpha(28),
-                foregroundColor: corLista,
-                side: BorderSide(color: corLista.withAlpha(180)),
+                backgroundColor: corAcoes.withAlpha(28),
+                foregroundColor: corAcoes,
+                side: BorderSide(color: corAcoes.withAlpha(180)),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
@@ -476,13 +476,15 @@ class _TabelaItensCompacta extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tema = Theme.of(context);
+    final corListaComContraste = corLista.paraPrimeiroPlano(tema);
     return LayoutBuilder(
       builder: (context, restricoes) {
         final mostrarTotalSeparado = restricoes.maxWidth >= 430;
         return Column(
           children: [
             Container(
-              color: Theme.of(context).colorScheme.surfaceContainer,
+              color: tema.colorScheme.surfaceContainer,
               padding: const EdgeInsets.symmetric(vertical: 7),
               child: Row(
                 children: [
@@ -524,9 +526,12 @@ class _TabelaItensCompacta extends StatelessWidget {
                   final item = itens[indice];
                   final categoria = categorias[item.idCategoria];
                   final total = item.valorTotal;
+                  final corCategoriaComContraste =
+                      categoria?.cor.paraPrimeiroPlano(tema) ??
+                          tema.colorScheme.outline;
                   return Material(
                     color: item.obtido
-                        ? corLista.withAlpha(24)
+                        ? corListaComContraste.withAlpha(28)
                         : Colors.transparent,
                     child: InkWell(
                       onTap: () => aoAlterarMarcacao(item, !item.obtido),
@@ -534,7 +539,7 @@ class _TabelaItensCompacta extends StatelessWidget {
                         child: Row(
                           children: [
                             Container(
-                              width: 3,
+                              width: 7,
                               color: _corPrioridadeTabela(
                                 context,
                                 item.prioridade,
@@ -544,15 +549,13 @@ class _TabelaItensCompacta extends StatelessWidget {
                               width: 45,
                               child: Checkbox(
                                 value: item.obtido,
-                                activeColor: corLista,
-                                side: BorderSide(color: corLista, width: 2),
-                                checkColor:
-                                    ThemeData.estimateBrightnessForColor(
-                                              corLista,
-                                            ) ==
-                                            Brightness.dark
-                                        ? Colors.white
-                                        : Colors.black,
+                                activeColor: corListaComContraste,
+                                side: BorderSide(
+                                  color: corListaComContraste,
+                                  width: 2,
+                                ),
+                                checkColor: corListaComContraste.corSobre,
+                                visualDensity: VisualDensity.compact,
                                 onChanged: (valor) => aoAlterarMarcacao(
                                   item,
                                   valor ?? false,
@@ -563,7 +566,7 @@ class _TabelaItensCompacta extends StatelessWidget {
                               flex: 5,
                               child: Padding(
                                 padding:
-                                    const EdgeInsets.symmetric(vertical: 8),
+                                    const EdgeInsets.symmetric(vertical: 3),
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
@@ -571,8 +574,10 @@ class _TabelaItensCompacta extends StatelessWidget {
                                       item.titulo,
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(
-                                        fontWeight: FontWeight.w600,
+                                      style: tema.textTheme.bodyLarge?.copyWith(
+                                        decoration: item.obtido
+                                            ? TextDecoration.lineThrough
+                                            : null,
                                       ),
                                     ),
                                     Row(
@@ -584,10 +589,7 @@ class _TabelaItensCompacta extends StatelessWidget {
                                               const EdgeInsets.only(right: 4),
                                           decoration: BoxDecoration(
                                             shape: BoxShape.circle,
-                                            color: categoria?.cor ??
-                                                Theme.of(context)
-                                                    .colorScheme
-                                                    .outline,
+                                            color: corCategoriaComContraste,
                                           ),
                                         ),
                                         Expanded(
@@ -596,9 +598,7 @@ class _TabelaItensCompacta extends StatelessWidget {
                                                 'Sem categoria',
                                             maxLines: 1,
                                             overflow: TextOverflow.ellipsis,
-                                            style: Theme.of(context)
-                                                .textTheme
-                                                .labelSmall,
+                                            style: tema.textTheme.labelSmall,
                                           ),
                                         ),
                                       ],
@@ -672,7 +672,7 @@ class _TabelaItensCompacta extends StatelessWidget {
                                 icon: Icon(
                                   PhosphorIcons.pencilSimple,
                                   size: 20,
-                                  color: corLista,
+                                  color: corListaComContraste,
                                 ),
                               ),
                             ),

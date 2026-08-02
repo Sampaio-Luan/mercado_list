@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 
 import '../../../core/constants/enums/prioridade.dart';
 import '../../../core/constants/enums/tipo_medida.dart';
+import '../../../core/extensions/cor_contraste_extension.dart';
 import '../../../core/constants/enums/tipo_visualizacao_itens.dart';
 import '../../../core/extensions/snackbar_extension.dart';
 import '../../../core/utils/monetario_utils.dart';
@@ -106,6 +107,10 @@ class CompositorItemState extends State<CompositorItemWidget> {
         : controller.sugerirItens(_titulo.text);
     final tema = Theme.of(context);
     final corLista = controller.listaSelecionada!.cor;
+    final corListaComContraste = corLista.paraPrimeiroPlano(
+      tema,
+      superficie: tema.colorScheme.surfaceContainer,
+    );
     return Material(
       elevation: 12,
       color: tema.colorScheme.surfaceContainer,
@@ -221,7 +226,10 @@ class CompositorItemState extends State<CompositorItemWidget> {
                           tooltip:
                               editando ? 'Cancelar edição' : 'Cancelar criação',
                           onPressed: _limpar,
-                          icon: Icon(PhosphorIcons.x, color: corLista),
+                          icon: Icon(
+                            PhosphorIcons.x,
+                            color: corListaComContraste,
+                          ),
                         ),
                       ),
                       Text(
@@ -287,7 +295,7 @@ class CompositorItemState extends State<CompositorItemWidget> {
                       child: _SeletorPrioridadeCompacto(
                         prioridade: _prioridade,
                         cor: _corPrioridade(_prioridade),
-                        corSobre: _corSobre(_corPrioridade(_prioridade)),
+                        corSobre: _corPrioridade(_prioridade).corSobre,
                         aoAlterar: (prioridade) {
                           setState(() => _prioridade = prioridade);
                         },
@@ -388,7 +396,7 @@ class CompositorItemState extends State<CompositorItemWidget> {
                       onPressed: () => setState(() => _expandido = true),
                       icon: Icon(
                         PhosphorIcons.slidersHorizontal,
-                        color: corLista,
+                        color: corListaComContraste,
                       ),
                     ),
                   Expanded(
@@ -411,8 +419,8 @@ class CompositorItemState extends State<CompositorItemWidget> {
                   FilledButton(
                     onPressed: _salvando ? null : _salvar,
                     style: FilledButton.styleFrom(
-                      backgroundColor: corLista,
-                      foregroundColor: _corSobre(corLista),
+                      backgroundColor: corListaComContraste,
+                      foregroundColor: corListaComContraste.corSobre,
                     ),
                     child: Text(editando ? 'Salvar' : 'Enviar'),
                   ),
@@ -613,12 +621,6 @@ class CompositorItemState extends State<CompositorItemWidget> {
         Prioridade.alta => Colors.red,
       };
 
-  Color _corSobre(Color fundo) {
-    return ThemeData.estimateBrightnessForColor(fundo) == Brightness.dark
-        ? Colors.white
-        : Colors.black;
-  }
-
   Future<void> _excluirItemEmEdicao() async {
     final item = _itemEmEdicao;
     if (item == null) return;
@@ -778,6 +780,11 @@ class _BarraAcoes extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tema = Theme.of(context);
+    final corAcoes = corLista.paraPrimeiroPlano(
+      tema,
+      superficie: tema.colorScheme.surfaceContainer,
+    );
     return LayoutBuilder(
       builder: (context, restricoes) => SizedBox(
         height: 48,
@@ -793,7 +800,7 @@ class _BarraAcoes extends StatelessWidget {
                       ? PhosphorIcons.stack
                       : PhosphorIcons.table,
                   rotulo: 'Visualização',
-                  corIcone: corLista,
+                  corIcone: corAcoes,
                   onTap: habilitada ? aoVisualizar : null,
                 ),
                 if (visualizacao == TipoVisualizacaoItens.categorias)
@@ -804,13 +811,13 @@ class _BarraAcoes extends StatelessWidget {
                     rotulo: categoriasExpandidas
                         ? 'Recolher categorias'
                         : 'Expandir categorias',
-                    corIcone: corLista,
+                    corIcone: corAcoes,
                     onTap: habilitada ? aoAlternarCategorias : null,
                   ),
                 _Acao(
                   icone: PhosphorIcons.repeat,
                   rotulo: 'Itens recorrentes',
-                  corIcone: corLista,
+                  corIcone: corAcoes,
                   onTap: aoItensRecorrentes,
                 ),
               ],
