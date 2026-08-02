@@ -12,7 +12,7 @@ abstract interface class SalvarHistoricoServiceContract {
 }
 
 class SalvarHistoricoService implements SalvarHistoricoServiceContract {
-  final HistoricoRepository _repository;
+  final HistoricoRepositoryContract _repository;
 
   SalvarHistoricoService(this._repository);
 

@@ -228,6 +228,12 @@ class ListasController extends ChangeNotifier {
     }
   }
 
+  Future<void> recarregarAposReutilizacao() async {
+    await itensController.recarregar();
+    await _recarregarResumos();
+    notifyListeners();
+  }
+
   Future<void> _selecionarResolvida(
     int? idLista, {
     required bool salvar,

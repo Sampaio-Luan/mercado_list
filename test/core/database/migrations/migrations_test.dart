@@ -148,6 +148,25 @@ void main() {
     );
     expect(executor.comandos.last, contains('tb_item_historico'));
   });
+
+  test('versão 10 completa o snapshot e cria índices do histórico', () async {
+    final executor = _ExecutorGravador();
+
+    await Migrations.executar(
+      executor,
+      versaoAnterior: 9,
+      novaVersao: 10,
+    );
+
+    final comandos = executor.comandos.join('\n');
+    expect(comandos, contains("ADD COLUMN cor TEXT NOT NULL DEFAULT 'indigo'"));
+    expect(comandos, contains('ADD COLUMN orcamento INTEGER'));
+    expect(
+        comandos, contains('ADD COLUMN prioridade INTEGER NOT NULL DEFAULT 0'));
+    expect(comandos, contains('ADD COLUMN observacao TEXT'));
+    expect(comandos, contains('CREATE INDEX idx_historico_data'));
+    expect(comandos, contains('CREATE INDEX idx_item_historico_historico'));
+  });
 }
 
 class _ExecutorGravador implements DatabaseExecutor {

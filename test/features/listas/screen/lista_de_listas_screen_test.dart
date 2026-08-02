@@ -943,6 +943,9 @@ class _HistoricoServiceFake implements HistoricoServiceContract {
 
   @override
   Future<List<HistoricoComItens>> recuperarTodos() async => const [];
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
 Future<void> _abrirDrawer(WidgetTester tester) async {

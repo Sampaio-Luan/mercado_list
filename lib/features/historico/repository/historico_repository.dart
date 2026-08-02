@@ -1,4 +1,5 @@
 import '../../../core/constants/enums/tipo_medida.dart';
+import '../../../core/constants/enums/cor.dart';
 import '../../../core/database/banco_local.dart';
 import '../../../core/database/schema/tb_historico.dart';
 import '../../../core/database/schema/tb_item_historico.dart';
@@ -8,12 +9,35 @@ import '../../listas/model/lista_model.dart';
 import '../model/historico_model.dart';
 import '../model/historico_com_itens_model.dart';
 import '../model/item_historico_model.dart';
+import '../mapper/historico_mapper.dart';
+import '../mapper/item_historico_mapper.dart';
 
-class HistoricoRepository {
+abstract interface class HistoricoRepositoryContract {
+  Future<List<HistoricoComItens>> recuperarTodosComItens();
+
+  Future<Historico> salvarCompra({
+    required Lista lista,
+    required List<Item> itens,
+    required Map<int, String> titulosCategorias,
+  });
+
+  Future<Historico> editar(Historico historico);
+
+  Future<void> excluir(Historico historico);
+}
+
+class HistoricoRepository implements HistoricoRepositoryContract {
   final BancoLocal bancoLocal;
+  final HistoricoMapper historicoMapper;
+  final ItemHistoricoMapper itemHistoricoMapper;
 
-  HistoricoRepository(this.bancoLocal);
+  HistoricoRepository(
+    this.bancoLocal, {
+    this.historicoMapper = const HistoricoMapper(),
+    this.itemHistoricoMapper = const ItemHistoricoMapper(),
+  });
 
+  @override
   Future<List<HistoricoComItens>> recuperarTodosComItens() {
     return bancoLocal.executar((executor) async {
       final historicosMap = await executor.query(
@@ -37,11 +61,11 @@ class HistoricoRepository {
       );
       final itensPorHistorico = <int, List<ItemHistorico>>{};
       for (final linha in itensMap) {
-        final item = _mapearItem(linha);
+        final item = itemHistoricoMapper.doMapa(linha);
         itensPorHistorico.putIfAbsent(item.idHistorico, () => []).add(item);
       }
       return historicosMap.map((linha) {
-        final historico = _mapearHistorico(linha);
+        final historico = historicoMapper.doMapa(linha);
         return HistoricoComItens(
           historico: historico,
           itens: List.unmodifiable(itensPorHistorico[historico.id] ?? const []),
@@ -50,6 +74,7 @@ class HistoricoRepository {
     });
   }
 
+  @override
   Future<Historico> salvarCompra({
     required Lista lista,
     required List<Item> itens,
@@ -60,6 +85,8 @@ class HistoricoRepository {
       final id = await executor.insert(TbHistorico.nomeTabela, {
         TbHistorico.colunaTitulo: lista.titulo,
         TbHistorico.colunaDescricao: lista.descricao,
+        TbHistorico.colunaCor: Cor.obterPorColor(color: lista.cor).name,
+        TbHistorico.colunaOrcamento: lista.orcamento,
         TbHistorico.colunaDataCompra: DataUtils.paraPersistencia(agora),
         TbHistorico.colunaDataCriacao: DataUtils.paraPersistencia(agora),
         TbHistorico.colunaDataAlteracao: DataUtils.paraPersistencia(agora),
@@ -77,57 +104,66 @@ class HistoricoRepository {
           TbItemHistorico.colunaPreco: item.preco ?? 0,
           TbItemHistorico.colunaUnidadeDeMedida:
               TipoMedida.obterRotulo(tipo: item.tipoMedida),
+          TbItemHistorico.colunaPrioridade: item.prioridade.index,
+          TbItemHistorico.colunaObservacao: item.observacao,
           TbItemHistorico.colunaDataCriacao: DataUtils.paraPersistencia(agora),
           TbItemHistorico.colunaDataAlteracao:
               DataUtils.paraPersistencia(agora),
           TbItemHistorico.colunaExcluido: 0,
         });
       }
+      await batch.commit(noResult: true);
       return Historico(
         id: id,
         titulo: lista.titulo,
         descricao: lista.descricao,
         dataCompra: agora,
+        cor: lista.cor,
+        orcamento: lista.orcamento,
         dataCriacao: agora,
         dataAlteracao: agora,
       );
     });
   }
 
-  Historico _mapearHistorico(Map<String, Object?> linha) {
-    return Historico(
-      id: linha[TbHistorico.colunaId] as int,
-      titulo: linha[TbHistorico.colunaTitulo] as String,
-      descricao: linha[TbHistorico.colunaDescricao] as String?,
-      dataCompra: DataUtils.daPersistencia(
-        linha[TbHistorico.colunaDataCompra] as String,
-      ),
-      dataCriacao: DataUtils.daPersistencia(
-        linha[TbHistorico.colunaDataCriacao] as String,
-      ),
-      dataAlteracao: DataUtils.daPersistencia(
-        linha[TbHistorico.colunaDataAlteracao] as String,
-      ),
-      excluido: (linha[TbHistorico.colunaExcluido] as int) == 1,
-    );
+  @override
+  Future<Historico> editar(Historico historico) {
+    return bancoLocal.executar((executor) async {
+      final id = historico.id;
+      if (id == null) throw StateError('O histórico precisa estar persistido.');
+      final editado = historico.copia()..dataAlteracao = DataUtils.agoraUtc();
+      final mapa = historicoMapper.paraMapa(editado)
+        ..remove(TbHistorico.colunaId)
+        ..remove(TbHistorico.colunaDataCriacao);
+      final linhas = await executor.update(
+        TbHistorico.nomeTabela,
+        mapa,
+        where: '${TbHistorico.colunaId} = ? AND '
+            '${TbHistorico.colunaExcluido} = 0',
+        whereArgs: [id],
+      );
+      if (linhas == 0) throw StateError('Histórico não encontrado.');
+      return editado;
+    });
   }
 
-  ItemHistorico _mapearItem(Map<String, Object?> linha) {
-    return ItemHistorico(
-      id: linha[TbItemHistorico.colunaId] as int,
-      idHistorico: linha[TbItemHistorico.colunaIdHistorico] as int,
-      titulo: linha[TbItemHistorico.colunaTitulo] as String,
-      tituloCategoria: linha[TbItemHistorico.colunaTituloCategoria] as String,
-      quantidade: linha[TbItemHistorico.colunaQuantidade] as int,
-      preco: linha[TbItemHistorico.colunaPreco] as int,
-      unidadeMedida: linha[TbItemHistorico.colunaUnidadeDeMedida] as String,
-      dataCriacao: DataUtils.daPersistencia(
-        linha[TbItemHistorico.colunaDataCriacao] as String,
-      ),
-      dataAlteracao: DataUtils.daPersistencia(
-        linha[TbItemHistorico.colunaDataAlteracao] as String,
-      ),
-      excluido: (linha[TbItemHistorico.colunaExcluido] as int) == 1,
-    );
+  @override
+  Future<void> excluir(Historico historico) {
+    return bancoLocal.executar((executor) async {
+      final id = historico.id;
+      if (id == null) throw StateError('O histórico precisa estar persistido.');
+      final linhas = await executor.update(
+        TbHistorico.nomeTabela,
+        {
+          TbHistorico.colunaExcluido: 1,
+          TbHistorico.colunaDataAlteracao:
+              DataUtils.paraPersistencia(DataUtils.agoraUtc()),
+        },
+        where: '${TbHistorico.colunaId} = ? AND '
+            '${TbHistorico.colunaExcluido} = 0',
+        whereArgs: [id],
+      );
+      if (linhas == 0) throw StateError('Histórico não encontrado.');
+    });
   }
 }

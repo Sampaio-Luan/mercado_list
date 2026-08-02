@@ -41,6 +41,9 @@ class Migrations {
     if (versaoAnterior < 9 && novaVersao >= 9) {
       await paraVersao9(db);
     }
+    if (versaoAnterior < 10 && novaVersao >= 10) {
+      await paraVersao10(db);
+    }
   }
 
   static Future<void> paraVersao2(DatabaseExecutor db) async {
@@ -147,5 +150,26 @@ class Migrations {
           ${TbItemHistorico.colunaQuantidade} * 1000
       WHERE ${TbItemHistorico.colunaUnidadeDeMedida} = 'kg'
     ''');
+  }
+
+  static Future<void> paraVersao10(DatabaseExecutor db) async {
+    await db.execute('''
+      ALTER TABLE ${TbHistorico.nomeTabela}
+      ADD COLUMN ${TbHistorico.colunaCor} TEXT NOT NULL DEFAULT 'indigo'
+    ''');
+    await db.execute('''
+      ALTER TABLE ${TbHistorico.nomeTabela}
+      ADD COLUMN ${TbHistorico.colunaOrcamento} INTEGER
+    ''');
+    await db.execute('''
+      ALTER TABLE ${TbItemHistorico.nomeTabela}
+      ADD COLUMN ${TbItemHistorico.colunaPrioridade} INTEGER NOT NULL DEFAULT 0
+    ''');
+    await db.execute('''
+      ALTER TABLE ${TbItemHistorico.nomeTabela}
+      ADD COLUMN ${TbItemHistorico.colunaObservacao} TEXT
+    ''');
+    await db.execute(TbHistorico.criarIndiceData);
+    await db.execute(TbItemHistorico.criarIndiceHistorico);
   }
 }

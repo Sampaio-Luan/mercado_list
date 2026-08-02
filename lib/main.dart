@@ -26,6 +26,7 @@ import 'features/itens/service/itens_service.dart';
 import 'features/historico/repository/historico_repository.dart';
 import 'features/historico/service/historico_service.dart';
 import 'features/historico/service/salvar_historico_service.dart';
+import 'features/historico/service/reutilizar_historico_service.dart';
 import 'features/listas/controller/listas_controller.dart';
 import 'features/listas/mapper/lista_mapper.dart';
 import 'features/listas/repository/lista_repository.dart';
@@ -72,6 +73,10 @@ void main() async {
   final historicoRepository = HistoricoRepository(BancoLocal.instancia);
   final salvarHistoricoService = SalvarHistoricoService(historicoRepository);
   final historicoService = HistoricoService(historicoRepository);
+  final reutilizarHistoricoService = ReutilizarHistoricoService(
+    itensService,
+    categoriasService,
+  );
   final prepararConteudoCompartilhamentoService =
       PrepararConteudoCompartilhamentoService(
     itensService,
@@ -95,7 +100,10 @@ void main() async {
         ChangeNotifierProvider.value(value: preferenciasProvider),
         Provider.value(value: compartilhamentoService),
         ChangeNotifierProvider(
-          create: (_) => HistoricoController(historicoService)..carregar(),
+          create: (_) => HistoricoController(
+            historicoService,
+            reutilizarService: reutilizarHistoricoService,
+          )..carregar(),
           lazy: false,
         ),
         ChangeNotifierProvider(

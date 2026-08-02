@@ -2,14 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/constants/enums/estado_de_tela.dart';
-import '../../../core/extensions/cor_contraste_extension.dart';
+import '../../../core/constants/enums/tipo_dialogo.dart';
+import '../../../core/extensions/dialogo_extension.dart';
 import '../../../core/extensions/snackbar_extension.dart';
-import '../../../core/utils/data_utils.dart';
-import '../../../core/utils/monetario_utils.dart';
 import '../../compartilhamento/service/compartilhamento_service.dart';
 import '../../compartilhamento/widget/compartilhamento_sheet.dart';
+import '../../listas/controller/listas_controller.dart';
 import '../controller/historico_controller.dart';
+import '../form/historico_formulario.dart';
 import '../model/historico_com_itens_model.dart';
+import '../widget/barra_historico.dart';
+import '../widget/historico_card.dart';
+import '../widget/historico_detalhes_sheet.dart';
 
 class HistoricoScreen extends StatelessWidget {
   const HistoricoScreen({super.key, this.corDestaque});
@@ -37,101 +41,164 @@ class HistoricoScreen extends StatelessWidget {
             icone: Icons.history_toggle_off,
             mensagem: 'As compras salvas aparecerão aqui.',
           ),
-        EstadoDeTela.carregadaComDados => RefreshIndicator(
-            color: cor,
-            onRefresh: controller.carregar,
-            child: ListView.separated(
-              padding: const EdgeInsets.all(16),
-              itemCount: controller.compras.length,
-              separatorBuilder: (_, _) => const SizedBox(height: 10),
-              itemBuilder: (context, indice) => _CartaoHistorico(
-                compra: controller.compras[indice],
+        _ => Column(
+            children: [
+              BarraHistorico(
+                periodo: controller.periodo,
+                ordenacao: controller.ordenacao,
                 corDestaque: cor,
-                aoCompartilhar: () => _compartilhar(
-                  context,
-                  controller,
-                  controller.compras[indice],
-                  cor,
-                ),
+                aoPesquisar: controller.alterarPesquisa,
+                aoAlterarPeriodo: controller.alterarPeriodo,
+                aoAlterarOrdenacao: controller.alterarOrdenacao,
               ),
-            ),
+              Expanded(
+                child: controller.comprasVisiveis.isEmpty
+                    ? const _EstadoHistorico(
+                        icone: Icons.search_off_outlined,
+                        mensagem: 'Nenhuma compra corresponde aos filtros.',
+                      )
+                    : RefreshIndicator(
+                        color: cor,
+                        onRefresh: controller.carregar,
+                        child: ListView.separated(
+                          padding: const EdgeInsets.all(12),
+                          itemCount: controller.comprasVisiveis.length,
+                          separatorBuilder: (_, _) => const SizedBox(height: 8),
+                          itemBuilder: (context, indice) {
+                            final compra = controller.comprasVisiveis[indice];
+                            return HistoricoCard(
+                              compra: compra,
+                              aoAbrir: () => _abrirDetalhes(
+                                context,
+                                controller,
+                                compra,
+                              ),
+                              aoCompartilhar: () => _compartilhar(
+                                context,
+                                controller,
+                                compra,
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+              ),
+            ],
           ),
       },
     );
+  }
+
+  Future<void> _abrirDetalhes(
+    BuildContext context,
+    HistoricoController controller,
+    HistoricoComItens compra,
+  ) {
+    return HistoricoDetalhesSheet.exibir(
+      context,
+      compra: compra,
+      operacaoEmAndamento: controller.operacaoEmAndamento(compra),
+      aoEditar: () => _aposFecharDetalhes(
+        context,
+        () => HistoricoFormulario.exibir(context, compra),
+      ),
+      aoCompartilhar: () => _aposFecharDetalhes(
+        context,
+        () => _compartilhar(context, controller, compra),
+      ),
+      aoReutilizar: () => _aposFecharDetalhes(
+        context,
+        () => _reutilizar(context, controller, compra),
+      ),
+      aoExcluir: () => _aposFecharDetalhes(
+        context,
+        () => _excluir(context, controller, compra),
+      ),
+    );
+  }
+
+  Future<void> _aposFecharDetalhes(
+    BuildContext context,
+    Future<void> Function() acao,
+  ) async {
+    Navigator.of(context).pop();
+    await Future<void>.delayed(Duration.zero);
+    if (context.mounted) await acao();
+  }
+
+  Future<void> _reutilizar(
+    BuildContext context,
+    HistoricoController controller,
+    HistoricoComItens compra,
+  ) async {
+    final listasController = context.read<ListasController>();
+    final lista = listasController.listaSelecionada;
+    if (lista == null) {
+      context.mostrarAviso('Selecione uma lista antes de reutilizar a compra.');
+      return;
+    }
+    final confirmacao = await context.confirmar(
+      titulo: 'Reutilizar compra',
+      mensagem: 'Adicionar os itens de "${compra.historico.titulo}" à lista '
+          '"${lista.titulo}"? Itens com o mesmo título serão ignorados.',
+      textoConfirmar: 'Adicionar itens',
+    );
+    if (confirmacao != ResultadoDialogo.confirmar || !context.mounted) return;
+    try {
+      final resultado = await controller.reutilizar(compra, lista);
+      await listasController.recarregarAposReutilizacao();
+      if (!context.mounted) return;
+      context.mostrarSucesso(
+        '${resultado.adicionados} itens adicionados'
+        '${resultado.ignorados > 0 ? ' e ${resultado.ignorados} ignorados' : ''}.',
+      );
+    } catch (_) {
+      if (context.mounted) {
+        context.mostrarErro('Não foi possível reutilizar esta compra.');
+      }
+    }
+  }
+
+  Future<void> _excluir(
+    BuildContext context,
+    HistoricoController controller,
+    HistoricoComItens compra,
+  ) async {
+    final confirmacao = await context.confirmar(
+      titulo: 'Excluir compra',
+      mensagem: 'Deseja excluir "${compra.historico.titulo}" do histórico?',
+      textoConfirmar: 'Excluir',
+    );
+    if (confirmacao != ResultadoDialogo.confirmar || !context.mounted) return;
+    try {
+      await controller.excluir(compra);
+      if (context.mounted) {
+        context.mostrarSucesso('Compra excluída do histórico.');
+      }
+    } catch (_) {
+      if (context.mounted) {
+        context.mostrarErro('Não foi possível excluir a compra.');
+      }
+    }
   }
 
   Future<void> _compartilhar(
     BuildContext context,
     HistoricoController controller,
     HistoricoComItens compra,
-    Color cor,
   ) async {
     try {
       await CompartilhamentoSheet.exibir(
         context,
         conteudo: controller.prepararCompartilhamento(compra),
-        corDestaque: cor,
+        corDestaque: compra.historico.cor,
         service: context.read<CompartilhamentoService>(),
       );
-    } catch (erro) {
+    } catch (_) {
       if (context.mounted) {
-        context.mostrarErro('Não foi possível compartilhar: $erro');
+        context.mostrarErro('Não foi possível compartilhar a compra.');
       }
     }
-  }
-}
-
-class _CartaoHistorico extends StatelessWidget {
-  const _CartaoHistorico({
-    required this.compra,
-    required this.corDestaque,
-    required this.aoCompartilhar,
-  });
-
-  final HistoricoComItens compra;
-  final Color corDestaque;
-  final VoidCallback aoCompartilhar;
-
-  @override
-  Widget build(BuildContext context) {
-    final tema = Theme.of(context);
-    final corAcao = corDestaque.paraPrimeiroPlano(tema);
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 12, 8, 12),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(compra.historico.titulo,
-                      style: tema.textTheme.titleMedium),
-                  const SizedBox(height: 4),
-                  Text(
-                    DataUtils.formatarData(compra.historico.dataCompra),
-                    style: tema.textTheme.bodySmall,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    '${compra.itens.length} ${compra.itens.length == 1 ? 'item' : 'itens'}  •  '
-                    '${MonetarioUtils.formatarIntToMoeda(compra.valorTotal)}',
-                    style: tema.textTheme.bodyMedium,
-                  ),
-                ],
-              ),
-            ),
-            IconButton(
-              tooltip: 'Compartilhar compra',
-              onPressed: compra.itens.isEmpty ? null : aoCompartilhar,
-              color: corAcao,
-              icon: const Icon(Icons.ios_share_outlined),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 }
 
