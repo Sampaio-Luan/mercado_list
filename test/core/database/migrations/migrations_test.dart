@@ -167,6 +167,22 @@ void main() {
     expect(comandos, contains('CREATE INDEX idx_historico_data'));
     expect(comandos, contains('CREATE INDEX idx_item_historico_historico'));
   });
+
+  test('versão 11 adiciona a loja opcional ao histórico', () async {
+    final executor = _ExecutorGravador();
+
+    await Migrations.executar(
+      executor,
+      versaoAnterior: 10,
+      novaVersao: 11,
+    );
+
+    expect(executor.comandos, hasLength(1));
+    expect(
+      executor.comandos.single,
+      contains('ALTER TABLE tb_historico ADD COLUMN loja TEXT'),
+    );
+  });
 }
 
 class _ExecutorGravador implements DatabaseExecutor {

@@ -38,4 +38,29 @@ void main() {
           'Flutter continuam permitidos.',
     );
   });
+
+  test('ícones explícitos da aplicação usam PhosphorIcons', () {
+    final ocorrencias = <String>[];
+    final arquivosDart = Directory('lib')
+        .listSync(recursive: true)
+        .whereType<File>()
+        .where((arquivo) => arquivo.path.endsWith('.dart'));
+
+    for (final arquivo in arquivosDart) {
+      final conteudo = arquivo.readAsStringSync();
+      for (final correspondencia in RegExp(r'\bIcons\.').allMatches(conteudo)) {
+        final linha = '\n'
+                .allMatches(conteudo.substring(0, correspondencia.start))
+                .length +
+            1;
+        ocorrencias.add('${arquivo.path}:$linha');
+      }
+    }
+
+    expect(
+      ocorrencias,
+      isEmpty,
+      reason: 'Substitua Icons.* pelo equivalente de PhosphorIcons.',
+    );
+  });
 }

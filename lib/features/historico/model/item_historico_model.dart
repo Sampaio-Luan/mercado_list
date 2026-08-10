@@ -28,4 +28,25 @@ class ItemHistorico extends EntidadeBase {
   int get valorTotal => unidadeMedida == 'kg'
       ? (preco * quantidade / 1000).round()
       : preco * quantidade;
+
+  ItemHistorico copia({
+    String? titulo,
+    int? quantidade,
+    int? preco,
+  }) {
+    return ItemHistorico(
+      id: id,
+      idHistorico: idHistorico,
+      titulo: titulo ?? this.titulo,
+      tituloCategoria: tituloCategoria,
+      quantidade: quantidade ?? this.quantidade,
+      preco: preco ?? this.preco,
+      unidadeMedida: unidadeMedida,
+      prioridade: prioridade,
+      observacao: observacao,
+      dataCriacao: dataCriacao,
+      dataAlteracao: dataAlteracao,
+      excluido: excluido,
+    );
+  }
 }

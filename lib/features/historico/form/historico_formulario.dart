@@ -1,27 +1,72 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 
 import '../../../core/constants/enums/cor.dart';
-import '../../../core/extensions/snackbar_extension.dart';
 import '../../../core/utils/data_utils.dart';
 import '../../../shared/widgets/campos_formulario/campo_texto.dart';
 import '../../../shared/widgets/campos_formulario/real_field.dart';
 import '../../../shared/widgets/linha_botoes_confirmacao.dart';
+import '../../../shared/widgets/painel_pesquisa/similaridade_texto.dart';
+import '../../../shared/widgets/painel_pesquisa/texto_destacado_pesquisa.dart';
 import '../../../shared/widgets/seletor_de_cor.dart';
-import '../controller/historico_controller.dart';
 import '../model/historico_com_itens_model.dart';
 import '../model/historico_model.dart';
 
 class HistoricoFormulario extends StatefulWidget {
-  const HistoricoFormulario({super.key, required this.compra});
+  const HistoricoFormulario({
+    super.key,
+    required this.historico,
+    required this.tituloFormulario,
+    this.sugestoesLojas = const [],
+    this.quantidadeItens,
+    this.quantidadeItensIgnorados = 0,
+  });
 
-  final HistoricoComItens compra;
+  final Historico historico;
+  final String tituloFormulario;
+  final List<String> sugestoesLojas;
+  final int? quantidadeItens;
+  final int quantidadeItensIgnorados;
 
-  static Future<void> exibir(
+  static Future<Historico?> criar(
+    BuildContext context, {
+    required Historico historico,
+    required int quantidadeItens,
+    required int quantidadeItensIgnorados,
+    List<String> sugestoesLojas = const [],
+  }) {
+    return _exibir(
+      context,
+      HistoricoFormulario(
+        historico: historico,
+        tituloFormulario: 'Salvar compra',
+        sugestoesLojas: sugestoesLojas,
+        quantidadeItens: quantidadeItens,
+        quantidadeItensIgnorados: quantidadeItensIgnorados,
+      ),
+    );
+  }
+
+  static Future<Historico?> editar(
     BuildContext context,
-    HistoricoComItens compra,
+    HistoricoComItens compra, {
+    List<String> sugestoesLojas = const [],
+  }) {
+    return _exibir(
+      context,
+      HistoricoFormulario(
+        historico: compra.historico,
+        tituloFormulario: 'Editar compra',
+        sugestoesLojas: sugestoesLojas,
+      ),
+    );
+  }
+
+  static Future<Historico?> _exibir(
+    BuildContext context,
+    HistoricoFormulario formulario,
   ) {
-    return showModalBottomSheet<void>(
+    return showModalBottomSheet<Historico>(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
@@ -30,7 +75,7 @@ class HistoricoFormulario extends StatefulWidget {
         padding: EdgeInsets.only(
           bottom: MediaQuery.viewInsetsOf(context).bottom,
         ),
-        child: HistoricoFormulario(compra: compra),
+        child: formulario,
       ),
     );
   }
@@ -41,8 +86,7 @@ class HistoricoFormulario extends StatefulWidget {
 
 class _HistoricoFormularioState extends State<HistoricoFormulario> {
   final _chaveFormulario = GlobalKey<FormState>();
-  late Historico _historico = widget.compra.historico.copia();
-  bool _salvando = false;
+  late Historico _historico = widget.historico.copia();
 
   @override
   Widget build(BuildContext context) {
@@ -51,15 +95,24 @@ class _HistoricoFormularioState extends State<HistoricoFormulario> {
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
       child: Form(
         key: _chaveFormulario,
+        autovalidateMode: AutovalidateMode.onUserInteraction,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
-              'Editar compra',
+              widget.tituloFormulario,
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.titleLarge,
             ),
+            if (widget.quantidadeItens case final quantidade?) ...[
+              const SizedBox(height: 12),
+              _ResumoItensHistorico(
+                quantidade: quantidade,
+                ignorados: widget.quantidadeItensIgnorados,
+                cor: cor,
+              ),
+            ],
             const SizedBox(height: 16),
             CampoDeTexto(
               rotulo: 'Título',
@@ -71,6 +124,7 @@ class _HistoricoFormularioState extends State<HistoricoFormulario> {
               ],
               onChanged: (valor) => _historico.titulo = valor,
             ),
+            const SizedBox(height: 12),
             CampoDeTexto(
               rotulo: 'Descrição (opcional)',
               valor: _historico.descricao ?? '',
@@ -81,13 +135,22 @@ class _HistoricoFormularioState extends State<HistoricoFormulario> {
                 limparDescricao: valor.trim().isEmpty,
               ),
             ),
+            const SizedBox(height: 12),
+            _CampoLoja(
+              valor: _historico.loja ?? '',
+              sugestoes: widget.sugestoesLojas,
+              onChanged: (valor) => _historico = _historico.copia(
+                loja: valor,
+                limparLoja: valor.trim().isEmpty,
+              ),
+            ),
             const SizedBox(height: 4),
             ListTile(
               contentPadding: EdgeInsets.zero,
-              leading: Icon(Icons.calendar_month_outlined, color: cor),
+              leading: Icon(PhosphorIcons.calendarBlank, color: cor),
               title: const Text('Data da compra'),
               subtitle: Text(DataUtils.formatarData(_historico.dataCompra)),
-              trailing: const Icon(Icons.edit_calendar_outlined),
+              trailing: const Icon(PhosphorIcons.calendarCheck),
               onTap: _selecionarData,
             ),
             RealField(
@@ -117,10 +180,8 @@ class _HistoricoFormularioState extends State<HistoricoFormulario> {
             const SizedBox(height: 14),
             LinhaBotoesConfirmacao(
               cor: cor,
-              onConfirmar: _salvando ? () {} : _salvar,
-              onCancelar: () {
-                if (!_salvando) Navigator.pop(context);
-              },
+              onConfirmar: _confirmar,
+              onCancelar: () => Navigator.pop(context),
             ),
           ],
         ),
@@ -150,21 +211,152 @@ class _HistoricoFormularioState extends State<HistoricoFormulario> {
     });
   }
 
-  Future<void> _salvar() async {
-    if (_salvando || !_chaveFormulario.currentState!.validate()) return;
-    setState(() => _salvando = true);
-    try {
-      await context.read<HistoricoController>().editar(
-            widget.compra,
-            _historico,
-          );
-      if (!mounted) return;
-      context.mostrarSucesso('Compra atualizada com sucesso.');
-      Navigator.pop(context);
-    } catch (_) {
-      if (mounted) context.mostrarErro('Não foi possível editar a compra.');
-    } finally {
-      if (mounted) setState(() => _salvando = false);
-    }
+  void _confirmar() {
+    if (!_chaveFormulario.currentState!.validate()) return;
+    Navigator.pop(context, _historico);
+  }
+}
+
+class _CampoLoja extends StatefulWidget {
+  const _CampoLoja({
+    required this.valor,
+    required this.sugestoes,
+    required this.onChanged,
+  });
+
+  final String valor;
+  final List<String> sugestoes;
+  final ValueChanged<String> onChanged;
+
+  @override
+  State<_CampoLoja> createState() => _CampoLojaState();
+}
+
+class _CampoLojaState extends State<_CampoLoja> {
+  String _termo = '';
+
+  @override
+  Widget build(BuildContext context) {
+    return Autocomplete<String>(
+      initialValue: TextEditingValue(text: widget.valor),
+      displayStringForOption: (opcao) => opcao,
+      optionsBuilder: (valorDigitado) {
+        final termo = valorDigitado.text.trim();
+        final aindaNaoDigitou = _termo.isEmpty && termo == widget.valor.trim();
+        if (termo.isEmpty || aindaNaoDigitou) {
+          return const Iterable<String>.empty();
+        }
+        final ordenadas = widget.sugestoes
+            .map(
+              (loja) => (
+                loja: loja,
+                relevancia: SimilaridadeTexto.calcularPontuacaoRelevancia(
+                  textoItem: loja,
+                  textoPesquisa: termo,
+                ),
+              ),
+            )
+            .where((sugestao) => sugestao.relevancia > 0)
+            .toList()
+          ..sort((a, b) => b.relevancia.compareTo(a.relevancia));
+        return ordenadas.take(3).map((sugestao) => sugestao.loja);
+      },
+      onSelected: widget.onChanged,
+      optionsViewBuilder: (context, onSelected, opcoes) => Align(
+        alignment: Alignment.topLeft,
+        child: Material(
+          elevation: 8,
+          borderRadius: BorderRadius.circular(12),
+          clipBehavior: Clip.antiAlias,
+          child: SizedBox(
+            width: MediaQuery.sizeOf(context).width - 32,
+            child: ListView.builder(
+              shrinkWrap: true,
+              padding: EdgeInsets.zero,
+              itemCount: opcoes.length,
+              itemBuilder: (_, indice) {
+                final loja = opcoes.elementAt(indice);
+                return InkWell(
+                  onTap: () => onSelected(loja),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 11,
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(PhosphorIcons.storefront, size: 20),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: TextoDestacadoPesquisa(
+                            texto: loja,
+                            textoPesquisa: _termo,
+                            maximoLinhas: 1,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ),
+      ),
+      fieldViewBuilder: (_, controller, foco, aoEnviar) => TextFormField(
+        controller: controller,
+        focusNode: foco,
+        textCapitalization: TextCapitalization.words,
+        decoration: const InputDecoration(
+          labelText: 'Loja (opcional)',
+          prefixIcon: Icon(PhosphorIcons.storefront),
+        ),
+        onChanged: (valor) {
+          setState(() => _termo = valor);
+          widget.onChanged(valor);
+        },
+        onFieldSubmitted: (_) => aoEnviar(),
+      ),
+    );
+  }
+}
+
+class _ResumoItensHistorico extends StatelessWidget {
+  const _ResumoItensHistorico({
+    required this.quantidade,
+    required this.ignorados,
+    required this.cor,
+  });
+
+  final int quantidade;
+  final int ignorados;
+  final Color cor;
+
+  @override
+  Widget build(BuildContext context) {
+    final tema = Theme.of(context);
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: cor.withValues(alpha: .1),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(PhosphorIcons.info, color: cor),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                '$quantidade ${quantidade == 1 ? 'item marcado com preço será salvo' : 'itens marcados com preço serão salvos'}.'
+                '${ignorados > 0 ? ' $ignorados ${ignorados == 1 ? 'item marcado sem preço será ignorado' : 'itens marcados sem preço serão ignorados'}.' : ''}',
+                style: tema.textTheme.bodyMedium,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

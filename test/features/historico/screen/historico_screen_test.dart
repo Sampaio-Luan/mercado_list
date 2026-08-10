@@ -11,6 +11,7 @@ import 'package:mercado_list/features/historico/service/historico_service.dart';
 import 'package:mercado_list/features/historico/widget/barra_historico.dart';
 import 'package:mercado_list/features/historico/widget/historico_detalhes_sheet.dart';
 import 'package:provider/provider.dart';
+import 'package:mercado_list/shared/widgets/painel_pesquisa/texto_destacado_pesquisa.dart';
 
 void main() {
   testWidgets('exibe filtros, detalhes e formulário de edição', (tester) async {
@@ -33,8 +34,10 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(HistoricoDetalhesSheet), findsOneWidget);
-    expect(find.text('Mercearia'), findsOneWidget);
-    expect(find.text('Arroz (N)'), findsOneWidget);
+    expect(find.text('ITEM'), findsOneWidget);
+    expect(find.text('QTD. × PREÇO'), findsOneWidget);
+    expect(find.text('Arroz'), findsOneWidget);
+    expect(find.text('Mercearia'), findsNothing);
 
     await tester.tap(find.text('Editar'));
     await tester.pumpAndSettle();
@@ -43,6 +46,41 @@ void main() {
     expect(find.text('Editar compra'), findsOneWidget);
     expect(find.text('Data da compra'), findsOneWidget);
     expect(find.text('Orçamento (opcional)'), findsOneWidget);
+    expect(find.text('Loja (opcional)'), findsOneWidget);
+  });
+
+  testWidgets('loja só sugere após digitar e limita a três opções',
+      (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: HistoricoFormulario(
+            historico: Historico(
+              titulo: 'Compra',
+              dataCompra: DateTime.utc(2026, 8, 2),
+            ),
+            tituloFormulario: 'Salvar compra',
+            sugestoesLojas: const [
+              'Mercado Central',
+              'Mercadinho do Bairro',
+              'Supermercado Sul',
+              'Mercado Norte',
+            ],
+          ),
+        ),
+      ),
+    );
+
+    final campoLoja = find.widgetWithText(TextFormField, 'Loja (opcional)');
+    await tester.ensureVisible(campoLoja);
+    await tester.tap(campoLoja);
+    await tester.pump();
+    expect(find.byType(TextoDestacadoPesquisa), findsNothing);
+
+    await tester.enterText(campoLoja, 'merc');
+    await tester.pumpAndSettle();
+
+    expect(find.byType(TextoDestacadoPesquisa), findsNWidgets(3));
   });
 }
 
@@ -54,6 +92,7 @@ class _HistoricoServiceFake implements HistoricoServiceContract {
       dataCompra: DateTime.utc(2026, 8, 2),
       cor: Colors.indigo,
       orcamento: 50000,
+      loja: 'Mercado Central',
     ),
     itens: [
       ItemHistorico(

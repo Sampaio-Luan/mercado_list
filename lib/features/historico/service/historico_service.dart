@@ -2,6 +2,7 @@ import '../../compartilhamento/model/compartilhamento_model.dart';
 import '../model/historico_com_itens_model.dart';
 import '../repository/historico_repository.dart';
 import '../model/historico_model.dart';
+import '../model/item_historico_model.dart';
 
 abstract interface class HistoricoServiceContract {
   Future<List<HistoricoComItens>> recuperarTodos();
@@ -11,6 +12,8 @@ abstract interface class HistoricoServiceContract {
   );
 
   Future<Historico> editar(Historico historico);
+
+  Future<ItemHistorico> editarItem(ItemHistorico item);
 
   Future<void> excluir(Historico historico);
 }
@@ -28,17 +31,32 @@ class HistoricoService implements HistoricoServiceContract {
   Future<Historico> editar(Historico historico) {
     final titulo = historico.titulo.trim();
     if (titulo.isEmpty) throw ArgumentError('O título é obrigatório.');
+    final descricao = historico.descricao?.trim();
+    final loja = historico.loja?.trim();
     return _repository.editar(
       historico.copia(
         titulo: titulo,
-        descricao: historico.descricao?.trim(),
-        limparDescricao: historico.descricao?.trim().isEmpty ?? true,
+        descricao: descricao,
+        limparDescricao: descricao?.isEmpty ?? true,
+        loja: loja,
+        limparLoja: loja?.isEmpty ?? true,
       ),
     );
   }
 
   @override
   Future<void> excluir(Historico historico) => _repository.excluir(historico);
+
+  @override
+  Future<ItemHistorico> editarItem(ItemHistorico item) {
+    final titulo = item.titulo.trim();
+    if (titulo.isEmpty) throw ArgumentError('O título é obrigatório.');
+    if (item.quantidade <= 0) {
+      throw ArgumentError('A quantidade deve ser maior que zero.');
+    }
+    if (item.preco < 0) throw ArgumentError('O preço não pode ser negativo.');
+    return _repository.editarItem(item.copia(titulo: titulo));
+  }
 
   @override
   ConteudoCompartilhamento prepararCompartilhamento(
@@ -48,6 +66,7 @@ class HistoricoService implements HistoricoServiceContract {
       contexto: ContextoCompartilhamento.historico,
       titulo: compra.historico.titulo,
       descricao: compra.historico.descricao,
+      loja: compra.historico.loja,
       data: compra.historico.dataCompra,
       orcamento: compra.historico.orcamento,
       itens: compra.itens

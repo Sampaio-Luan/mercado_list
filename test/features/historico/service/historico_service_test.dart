@@ -15,6 +15,7 @@ void main() {
     final conteudo = service.prepararCompartilhamento(compra);
 
     expect(conteudo.titulo, 'Compra mensal');
+    expect(conteudo.loja, 'Mercado Central');
     expect(conteudo.orcamento, 50000);
     expect(conteudo.itens.single.prioridade, 'Alta');
     expect(conteudo.itens.single.observacao, 'Integral');
@@ -27,12 +28,14 @@ void main() {
     final historico = _compra().historico.copia(
           titulo: '  Compra editada  ',
           descricao: '  descrição  ',
+          loja: '  Loja nova  ',
         );
 
     final editado = await service.editar(historico);
 
     expect(editado.titulo, 'Compra editada');
     expect(editado.descricao, 'descrição');
+    expect(editado.loja, 'Loja nova');
     expect(repository.editado, isNotNull);
   });
 
@@ -54,6 +57,7 @@ HistoricoComItens _compra() => HistoricoComItens(
         id: 1,
         titulo: 'Compra mensal',
         descricao: 'Casa',
+        loja: 'Mercado Central',
         dataCompra: DateTime.utc(2026, 8, 2),
         cor: Colors.indigo,
         orcamento: 50000,

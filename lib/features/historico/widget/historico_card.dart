@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 
 import '../../../core/extensions/cor_contraste_extension.dart';
 import '../../../core/utils/data_utils.dart';
@@ -10,11 +11,13 @@ class HistoricoCard extends StatelessWidget {
     super.key,
     required this.compra,
     required this.aoAbrir,
+    required this.aoEditar,
     required this.aoCompartilhar,
   });
 
   final HistoricoComItens compra;
   final VoidCallback aoAbrir;
+  final VoidCallback aoEditar;
   final VoidCallback aoCompartilhar;
 
   @override
@@ -52,6 +55,13 @@ class HistoricoCard extends StatelessWidget {
                       DataUtils.formatarData(compra.historico.dataCompra),
                       style: tema.textTheme.bodySmall,
                     ),
+                    if (compra.historico.loja?.trim().isNotEmpty == true) ...[
+                      const SizedBox(height: 3),
+                      Text(
+                        compra.historico.loja!.trim(),
+                        style: tema.textTheme.bodySmall,
+                      ),
+                    ],
                     const SizedBox(height: 7),
                     Text(
                       '${compra.itens.length} ${compra.itens.length == 1 ? 'item' : 'itens'}  •  '
@@ -60,11 +70,22 @@ class HistoricoCard extends StatelessWidget {
                   ],
                 ),
               ),
-              IconButton(
-                tooltip: 'Compartilhar compra',
-                onPressed: compra.itens.isEmpty ? null : aoCompartilhar,
-                color: cor,
-                icon: const Icon(Icons.ios_share_outlined),
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    tooltip: 'Editar histórico',
+                    onPressed: aoEditar,
+                    color: cor,
+                    icon: const Icon(PhosphorIcons.pencilSimple),
+                  ),
+                  IconButton(
+                    tooltip: 'Compartilhar compra',
+                    onPressed: compra.itens.isEmpty ? null : aoCompartilhar,
+                    color: cor,
+                    icon: const Icon(PhosphorIcons.shareNetwork),
+                  ),
+                ],
               ),
             ],
           ),

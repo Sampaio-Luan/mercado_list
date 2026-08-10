@@ -9,6 +9,7 @@ import '../../listas/model/lista_model.dart';
 import '../model/filtro_historico.dart';
 import '../model/historico_com_itens_model.dart';
 import '../model/historico_model.dart';
+import '../model/item_historico_model.dart';
 import '../model/resultado_reutilizacao_historico.dart';
 import '../service/reutilizar_historico_service.dart';
 import '../service/historico_service.dart';
@@ -33,6 +34,18 @@ class HistoricoController extends ChangeNotifier {
   UnmodifiableListView<HistoricoComItens> get compras =>
       UnmodifiableListView(_compras);
 
+  List<String> get sugestoesLojas {
+    final normalizadas = <String>{};
+    final resultado = <String>[];
+    for (final compra in _compras) {
+      final loja = compra.historico.loja?.trim();
+      if (loja == null || loja.isEmpty) continue;
+      final chave = TextoUtils.normalizarParaOrdenacao(loja);
+      if (normalizadas.add(chave)) resultado.add(loja);
+    }
+    return List.unmodifiable(resultado);
+  }
+
   List<HistoricoComItens> get comprasVisiveis {
     final termo = TextoUtils.normalizarParaOrdenacao(pesquisa);
     final limite = periodo.dias == null
@@ -44,6 +57,8 @@ class HistoricoController extends ChangeNotifier {
       }
       if (termo.isEmpty) return true;
       return TextoUtils.normalizarParaOrdenacao(compra.historico.titulo)
+              .contains(termo) ||
+          TextoUtils.normalizarParaOrdenacao(compra.historico.loja ?? '')
               .contains(termo) ||
           compra.itens.any(
             (item) =>
@@ -115,9 +130,10 @@ class HistoricoController extends ChangeNotifier {
         (item) => item.historico.id == compra.historico.id,
       );
       if (indice >= 0) {
+        final itensAtuais = _compras[indice].itens;
         _compras[indice] = HistoricoComItens(
           historico: editado,
-          itens: compra.itens,
+          itens: itensAtuais,
         );
       }
     });
@@ -133,6 +149,30 @@ class HistoricoController extends ChangeNotifier {
           ? EstadoDeTela.carregadaSemDados
           : EstadoDeTela.carregadaComDados;
     });
+  }
+
+  Future<ItemHistorico> editarItem(
+    HistoricoComItens compra,
+    ItemHistorico item,
+  ) async {
+    late ItemHistorico editado;
+    await _executarNaCompra(compra, () async {
+      editado = await _service.editarItem(item);
+      final indiceCompra = _compras.indexWhere(
+        (registro) => registro.historico.id == compra.historico.id,
+      );
+      if (indiceCompra < 0) return;
+      final compraAtual = _compras[indiceCompra];
+      final itens = [...compraAtual.itens];
+      final indiceItem = itens.indexWhere((registro) => registro.id == item.id);
+      if (indiceItem < 0) return;
+      itens[indiceItem] = editado;
+      _compras[indiceCompra] = HistoricoComItens(
+        historico: compraAtual.historico,
+        itens: List.unmodifiable(itens),
+      );
+    });
+    return editado;
   }
 
   Future<ResultadoReutilizacaoHistorico> reutilizar(

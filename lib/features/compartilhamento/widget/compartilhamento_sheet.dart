@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 
 import '../../../core/extensions/cor_contraste_extension.dart';
 import '../controller/compartilhamento_controller.dart';
@@ -79,7 +80,7 @@ class _CompartilhamentoSheetState extends State<CompartilhamentoSheet> {
               children: [
                 Row(
                   children: [
-                    Icon(Icons.ios_share_outlined, color: corAcao),
+                    Icon(PhosphorIcons.shareNetwork, color: corAcao),
                     const SizedBox(width: 10),
                     Expanded(
                       child: Text(
@@ -151,7 +152,7 @@ class _CompartilhamentoSheetState extends State<CompartilhamentoSheet> {
                                   : (_) => _controller.alternarCampo(campo),
                               avatar: obrigatorio
                                   ? Icon(
-                                      Icons.lock_outline,
+                                      PhosphorIcons.lock,
                                       size: 16,
                                       color: corAcao,
                                     )
@@ -216,7 +217,7 @@ class _CompartilhamentoSheetState extends State<CompartilhamentoSheet> {
                           dimension: 18,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
-                      : const Icon(Icons.ios_share_outlined),
+                      : const Icon(PhosphorIcons.shareNetwork),
                   label: Text(
                     _controller.compartilhando
                         ? 'Preparando...'
@@ -241,12 +242,12 @@ class _CompartilhamentoSheetState extends State<CompartilhamentoSheet> {
   }
 
   IconData _iconeFormato(FormatoCompartilhamento formato) => switch (formato) {
-        FormatoCompartilhamento.texto => Icons.notes_outlined,
-        FormatoCompartilhamento.imagem => Icons.image_outlined,
-        FormatoCompartilhamento.pdf => Icons.picture_as_pdf_outlined,
-        FormatoCompartilhamento.csv => Icons.table_rows_outlined,
-        FormatoCompartilhamento.excel => Icons.grid_on_outlined,
-        FormatoCompartilhamento.json => Icons.data_object,
+        FormatoCompartilhamento.texto => PhosphorIcons.note,
+        FormatoCompartilhamento.imagem => PhosphorIcons.image,
+        FormatoCompartilhamento.pdf => PhosphorIcons.filePdf,
+        FormatoCompartilhamento.csv => PhosphorIcons.fileCsv,
+        FormatoCompartilhamento.excel => PhosphorIcons.fileXls,
+        FormatoCompartilhamento.json => PhosphorIcons.fileCode,
       };
 }
 

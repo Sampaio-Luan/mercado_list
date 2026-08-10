@@ -48,6 +48,47 @@ void main() {
     await controller.excluir(controller.compras.single);
     expect(controller.compras, isEmpty);
   });
+
+  test('pesquisa por loja e sugere lojas sem duplicação', () async {
+    final primeira = _compra(1, 'Compra 1', 'Arroz', 1000, DateTime.now());
+    final segunda = _compra(2, 'Compra 2', 'Feijão', 1500, DateTime.now());
+    final service = _HistoricoServiceFake([
+      HistoricoComItens(
+        historico: primeira.historico.copia(loja: 'Mercado Central'),
+        itens: primeira.itens,
+      ),
+      HistoricoComItens(
+        historico: segunda.historico.copia(loja: 'mercado central'),
+        itens: segunda.itens,
+      ),
+    ]);
+    final controller = HistoricoController(service);
+    await controller.carregar();
+
+    controller.alterarPesquisa('central');
+
+    expect(controller.comprasVisiveis, hasLength(2));
+    expect(controller.sugestoesLojas, ['Mercado Central']);
+  });
+
+  test('editar dados da compra preserva itens já atualizados em memória',
+      () async {
+    final compra = _compra(1, 'Mercado', 'Arroz', 1000, DateTime.now());
+    final controller = HistoricoController(_HistoricoServiceFake([compra]));
+    await controller.carregar();
+
+    await controller.editarItem(
+      compra,
+      compra.itens.single.copia(titulo: 'Arroz integral'),
+    );
+    await controller.editar(
+      compra,
+      compra.historico.copia(titulo: 'Compra editada'),
+    );
+
+    expect(controller.compras.single.historico.titulo, 'Compra editada');
+    expect(controller.compras.single.itens.single.titulo, 'Arroz integral');
+  });
 }
 
 HistoricoComItens _compra(
@@ -61,6 +102,7 @@ HistoricoComItens _compra(
       historico: Historico(id: id, titulo: titulo, dataCompra: data),
       itens: [
         ItemHistorico(
+          id: id,
           idHistorico: id,
           titulo: item,
           tituloCategoria: 'Geral',
@@ -81,6 +123,9 @@ class _HistoricoServiceFake implements HistoricoServiceContract {
 
   @override
   Future<Historico> editar(Historico historico) async => historico;
+
+  @override
+  Future<ItemHistorico> editarItem(ItemHistorico item) async => item;
 
   @override
   Future<void> excluir(Historico historico) async {}

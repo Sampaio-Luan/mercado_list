@@ -11,6 +11,8 @@ import '../../../core/constants/enums/ordem.dart';
 import '../../../core/constants/enums/ordenar_por.dart';
 import '../../../core/constants/enums/tipo_visualizacao_itens.dart';
 import '../../../core/constants/logs/logs.dart';
+import '../../../core/model/progresso_operacao.dart';
+import '../../../core/utils/data_utils.dart';
 import '../../../core/utils/texto_utils.dart';
 import '../../../shared/widgets/painel_pesquisa/similaridade_texto.dart';
 import '../../categoria/model/categoria_model.dart';
@@ -90,6 +92,10 @@ class ItensController extends ChangeNotifier {
 
   bool get possuiItens => _itens.isNotEmpty;
   bool get possuiItensMarcados => _itens.any((item) => item.obtido);
+  int get quantidadeItensElegiveisHistorico =>
+      _itens.where(_elegivelParaHistorico).length;
+  int get quantidadeItensMarcadosSemPreco =>
+      _itens.where((item) => item.obtido && item.preco == null).length;
   bool get todosItensMarcados =>
       _itens.isNotEmpty && _itens.every((item) => item.obtido);
 
@@ -392,7 +398,24 @@ class ItensController extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<Historico> salvarNoHistorico() async {
+  Historico prepararNovoHistorico() {
+    final lista = _listaSelecionada;
+    if (lista == null) {
+      throw StateError('Selecione uma lista antes de salvar no histórico.');
+    }
+    return Historico(
+      titulo: lista.titulo,
+      descricao: lista.descricao,
+      dataCompra: DataUtils.agoraUtc(),
+      cor: lista.cor,
+      orcamento: lista.orcamento,
+    );
+  }
+
+  Future<Historico> salvarNoHistorico(
+    Historico historico, {
+    AoProgredir? aoProgredir,
+  }) async {
     final service = _salvarHistoricoService;
     final lista = _listaSelecionada;
     if (service == null || lista == null) {
@@ -405,17 +428,33 @@ class ItensController extends ChangeNotifier {
     notifyListeners();
     try {
       return await service.executar(
-        lista: lista,
+        historico: historico,
         itens: _itens,
         titulosCategorias: {
           for (final categoria in _categorias) categoria.id!: categoria.titulo,
         },
+        aoProgredir: aoProgredir,
       );
     } finally {
       salvandoHistorico = false;
       notifyListeners();
     }
   }
+
+  Future<void> desmarcarItensSalvosNoHistorico() async {
+    final elegiveis = _itens.where(_elegivelParaHistorico).toList();
+    for (final item in elegiveis) {
+      final alterado = await _itensService.alterarObtido(item, false);
+      final indice = _itens.indexWhere((existente) => existente.id == item.id);
+      if (indice >= 0) _itens[indice] = alterado;
+    }
+    if (elegiveis.isNotEmpty) {
+      notifyListeners();
+      await _notificarAlteracaoPersistida();
+    }
+  }
+
+  bool _elegivelParaHistorico(Item item) => item.obtido && item.preco != null;
 
   Future<void> _recarregarItensSelecionados() async {
     final idLista = idListaSelecionada;

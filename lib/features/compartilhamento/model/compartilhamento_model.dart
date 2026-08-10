@@ -75,6 +75,7 @@ class ConteudoCompartilhamento {
     required this.titulo,
     required this.itens,
     this.descricao,
+    this.loja,
     this.data,
     this.orcamento,
   });
@@ -82,6 +83,7 @@ class ConteudoCompartilhamento {
   final ContextoCompartilhamento contexto;
   final String titulo;
   final String? descricao;
+  final String? loja;
   final DateTime? data;
   final int? orcamento;
   final List<ItemCompartilhamento> itens;

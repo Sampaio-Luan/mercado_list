@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/constants/enums/estado_de_tela.dart';
@@ -11,6 +12,7 @@ import '../../listas/controller/listas_controller.dart';
 import '../controller/historico_controller.dart';
 import '../form/historico_formulario.dart';
 import '../model/historico_com_itens_model.dart';
+import '../model/item_historico_model.dart';
 import '../widget/barra_historico.dart';
 import '../widget/historico_card.dart';
 import '../widget/historico_detalhes_sheet.dart';
@@ -31,14 +33,14 @@ class HistoricoScreen extends StatelessWidget {
             child: CircularProgressIndicator(),
           ),
         EstadoDeTela.erro => _EstadoHistorico(
-            icone: Icons.error_outline,
+            icone: PhosphorIcons.warningCircle,
             mensagem:
                 controller.mensagemErro ?? 'O histórico não está disponível.',
             textoAcao: 'Tentar novamente',
             aoAcionar: controller.carregar,
           ),
         EstadoDeTela.carregadaSemDados => const _EstadoHistorico(
-            icone: Icons.history_toggle_off,
+            icone: PhosphorIcons.clockCounterClockwise,
             mensagem: 'As compras salvas aparecerão aqui.',
           ),
         _ => Column(
@@ -54,7 +56,7 @@ class HistoricoScreen extends StatelessWidget {
               Expanded(
                 child: controller.comprasVisiveis.isEmpty
                     ? const _EstadoHistorico(
-                        icone: Icons.search_off_outlined,
+                        icone: PhosphorIcons.listMagnifyingGlass,
                         mensagem: 'Nenhuma compra corresponde aos filtros.',
                       )
                     : RefreshIndicator(
@@ -73,6 +75,8 @@ class HistoricoScreen extends StatelessWidget {
                                 controller,
                                 compra,
                               ),
+                              aoEditar: () =>
+                                  _editar(context, controller, compra),
                               aoCompartilhar: () => _compartilhar(
                                 context,
                                 controller,
@@ -100,8 +104,9 @@ class HistoricoScreen extends StatelessWidget {
       operacaoEmAndamento: controller.operacaoEmAndamento(compra),
       aoEditar: () => _aposFecharDetalhes(
         context,
-        () => HistoricoFormulario.exibir(context, compra),
+        () => _editar(context, controller, compra),
       ),
+      aoEditarItem: (item) => _editarItem(context, controller, compra, item),
       aoCompartilhar: () => _aposFecharDetalhes(
         context,
         () => _compartilhar(context, controller, compra),
@@ -115,6 +120,49 @@ class HistoricoScreen extends StatelessWidget {
         () => _excluir(context, controller, compra),
       ),
     );
+  }
+
+  Future<ItemHistorico?> _editarItem(
+    BuildContext context,
+    HistoricoController controller,
+    HistoricoComItens compra,
+    ItemHistorico item,
+  ) async {
+    try {
+      final editado = await controller.editarItem(compra, item);
+      if (context.mounted) {
+        context.mostrarSucesso('Item atualizado com sucesso.');
+      }
+      return editado;
+    } catch (_) {
+      if (context.mounted) {
+        context.mostrarErro('Não foi possível editar o item.');
+      }
+      return null;
+    }
+  }
+
+  Future<void> _editar(
+    BuildContext context,
+    HistoricoController controller,
+    HistoricoComItens compra,
+  ) async {
+    final alterado = await HistoricoFormulario.editar(
+      context,
+      compra,
+      sugestoesLojas: controller.sugestoesLojas,
+    );
+    if (alterado == null || !context.mounted) return;
+    try {
+      await controller.editar(compra, alterado);
+      if (context.mounted) {
+        context.mostrarSucesso('Compra atualizada com sucesso.');
+      }
+    } catch (_) {
+      if (context.mounted) {
+        context.mostrarErro('Não foi possível editar a compra.');
+      }
+    }
   }
 
   Future<void> _aposFecharDetalhes(

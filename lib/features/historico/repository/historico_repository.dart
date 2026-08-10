@@ -5,23 +5,31 @@ import '../../../core/database/schema/tb_historico.dart';
 import '../../../core/database/schema/tb_item_historico.dart';
 import '../../../core/utils/data_utils.dart';
 import '../../itens/model/item_model.dart';
-import '../../listas/model/lista_model.dart';
 import '../model/historico_model.dart';
 import '../model/historico_com_itens_model.dart';
 import '../model/item_historico_model.dart';
 import '../mapper/historico_mapper.dart';
 import '../mapper/item_historico_mapper.dart';
 
+typedef AoSalvarItemHistorico = Future<void> Function(
+  int indice,
+  int total,
+  String titulo,
+);
+
 abstract interface class HistoricoRepositoryContract {
   Future<List<HistoricoComItens>> recuperarTodosComItens();
 
   Future<Historico> salvarCompra({
-    required Lista lista,
+    required Historico historico,
     required List<Item> itens,
     required Map<int, String> titulosCategorias,
+    AoSalvarItemHistorico? aoSalvarItem,
   });
 
   Future<Historico> editar(Historico historico);
+
+  Future<ItemHistorico> editarItem(ItemHistorico item);
 
   Future<void> excluir(Historico historico);
 }
@@ -76,32 +84,41 @@ class HistoricoRepository implements HistoricoRepositoryContract {
 
   @override
   Future<Historico> salvarCompra({
-    required Lista lista,
+    required Historico historico,
     required List<Item> itens,
     required Map<int, String> titulosCategorias,
+    AoSalvarItemHistorico? aoSalvarItem,
   }) {
     return bancoLocal.executar((executor) async {
       final agora = DataUtils.agoraUtc();
       final id = await executor.insert(TbHistorico.nomeTabela, {
-        TbHistorico.colunaTitulo: lista.titulo,
-        TbHistorico.colunaDescricao: lista.descricao,
-        TbHistorico.colunaCor: Cor.obterPorColor(color: lista.cor).name,
-        TbHistorico.colunaOrcamento: lista.orcamento,
-        TbHistorico.colunaDataCompra: DataUtils.paraPersistencia(agora),
+        TbHistorico.colunaTitulo: historico.titulo,
+        TbHistorico.colunaDescricao: historico.descricao,
+        TbHistorico.colunaLoja: historico.loja,
+        TbHistorico.colunaCor: Cor.obterPorColor(color: historico.cor).name,
+        TbHistorico.colunaOrcamento: historico.orcamento,
+        TbHistorico.colunaDataCompra:
+            DataUtils.paraPersistencia(historico.dataCompra),
         TbHistorico.colunaDataCriacao: DataUtils.paraPersistencia(agora),
         TbHistorico.colunaDataAlteracao: DataUtils.paraPersistencia(agora),
         TbHistorico.colunaExcluido: 0,
       });
-      final batch = executor.batch();
-      for (final item in itens) {
-        batch.insert(TbItemHistorico.nomeTabela, {
+      for (var indice = 0; indice < itens.length; indice++) {
+        final item = itens[indice];
+        final preco = item.preco;
+        if (!item.obtido || preco == null) {
+          throw ArgumentError(
+            'O histórico aceita somente itens marcados e com preço.',
+          );
+        }
+        await executor.insert(TbItemHistorico.nomeTabela, {
           TbItemHistorico.colunaIdHistorico: id,
           TbItemHistorico.colunaTitulo: item.titulo,
           TbItemHistorico.colunaTituloCategoria:
               titulosCategorias[item.idCategoria] ?? 'Sem categoria',
           TbItemHistorico.colunaQuantidade:
               item.quantidade ?? (item.tipoMedida == TipoMedida.kg ? 1000 : 1),
-          TbItemHistorico.colunaPreco: item.preco ?? 0,
+          TbItemHistorico.colunaPreco: preco,
           TbItemHistorico.colunaUnidadeDeMedida:
               TipoMedida.obterRotulo(tipo: item.tipoMedida),
           TbItemHistorico.colunaPrioridade: item.prioridade.index,
@@ -111,15 +128,16 @@ class HistoricoRepository implements HistoricoRepositoryContract {
               DataUtils.paraPersistencia(agora),
           TbItemHistorico.colunaExcluido: 0,
         });
+        await aoSalvarItem?.call(indice + 1, itens.length, item.titulo);
       }
-      await batch.commit(noResult: true);
       return Historico(
         id: id,
-        titulo: lista.titulo,
-        descricao: lista.descricao,
-        dataCompra: agora,
-        cor: lista.cor,
-        orcamento: lista.orcamento,
+        titulo: historico.titulo,
+        descricao: historico.descricao,
+        loja: historico.loja,
+        dataCompra: historico.dataCompra,
+        cor: historico.cor,
+        orcamento: historico.orcamento,
         dataCriacao: agora,
         dataAlteracao: agora,
       );
@@ -144,6 +162,31 @@ class HistoricoRepository implements HistoricoRepositoryContract {
       );
       if (linhas == 0) throw StateError('Histórico não encontrado.');
       return editado;
+    });
+  }
+
+  @override
+  Future<ItemHistorico> editarItem(ItemHistorico item) {
+    return bancoLocal.executar((executor) async {
+      final id = item.id;
+      if (id == null) throw StateError('O item precisa estar persistido.');
+      final agora = DataUtils.agoraUtc();
+      final linhas = await executor.update(
+        TbItemHistorico.nomeTabela,
+        {
+          TbItemHistorico.colunaTitulo: item.titulo,
+          TbItemHistorico.colunaQuantidade: item.quantidade,
+          TbItemHistorico.colunaPreco: item.preco,
+          TbItemHistorico.colunaDataAlteracao:
+              DataUtils.paraPersistencia(agora),
+        },
+        where: '${TbItemHistorico.colunaId} = ? AND '
+            '${TbItemHistorico.colunaIdHistorico} = ? AND '
+            '${TbItemHistorico.colunaExcluido} = 0',
+        whereArgs: [id, item.idHistorico],
+      );
+      if (linhas == 0) throw StateError('Item do histórico não encontrado.');
+      return item.copia()..dataAlteracao = agora;
     });
   }
 

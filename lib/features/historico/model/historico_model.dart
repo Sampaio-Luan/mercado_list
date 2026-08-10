@@ -5,6 +5,7 @@ import '../../../core/model/entidade_base.dart';
 
 class Historico extends EntidadeBase {
   final String? descricao;
+  final String? loja;
   final DateTime dataCompra;
   final Color cor;
   final int? orcamento;
@@ -13,6 +14,7 @@ class Historico extends EntidadeBase {
     super.id,
     required super.titulo,
     this.descricao,
+    this.loja,
     required this.dataCompra,
     Color? cor,
     this.orcamento,
@@ -25,6 +27,8 @@ class Historico extends EntidadeBase {
     String? titulo,
     String? descricao,
     bool limparDescricao = false,
+    String? loja,
+    bool limparLoja = false,
     DateTime? dataCompra,
     Color? cor,
     int? orcamento,
@@ -35,6 +39,7 @@ class Historico extends EntidadeBase {
       id: id,
       titulo: titulo ?? this.titulo,
       descricao: limparDescricao ? null : (descricao ?? this.descricao),
+      loja: limparLoja ? null : (loja ?? this.loja),
       dataCompra: dataCompra ?? this.dataCompra,
       cor: cor ?? this.cor,
       orcamento: limparOrcamento ? null : (orcamento ?? this.orcamento),

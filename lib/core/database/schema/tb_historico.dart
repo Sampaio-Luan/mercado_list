@@ -7,6 +7,7 @@ class TbHistorico implements ContratoTbEsquema {
   static const String colunaId = 'id_historico';
   static const String colunaTitulo = ColunasEntidade.titulo;
   static const String colunaDescricao = 'descricao';
+  static const String colunaLoja = 'loja';
   static const String colunaCor = 'cor';
   static const String colunaOrcamento = 'orcamento';
   static const String colunaDataCompra = 'dt_compra';
@@ -19,6 +20,7 @@ class TbHistorico implements ContratoTbEsquema {
       $colunaId INTEGER PRIMARY KEY AUTOINCREMENT,
       $colunaTitulo TEXT NOT NULL,
       $colunaDescricao TEXT,
+      $colunaLoja TEXT,
       $colunaCor TEXT NOT NULL DEFAULT 'indigo',
       $colunaOrcamento INTEGER,
       $colunaDataCompra TIMESTAMP NOT NULL,

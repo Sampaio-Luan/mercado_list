@@ -44,6 +44,9 @@ class Migrations {
     if (versaoAnterior < 10 && novaVersao >= 10) {
       await paraVersao10(db);
     }
+    if (versaoAnterior < 11 && novaVersao >= 11) {
+      await paraVersao11(db);
+    }
   }
 
   static Future<void> paraVersao2(DatabaseExecutor db) async {
@@ -171,5 +174,12 @@ class Migrations {
     ''');
     await db.execute(TbHistorico.criarIndiceData);
     await db.execute(TbItemHistorico.criarIndiceHistorico);
+  }
+
+  static Future<void> paraVersao11(DatabaseExecutor db) async {
+    await db.execute('''
+      ALTER TABLE ${TbHistorico.nomeTabela}
+      ADD COLUMN ${TbHistorico.colunaLoja} TEXT
+    ''');
   }
 }

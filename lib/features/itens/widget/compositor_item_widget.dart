@@ -26,6 +26,7 @@ class CompositorItemWidget extends StatefulWidget {
   final VoidCallback aoItensRecorrentes;
   final bool categoriasExpandidas;
   final VoidCallback aoAlternarCategorias;
+  final Future<void> Function()? aoConcluirLista;
 
   const CompositorItemWidget({
     super.key,
@@ -35,6 +36,7 @@ class CompositorItemWidget extends StatefulWidget {
     required this.aoItensRecorrentes,
     required this.categoriasExpandidas,
     required this.aoAlternarCategorias,
+    this.aoConcluirLista,
   });
 
   @override
@@ -444,8 +446,12 @@ class CompositorItemState extends State<CompositorItemWidget> {
   }
 
   Future<void> _alternarMarcacaoTodos(ItensController controller) async {
+    final estavaConcluida = controller.todosItensMarcados;
     try {
       await controller.alternarMarcacaoTodos();
+      if (!estavaConcluida && controller.todosItensMarcados && mounted) {
+        await widget.aoConcluirLista?.call();
+      }
     } catch (_) {
       if (mounted) {
         context.mostrarErro('Não foi possível atualizar todos os itens.');

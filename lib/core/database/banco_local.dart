@@ -34,7 +34,7 @@ class BancoLocal implements GerenciadorTransacoes {
   Future<Database> _iniciaBancoLocal() async {
     _dataBase = await openDatabase(
       join(await getDatabasesPath(), 'mercado_list_local.db'),
-      version: 10,
+      version: 11,
       onConfigure: _onConfigure,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,

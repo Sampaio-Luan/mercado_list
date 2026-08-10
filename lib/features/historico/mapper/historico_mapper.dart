@@ -15,6 +15,7 @@ class HistoricoMapper {
       id: mapa[TbHistorico.colunaId] as int,
       titulo: mapa[TbHistorico.colunaTitulo] as String,
       descricao: mapa[TbHistorico.colunaDescricao] as String?,
+      loja: mapa[TbHistorico.colunaLoja] as String?,
       dataCompra: DataUtils.daPersistencia(
         mapa[TbHistorico.colunaDataCompra] as String,
       ),
@@ -34,6 +35,7 @@ class HistoricoMapper {
         if (historico.id != null) TbHistorico.colunaId: historico.id,
         TbHistorico.colunaTitulo: historico.titulo,
         TbHistorico.colunaDescricao: historico.descricao,
+        TbHistorico.colunaLoja: historico.loja,
         TbHistorico.colunaDataCompra:
             DataUtils.paraPersistencia(historico.dataCompra),
         TbHistorico.colunaCor: Cor.obterPorColor(color: historico.cor).name,

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import 'package:mercado_list/core/extensions/cor_contraste_extension.dart';
 import 'package:mercado_list/features/compartilhamento/model/compartilhamento_model.dart';
 import 'package:mercado_list/features/compartilhamento/service/compartilhamento_service.dart';
@@ -32,17 +33,17 @@ void main() {
 
     expect(find.text('Texto'), findsOneWidget);
     for (final icone in [
-      Icons.notes_outlined,
-      Icons.image_outlined,
-      Icons.picture_as_pdf_outlined,
-      Icons.table_rows_outlined,
-      Icons.grid_on_outlined,
-      Icons.data_object,
+      PhosphorIcons.note,
+      PhosphorIcons.image,
+      PhosphorIcons.filePdf,
+      PhosphorIcons.fileCsv,
+      PhosphorIcons.fileXls,
+      PhosphorIcons.fileCode,
     ]) {
       expect(tester.widget<Icon>(find.byIcon(icone)).color, corEsperada);
     }
     expect(
-      tester.widget<Icon>(find.byIcon(Icons.lock_outline)).color,
+      tester.widget<Icon>(find.byIcon(PhosphorIcons.lock)).color,
       corEsperada,
     );
   });

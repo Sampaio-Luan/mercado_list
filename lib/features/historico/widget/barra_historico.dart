@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 
 import '../model/filtro_historico.dart';
 
@@ -30,7 +31,7 @@ class BarraHistorico extends StatelessWidget {
           children: [
             SearchBar(
               hintText: 'Pesquisar compras ou itens',
-              leading: const Icon(Icons.search),
+              leading: const Icon(PhosphorIcons.magnifyingGlass),
               elevation: const WidgetStatePropertyAll(0),
               onChanged: aoPesquisar,
             ),
@@ -67,7 +68,7 @@ class BarraHistorico extends StatelessWidget {
                         )
                         .toList(growable: false),
                     child: Chip(
-                      avatar: const Icon(Icons.swap_vert, size: 18),
+                      avatar: const Icon(PhosphorIcons.arrowsDownUp, size: 18),
                       label: Text(ordenacao.rotulo),
                     ),
                   ),

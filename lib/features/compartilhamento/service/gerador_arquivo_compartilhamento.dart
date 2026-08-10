@@ -35,6 +35,9 @@ class GeradorTextoCompartilhamento implements GeradorArquivoCompartilhamento {
     if (tabela.conteudo.descricao?.trim().isNotEmpty == true) {
       texto.writeln(tabela.conteudo.descricao!.trim());
     }
+    if (tabela.conteudo.loja?.trim().isNotEmpty == true) {
+      texto.writeln('Loja: ${tabela.conteudo.loja!.trim()}');
+    }
     for (final item in tabela.itens) {
       texto.writeln(_formatarLinhaItem(tabela, item));
     }
@@ -130,6 +133,8 @@ class GeradorJsonCompartilhamento implements GeradorArquivoCompartilhamento {
       'link_para_baixar': IdentidadeCompartilhamento.linkDownload,
       if (tabela.conteudo.descricao?.trim().isNotEmpty == true)
         'descricao': tabela.conteudo.descricao,
+      if (tabela.conteudo.loja?.trim().isNotEmpty == true)
+        'loja': tabela.conteudo.loja,
       if (tabela.conteudo.data != null)
         'data': tabela.conteudo.data!.toUtc().toIso8601String(),
       if (tabela.conteudo.orcamento != null)
@@ -165,6 +170,10 @@ class GeradorCsvCompartilhamento implements GeradorArquivoCompartilhamento {
   ) async {
     final tabela = TabelaCompartilhamento(configuracao);
     final linhas = <List<dynamic>>[
+      if (tabela.conteudo.loja?.trim().isNotEmpty == true) ...[
+        ['Loja', tabela.conteudo.loja!.trim()],
+        const [],
+      ],
       tabela.cabecalhos,
       ...tabela.linhas.map(
         (linha) => linha.map(_protegerCelulaCsv).toList(growable: false),
@@ -199,6 +208,13 @@ class GeradorExcelCompartilhamento implements GeradorArquivoCompartilhamento {
     final planilha = pasta['Itens'];
     pasta.setDefaultSheet('Itens');
     pasta.delete('Sheet1');
+    if (tabela.conteudo.loja?.trim().isNotEmpty == true) {
+      planilha.appendRow([
+        excel_lib.TextCellValue('Loja'),
+        excel_lib.TextCellValue(tabela.conteudo.loja!.trim()),
+      ]);
+      planilha.appendRow([]);
+    }
     planilha.appendRow(
       tabela.cabecalhos.map(excel_lib.TextCellValue.new).toList(),
     );
@@ -270,6 +286,8 @@ class GeradorPdfCompartilhamento implements GeradorArquivoCompartilhamento {
               pw.Text('Itens: ${tabela.itens.length}'),
               if (tabela.dataFormatada.isNotEmpty)
                 pw.Text('Data: ${tabela.dataFormatada}'),
+              if (tabela.conteudo.loja?.trim().isNotEmpty == true)
+                pw.Text('Loja: ${tabela.conteudo.loja!.trim()}'),
               if (tabela.conteudo.orcamento != null)
                 pw.Text(
                   'Orçamento: ${MonetarioUtils.formatarIntToMoeda(tabela.conteudo.orcamento!)}',
@@ -439,6 +457,7 @@ class GeradorImagemCompartilhamento implements GeradorArquivoCompartilhamento {
     canvas.drawParagraph(titulo, const ui.Offset(margem, 42));
     final subtitulo = _criarParagrafoImagem(
       '${tabela.escopo.rotulo} • ${tabela.itens.length} itens'
+      '${tabela.conteudo.loja?.trim().isNotEmpty == true ? ' • ${tabela.conteudo.loja!.trim()}' : ''}'
       '${totalPaginas > 1 ? ' • $numeroPagina/$totalPaginas' : ''}',
       tamanho: 25,
       cor: const ui.Color(0xFF49454F),

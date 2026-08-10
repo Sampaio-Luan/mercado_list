@@ -26,16 +26,26 @@ import '../widget/ordenacao_itens_sheet.dart';
 
 class ListaItensScreen extends StatefulWidget {
   final bool modoPesquisa;
+  final Future<void> Function()? aoConcluirLista;
 
-  const ListaItensScreen({super.key, this.modoPesquisa = false});
+  const ListaItensScreen({
+    super.key,
+    this.modoPesquisa = false,
+    this.aoConcluirLista,
+  });
 
-  static Future<void> abrirPesquisa(BuildContext context) async {
+  static Future<void> abrirPesquisa(
+    BuildContext context, {
+    Future<void> Function()? aoConcluirLista,
+  }) async {
     final controller = context.read<ItensController>();
     await Navigator.of(context).push<void>(
       PageRouteBuilder<void>(
         transitionDuration: const Duration(milliseconds: 650),
         reverseTransitionDuration: const Duration(milliseconds: 550),
-        pageBuilder: (_, _, _) => const _PesquisaItensScreen(),
+        pageBuilder: (_, _, _) => _PesquisaItensScreen(
+          aoConcluirLista: aoConcluirLista,
+        ),
         transitionsBuilder: (context, animacao, animacaoSecundaria, child) {
           return FadeTransition(
             opacity: CurvedAnimation(
@@ -134,6 +144,7 @@ class _ListaItensScreenState extends State<ListaItensScreen> {
             categoriasExpandidas: _categoriasExpandidas,
             aoAlternarCategorias: _alternarTodasCategorias,
             aoItensRecorrentes: () => Scaffold.of(context).openEndDrawer(),
+            aoConcluirLista: widget.aoConcluirLista,
           ),
         ),
       ],
@@ -153,8 +164,15 @@ class _ListaItensScreenState extends State<ListaItensScreen> {
     Item item,
     bool valor,
   ) async {
+    final estavaConcluida = controller.todosItensMarcados;
     try {
       await controller.alterarObtido(item, valor);
+      if (!estavaConcluida &&
+          valor &&
+          controller.todosItensMarcados &&
+          mounted) {
+        await widget.aoConcluirLista?.call();
+      }
     } catch (_) {
       if (mounted) context.mostrarErro('Não foi possível atualizar o item.');
     }
@@ -338,7 +356,9 @@ class _VisualizacaoCategoriasItens extends StatelessWidget {
 }
 
 class _PesquisaItensScreen extends StatefulWidget {
-  const _PesquisaItensScreen();
+  const _PesquisaItensScreen({this.aoConcluirLista});
+
+  final Future<void> Function()? aoConcluirLista;
 
   @override
   State<_PesquisaItensScreen> createState() => _PesquisaItensScreenState();
@@ -432,7 +452,10 @@ class _PesquisaItensScreenState extends State<_PesquisaItensScreen> {
           ),
         ],
       ),
-      body: const ListaItensScreen(modoPesquisa: true),
+      body: ListaItensScreen(
+        modoPesquisa: true,
+        aoConcluirLista: widget.aoConcluirLista,
+      ),
     );
   }
 

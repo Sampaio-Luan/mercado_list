@@ -4,12 +4,14 @@ import 'package:mercado_list/core/constants/enums/ordem.dart';
 import 'package:mercado_list/core/constants/enums/ordenar_por.dart';
 import 'package:mercado_list/core/constants/enums/tipo_medida.dart';
 import 'package:mercado_list/core/constants/enums/tipo_visualizacao_itens.dart';
+import 'package:mercado_list/core/model/progresso_operacao.dart';
 import 'package:mercado_list/core/services/preferencias_service.dart';
 import 'package:mercado_list/features/categoria/model/categoria_model.dart';
 import 'package:mercado_list/features/itens/controller/itens_controller.dart';
 import 'package:mercado_list/features/categoria/service/categorias_service.dart';
 import 'package:mercado_list/features/compartilhamento/model/compartilhamento_model.dart';
 import 'package:mercado_list/features/historico/controller/historico_controller.dart';
+import 'package:mercado_list/features/historico/form/historico_formulario.dart';
 import 'package:mercado_list/features/historico/model/historico_com_itens_model.dart';
 import 'package:mercado_list/features/historico/model/historico_model.dart';
 import 'package:mercado_list/features/historico/service/historico_service.dart';
@@ -29,6 +31,7 @@ import 'package:mercado_list/features/listas/service/listas_service.dart';
 import 'package:mercado_list/features/preferencias_usuario/controller/preferencias_provider.dart';
 import 'package:mercado_list/features/principal_screen.dart';
 import 'package:mercado_list/shared/widgets/dialogo/dialogo_base.dart';
+import 'package:mercado_list/shared/widgets/card_progresso_operacao.dart';
 import 'package:mercado_list/shared/widgets/painel_pesquisa/texto_destacado_pesquisa.dart';
 import 'package:percent_indicator/circular_percent_indicator.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
@@ -391,6 +394,11 @@ void main() {
     await tester.tap(find.byTooltip('Marcar todos'));
     await tester.pumpAndSettle();
 
+    expect(find.text('Lista concluída'), findsOneWidget);
+    expect(find.text('Salvar e reutilizar'), findsOneWidget);
+    await tester.tap(find.text('Agora não'));
+    await tester.pumpAndSettle();
+
     expect(
       tester.widget<IconButton>(salvarHistorico).onPressed,
       isNotNull,
@@ -410,14 +418,30 @@ void main() {
     await _montarApp(tester, ambiente);
     await tester.tap(find.byTooltip('Marcar todos'));
     await tester.pumpAndSettle();
+    await tester.tap(find.text('Agora não'));
+    await tester.pumpAndSettle();
 
     await tester.tap(find.byTooltip('Salvar no histórico'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(HistoricoFormulario), findsOneWidget);
+    expect(find.textContaining('item marcado com preço será salvo'),
+        findsOneWidget);
+    await tester.ensureVisible(find.text('Salvar'));
+    await tester.tap(find.text('Salvar'));
+    await tester.pump();
+
+    expect(find.byType(CardProgressoOperacao), findsOneWidget);
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(find.textContaining('Salvando item 1 de 1'), findsOneWidget);
+    await tester.pump(const Duration(milliseconds: 1600));
+    await tester.pump(const Duration(seconds: 2));
     await tester.pumpAndSettle();
 
     expect(find.byType(DialogoBase), findsOneWidget);
     expect(find.text('Compra salva'), findsOneWidget);
     expect(
-      find.text('Deseja desmarcar os itens para reutilizar esta lista?'),
+      find.text('Deseja desmarcar os itens salvos para reutilizar esta lista?'),
       findsOneWidget,
     );
     expect(find.text('Manter marcados'), findsOneWidget);
@@ -427,7 +451,31 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(ambiente.controller.itensController.possuiItensMarcados, isFalse);
-    expect(find.byTooltip('Marcar todos'), findsOneWidget);
+    expect(find.text('Histórico atualizado'), findsOneWidget);
+    expect(find.text('Ver histórico'), findsOneWidget);
+    await tester.tap(find.text('Ver histórico'));
+    await tester.pumpAndSettle();
+    expect(find.text('Histórico de compras'), findsOneWidget);
+  });
+
+  testWidgets('informa quando item marcado não possui preço', (tester) async {
+    final ambiente = await _prepararAmbiente();
+    await _montarApp(tester, ambiente);
+    ambiente.itensService._itens.single.preco = null;
+
+    await tester.tap(find.byTooltip('Marcar todos'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Agora não'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Salvar no histórico'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Itens necessários'), findsOneWidget);
+    expect(
+      find.textContaining('Somente itens marcados e com preço'),
+      findsOneWidget,
+    );
+    expect(find.byType(HistoricoFormulario), findsNothing);
   });
 
   testWidgets('tabela usa cor da lista nos controles e alterna visualização',
@@ -1006,6 +1054,7 @@ class _ItensServiceFake implements ItensService {
       idCategoria: 1,
       titulo: 'Sabonete',
       tipoMedida: TipoMedida.und,
+      preco: 1000,
     ),
   ];
   int _proximoId = 2;
@@ -1058,14 +1107,26 @@ class _ItensServiceFake implements ItensService {
 class _SalvarHistoricoServiceFake implements SalvarHistoricoServiceContract {
   @override
   Future<Historico> executar({
-    required Lista lista,
+    required Historico historico,
     required Iterable<Item> itens,
     required Map<int, String> titulosCategorias,
+    AoProgredir? aoProgredir,
   }) async {
+    aoProgredir?.call(
+      const ProgressoOperacao(
+        etapa: 4,
+        total: 5,
+        descricao: 'Salvando item 1 de 1: Sabonete',
+      ),
+    );
     return Historico(
       id: 1,
-      titulo: lista.titulo,
-      dataCompra: DateTime.utc(2026, 8, 2),
+      titulo: historico.titulo,
+      descricao: historico.descricao,
+      loja: historico.loja,
+      dataCompra: historico.dataCompra,
+      cor: historico.cor,
+      orcamento: historico.orcamento,
     );
   }
 }
