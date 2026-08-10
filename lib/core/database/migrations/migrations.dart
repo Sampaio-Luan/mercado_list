@@ -177,6 +177,14 @@ class Migrations {
   }
 
   static Future<void> paraVersao11(DatabaseExecutor db) async {
+    final colunas = await db.rawQuery(
+      'PRAGMA table_info(${TbHistorico.nomeTabela})',
+    );
+    final lojaJaExiste = colunas.any(
+      (coluna) => coluna['name'] == TbHistorico.colunaLoja,
+    );
+    if (lojaJaExiste) return;
+
     await db.execute('''
       ALTER TABLE ${TbHistorico.nomeTabela}
       ADD COLUMN ${TbHistorico.colunaLoja} TEXT

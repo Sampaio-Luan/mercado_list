@@ -183,9 +183,24 @@ void main() {
       contains('ALTER TABLE tb_historico ADD COLUMN loja TEXT'),
     );
   });
+
+  test('versão 11 preserva banco intermediário que já possui loja', () async {
+    final executor = _ExecutorGravador(colunasHistorico: {'loja'});
+
+    await Migrations.executar(
+      executor,
+      versaoAnterior: 10,
+      novaVersao: 11,
+    );
+
+    expect(executor.comandos, isEmpty);
+  });
 }
 
 class _ExecutorGravador implements DatabaseExecutor {
+  _ExecutorGravador({this.colunasHistorico = const {}});
+
+  final Set<String> colunasHistorico;
   final List<String> comandos = [];
   final List<String> tabelasAtualizadas = [];
   final List<Map<String, Object?>> valoresAtualizados = [];
@@ -195,6 +210,16 @@ class _ExecutorGravador implements DatabaseExecutor {
   @override
   Future<void> execute(String sql, [List<Object?>? arguments]) async {
     comandos.add(sql.replaceAll(RegExp(r'\s+'), ' ').trim());
+  }
+
+  @override
+  Future<List<Map<String, Object?>>> rawQuery(
+    String sql, [
+    List<Object?>? arguments,
+  ]) async {
+    return [
+      for (final coluna in colunasHistorico) {'name': coluna},
+    ];
   }
 
   @override
