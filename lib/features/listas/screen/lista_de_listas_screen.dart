@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import 'package:percent_indicator/circular_percent_indicator.dart';
 import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 import 'package:provider/provider.dart';
@@ -13,8 +14,8 @@ import '../../../core/utils/monetario_utils.dart';
 import '../../categoria/screen/categorias_screen.dart';
 import '../../compartilhamento/service/compartilhamento_service.dart';
 import '../../compartilhamento/widget/compartilhamento_sheet.dart';
-import '../../historico/screen/historico_screen.dart';
 import '../../historico/controller/historico_controller.dart';
+import '../../historico/screen/historico_screen.dart';
 import '../../preferencias_usuario/controller/preferencias_provider.dart';
 import '../controller/listas_controller.dart';
 import '../form/lista_formulario.dart';
@@ -58,101 +59,96 @@ class _ListaDeListasScreenState extends State<ListaDeListasScreen> {
         child: Scaffold(
           resizeToAvoidBottomInset: false,
           backgroundColor: Theme.of(context).colorScheme.surface,
-          body: SafeArea(
-            child: Column(
-              children: [
-                _CabecalhoDrawer(
-                  tema: tema,
-                  aoAlternarTema: () {
-                    context.read<PreferenciasProvider>().alterarTema(
-                          tema == TemaApp.claro
-                              ? TemaApp.escuro
-                              : TemaApp.claro,
-                        );
-                  },
-                ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(12, 10, 6, 6),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: _pesquisa,
-                          key: const ValueKey('pesquisa-listas'),
-                          onChanged: (_) => setState(() {}),
-                          decoration: InputDecoration(
-                            hintText: 'Pesquisar listas',
-                            prefixIcon: Icon(PhosphorIcons.magnifyingGlass),
-                            suffixIcon: _pesquisa.text.isEmpty
-                                ? null
-                                : IconButton(
-                                    tooltip: 'Limpar pesquisa',
-                                    onPressed: () {
-                                      _pesquisa.clear();
-                                      setState(() {});
-                                    },
-                                    icon: Icon(PhosphorIcons.x),
-                                  ),
-                            border: const OutlineInputBorder(),
-                            isDense: true,
-                          ),
+          body: Column(
+            children: [
+              _CabecalhoDrawer(
+                tema: tema,
+                aoAlternarTema: () {
+                  context.read<PreferenciasProvider>().alterarTema(
+                    tema == TemaApp.claro ? TemaApp.escuro : TemaApp.claro,
+                  );
+                },
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(12, 10, 6, 6),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _pesquisa,
+                        key: const ValueKey('pesquisa-listas'),
+                        onChanged: (_) => setState(() {}),
+                        decoration: InputDecoration(
+                          hintText: 'Pesquisar listas',
+                          prefixIcon: Icon(PhosphorIcons.magnifyingGlass),
+                          suffixIcon: _pesquisa.text.isEmpty
+                              ? null
+                              : IconButton(
+                                  tooltip: 'Limpar pesquisa',
+                                  onPressed: () {
+                                    _pesquisa.clear();
+                                    setState(() {});
+                                  },
+                                  icon: Icon(PhosphorIcons.x),
+                                ),
+                          border: const OutlineInputBorder(),
+                          isDense: true,
                         ),
                       ),
-                      IconButton(
-                        tooltip: 'Ordenar listas de A a Z',
-                        onPressed: alterandoOrdem
-                            ? null
-                            : () => _ordenarAlfabeticamente(controller),
-                        icon: Icon(PhosphorIcons.sortAscending),
-                      ),
-                    ],
-                  ),
-                ),
-                Expanded(
-                  child: _ConteudoListasDrawer(
-                    termoPesquisa: _pesquisa.text,
-                    aoSelecionar: _selecionar,
-                    aoReordenar: (antigo, novo) =>
-                        _reordenar(controller, antigo, novo),
-                    aoAcionar: _executarAcao,
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(12, 6, 12, 8),
-                  child: SizedBox(
-                    width: double.infinity,
-                    child: FilledButton.icon(
-                      onPressed: () => ListaFormulario.exibir(
-                        context,
-                        mensageiro: _mensageiroDrawer.currentState,
-                      ),
-                      icon: Icon(PhosphorIcons.notePencil),
-                      label: const Text('Nova Lista'),
                     ),
-                  ),
-                ),
-                const Divider(height: 1),
-                ListTile(
-                  leading:
-                      Icon(PhosphorIcons.stackPlusBold, color: Colors.green),
-                  title: const Text('Gerenciar Categorias'),
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute<void>(
-                      builder: (_) => const CategoriasScreen(),
+                    IconButton(
+                      tooltip: 'Ordenar listas de A a Z',
+                      onPressed: alterandoOrdem
+                          ? null
+                          : () => _ordenarAlfabeticamente(controller),
+                      icon: Icon(PhosphorIcons.sortAscending),
                     ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: _ConteudoListasDrawer(
+                  termoPesquisa: _pesquisa.text,
+                  aoSelecionar: _selecionar,
+                  aoReordenar: (antigo, novo) =>
+                      _reordenar(controller, antigo, novo),
+                  aoAcionar: _executarAcao,
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(12, 6, 12, 8),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.icon(
+                    onPressed: () => ListaFormulario.exibir(
+                      context,
+                      mensageiro: _mensageiroDrawer.currentState,
+                    ),
+                    icon: Icon(PhosphorIcons.notePencil),
+                    label: const Text('Nova Lista'),
                   ),
                 ),
-                ListTile(
-                  leading: Icon(
-                    PhosphorIcons.clockCounterClockwiseBold,
-                    color: Colors.blue,
+              ),
+              const Divider(height: 1),
+              ListTile(
+                leading: Icon(PhosphorIcons.stackPlusBold, color: Colors.green),
+                title: const Text('Gerenciar Categorias'),
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute<void>(
+                    builder: (_) => const CategoriasScreen(),
                   ),
-                  title: const Text('Histórico de Compras'),
-                  onTap: _abrirHistorico,
                 ),
-              ],
-            ),
+              ),
+              ListTile(
+                leading: Icon(
+                  PhosphorIcons.clockCounterClockwiseBold,
+                  color: Colors.blue,
+                ),
+                title: const Text('Histórico de Compras'),
+                onTap: _abrirHistorico,
+              ),
+            ],
           ),
         ),
       ),
@@ -196,10 +192,7 @@ class _ListaDeListasScreenState extends State<ListaDeListasScreen> {
     try {
       await controller.ordenarAlfabeticamente();
       if (mounted) {
-        _mostrarFeedback(
-          'Listas ordenadas de A a Z.',
-          TipoSnackbar.sucesso,
-        );
+        _mostrarFeedback('Listas ordenadas de A a Z.', TipoSnackbar.sucesso);
       }
     } catch (_) {
       if (mounted) {
@@ -232,10 +225,7 @@ class _ListaDeListasScreenState extends State<ListaDeListasScreen> {
         case _AcaoLista.copiar:
           await controller.copiar(lista);
           if (mounted) {
-            _mostrarFeedback(
-              'Cópia criada e aberta.',
-              TipoSnackbar.sucesso,
-            );
+            _mostrarFeedback('Cópia criada e aberta.', TipoSnackbar.sucesso);
           }
         case _AcaoLista.compartilhar:
           final conteudo = await controller.prepararConteudoCompartilhamento(
@@ -259,17 +249,15 @@ class _ListaDeListasScreenState extends State<ListaDeListasScreen> {
   Future<void> _confirmarExclusao(Lista lista) async {
     final resultado = await context.confirmar(
       titulo: 'Excluir lista',
-      mensagem: 'A lista "${lista.titulo}" e todos os seus itens serão '
+      mensagem:
+          'A lista "${lista.titulo}" e todos os seus itens serão '
           'removidos. O histórico de compras não será afetado. Deseja continuar?',
       textoConfirmar: 'Excluir lista',
     );
     if (resultado != ResultadoDialogo.confirmar || !mounted) return;
     await context.read<ListasController>().excluir(lista);
     if (mounted) {
-      _mostrarFeedback(
-        'Lista e itens excluídos.',
-        TipoSnackbar.sucesso,
-      );
+      _mostrarFeedback('Lista e itens excluídos.', TipoSnackbar.sucesso);
     }
   }
 
@@ -304,28 +292,29 @@ class _ConteudoListasDrawer extends StatelessWidget {
     final resultados = controller.pesquisar(termoPesquisa);
 
     return switch (controller.estado) {
-      EstadoDeTela.carregando =>
-        const Center(child: CircularProgressIndicator()),
+      EstadoDeTela.carregando => const Center(
+        child: CircularProgressIndicator(),
+      ),
       EstadoDeTela.erro => _EstadoDrawer(
-          mensagem:
-              controller.mensagemErro ?? 'Não foi possível carregar as listas.',
-          aoTentarNovamente: controller.carregar,
-        ),
+        mensagem:
+            controller.mensagemErro ?? 'Não foi possível carregar as listas.',
+        aoTentarNovamente: controller.carregar,
+      ),
       EstadoDeTela.carregadaSemDados => const _EstadoDrawer(
-          mensagem: 'Nenhuma lista criada.',
-        ),
+        mensagem: 'Nenhuma lista criada.',
+      ),
       EstadoDeTela.carregadaComDados when resultados.isEmpty =>
         const _EstadoDrawer(
           mensagem: 'Nenhuma lista encontrada para a pesquisa.',
         ),
       EstadoDeTela.carregadaComDados => _ListasAgrupadas(
-          resultados: resultados,
-          idListaSelecionada: controller.idListaSelecionada,
-          permitirReordenacao: termoPesquisa.isEmpty,
-          aoSelecionar: aoSelecionar,
-          aoReordenar: aoReordenar,
-          aoAcionar: aoAcionar,
-        ),
+        resultados: resultados,
+        idListaSelecionada: controller.idListaSelecionada,
+        permitirReordenacao: termoPesquisa.isEmpty,
+        aoSelecionar: aoSelecionar,
+        aoReordenar: aoReordenar,
+        aoAcionar: aoAcionar,
+      ),
     };
   }
 }
@@ -428,10 +417,8 @@ class _GrupoListasReordenavel extends StatelessWidget {
       buildDefaultDragHandles: permitirReordenacao,
       itemCount: resumos.length,
       onReorderItem: permitirReordenacao
-          ? (antigo, novo) => aoReordenar(
-                deslocamento + antigo,
-                deslocamento + novo,
-              )
+          ? (antigo, novo) =>
+                aoReordenar(deslocamento + antigo, deslocamento + novo)
           : (_, _) {},
       itemBuilder: (context, index) {
         final resumo = resumos[index];
@@ -468,21 +455,20 @@ class _CabecalhoGrupoListas extends StatelessWidget {
       child: Row(
         children: [
           Icon(icone, size: 16, color: cores.primary),
-          const SizedBox(width: 7),
+          const SizedBox(width: 15),
           Expanded(
             child: Text(
               titulo,
-              style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                    color: cores.primary,
-                    fontWeight: FontWeight.w700,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700),
             ),
           ),
           Text(
             '$quantidade',
-            style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                  color: cores.onSurfaceVariant,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.labelMedium?.copyWith(color: cores.onSurfaceVariant),
           ),
         ],
       ),
@@ -494,21 +480,18 @@ class _CabecalhoDrawer extends StatelessWidget {
   final TemaApp tema;
   final VoidCallback aoAlternarTema;
 
-  const _CabecalhoDrawer({
-    required this.tema,
-    required this.aoAlternarTema,
-  });
+  const _CabecalhoDrawer({required this.tema, required this.aoAlternarTema});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 112,
+      height: 150,
       padding: const EdgeInsets.all(16),
       decoration: const BoxDecoration(
         image: DecorationImage(
           image: AssetImage('lib/assets/padrao2.jpg'),
           fit: BoxFit.cover,
-          opacity: .22,
+          opacity: .40,
         ),
       ),
       child: Row(
@@ -518,9 +501,9 @@ class _CabecalhoDrawer extends StatelessWidget {
             child: Text(
               'Mercado List',
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    color: Theme.of(context).colorScheme.primary,
-                    fontWeight: FontWeight.bold,
-                  ),
+                color: Theme.of(context).colorScheme.primary,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
           IconButton.filledTonal(
@@ -556,14 +539,19 @@ class _CartaoLista extends StatelessWidget {
   Widget build(BuildContext context) {
     final lista = resumo.lista;
     final cores = Theme.of(context).colorScheme;
-    final corConteudo =
-        selecionada ? cores.onPrimaryContainer : cores.onSurface;
+    final corConteudo = selecionada
+        ? cores.onPrimaryContainer
+        : cores.onSurface;
     final corConteudoSecundario = selecionada
         ? cores.onPrimaryContainer.withAlpha(190)
         : cores.onSurfaceVariant;
-    return Card(
+    return Container(
       margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      color: selecionada ? cores.primaryContainer : null,
+      decoration: BoxDecoration(
+        color: selecionada ? lista.cor.withAlpha(28) : cores.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: lista.cor, width: 0.2),
+      ),
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
         onTap: aoSelecionar,
@@ -593,10 +581,7 @@ class _CartaoLista extends StatelessWidget {
                     '${resumo.quantidadeItensMarcados}/${resumo.quantidadeItens}',
                     key: ValueKey('contador-itens-${lista.id}'),
                     maxLines: 1,
-                    style: TextStyle(
-                      fontSize: 10,
-                      color: corConteudoSecundario,
-                    ),
+                    style: TextStyle(fontSize: 10),
                   ),
                 ],
               ),
@@ -611,7 +596,7 @@ class _CartaoLista extends StatelessWidget {
                           Icon(
                             PhosphorIcons.pushPinFill,
                             size: 14,
-                            color: corConteudo,
+                            color: lista.cor,
                           ),
                           const SizedBox(width: 4),
                         ],
@@ -620,10 +605,7 @@ class _CartaoLista extends StatelessWidget {
                             lista.titulo,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              fontWeight: FontWeight.w600,
-                              color: corConteudo,
-                            ),
+                            style: TextStyle(fontWeight: FontWeight.w600),
                           ),
                         ),
                       ],
@@ -635,25 +617,23 @@ class _CartaoLista extends StatelessWidget {
                           lista.descricao!,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
-                          style:
-                              Theme.of(context).textTheme.bodySmall?.copyWith(
-                                    color: corConteudoSecundario,
-                                  ),
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(color: corConteudoSecundario),
                         ),
                       ),
                     if (lista.orcamento != null)
                       Text(
                         'Orçamento: ${MonetarioUtils.formatarIntToMoeda(lista.orcamento!)}',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: corConteudoSecundario,
-                            ),
+                        style: Theme.of(context).textTheme.bodySmall,
                       ),
                   ],
                 ),
               ),
               PopupMenuButton<_AcaoLista>(
                 tooltip: 'Ações da lista',
-                iconColor: corConteudo,
+                iconColor: lista.cor,
+                icon: Icon(PhosphorIcons.slidersBold),
+                //iconSize: 22,
                 onSelected: aoAcionar,
                 itemBuilder: (_) => [
                   const PopupMenuItem(
