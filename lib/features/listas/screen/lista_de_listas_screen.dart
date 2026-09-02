@@ -129,10 +129,17 @@ class _ListaDeListasScreenState extends State<ListaDeListasScreen> {
                   ),
                 ),
               ),
-              const Divider(height: 1),
+              const Divider(height: 1, thickness: 0.4),
               ListTile(
                 leading: Icon(PhosphorIcons.stackPlusBold, color: Colors.green),
-                title: const Text('Gerenciar Categorias'),
+                trailing: const Icon(
+                  PhosphorIcons.caretRightBold,
+                  color: Colors.green,
+                ),
+                title: const Text(
+                  'Gerenciar Categorias',
+                  style: TextStyle(color: Colors.green),
+                ),
                 onTap: () => Navigator.push(
                   context,
                   MaterialPageRoute<void>(
@@ -140,12 +147,20 @@ class _ListaDeListasScreenState extends State<ListaDeListasScreen> {
                   ),
                 ),
               ),
+              const Divider(height: 0.2, thickness: 0.2),
               ListTile(
                 leading: Icon(
                   PhosphorIcons.clockCounterClockwiseBold,
                   color: Colors.blue,
                 ),
-                title: const Text('Histórico de Compras'),
+                trailing: const Icon(
+                  PhosphorIcons.caretRightBold,
+                  color: Colors.blue,
+                ),
+                title: const Text(
+                  'Histórico de Compras',
+                  style: TextStyle(color: Colors.blue),
+                ),
                 onTap: _abrirHistorico,
               ),
             ],
@@ -491,7 +506,7 @@ class _CabecalhoDrawer extends StatelessWidget {
         image: DecorationImage(
           image: AssetImage('lib/assets/padrao2.jpg'),
           fit: BoxFit.cover,
-          opacity: .40,
+          opacity: .25,
         ),
       ),
       child: Row(
@@ -539,16 +554,14 @@ class _CartaoLista extends StatelessWidget {
   Widget build(BuildContext context) {
     final lista = resumo.lista;
     final cores = Theme.of(context).colorScheme;
-    final corConteudo = selecionada
-        ? cores.onPrimaryContainer
-        : cores.onSurface;
-    final corConteudoSecundario = selecionada
-        ? cores.onPrimaryContainer.withAlpha(190)
-        : cores.onSurfaceVariant;
+    // final corConteudo = selecionada
+    //     ? cores.onPrimaryContainer
+    //     : cores.onSurface;
+    final corConteudoSecundario = cores.onSurface.withAlpha(100);
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: selecionada ? lista.cor.withAlpha(28) : cores.surface,
+        color: selecionada ? lista.cor.withAlpha(28) : null,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: lista.cor, width: 0.2),
       ),
@@ -556,109 +569,134 @@ class _CartaoLista extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         onTap: aoSelecionar,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(10, 8, 4, 8),
-          child: Row(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+
             children: [
-              Column(
-                mainAxisSize: MainAxisSize.min,
+              Row(
                 children: [
-                  CircularPercentIndicator(
-                    radius: 18,
-                    lineWidth: 5,
-                    percent: resumo.progresso.clamp(0, 1).toDouble(),
-                    progressColor: lista.cor,
-                    backgroundColor: lista.cor.withAlpha(45),
-                    center: resumo.quantidadeItens > 0 && resumo.progresso == 1
-                        ? Icon(
-                            PhosphorIcons.checkBold,
-                            size: 14,
-                            color: lista.cor,
-                          )
-                        : null,
+                  Column(
+                    children: [
+                      CircularPercentIndicator(
+                        radius: 15,
+                        lineWidth: 5,
+                        percent: resumo.progresso.clamp(0, 1).toDouble(),
+                        progressColor: lista.cor,
+                        backgroundColor: lista.cor.withAlpha(45),
+                        center:
+                            resumo.quantidadeItens > 0 && resumo.progresso == 1
+                            ? Icon(
+                                PhosphorIcons.checkBold,
+                                size: 14,
+                                color: lista.cor,
+                              )
+                            : null,
+                      ),
+                      Text(
+                        '${resumo.quantidadeItensMarcados}/${resumo.quantidadeItens}',
+                        overflow: TextOverflow.ellipsis,
+
+                        key: ValueKey('contador-itens-${lista.id}'),
+                        maxLines: 1,
+                        style: TextStyle(fontSize: 10),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 2),
-                  Text(
-                    '${resumo.quantidadeItensMarcados}/${resumo.quantidadeItens}',
-                    key: ValueKey('contador-itens-${lista.id}'),
-                    maxLines: 1,
-                    style: TextStyle(fontSize: 10),
-                  ),
-                ],
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        if (lista.fixada) ...[
-                          Icon(
-                            PhosphorIcons.pushPinFill,
-                            size: 14,
-                            color: lista.cor,
-                          ),
-                          const SizedBox(width: 4),
-                        ],
-                        Expanded(
-                          child: Text(
-                            lista.titulo,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(fontWeight: FontWeight.w600),
-                          ),
+                        Row(
+                          spacing: 8,
+                          children: [
+                            if (lista.fixada)
+                              Icon(
+                                PhosphorIcons.pushPinFill,
+                                color: lista.cor,
+                                size: 15,
+                              ),
+                            Expanded(
+                              child: Text(
+                                lista.titulo,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              
+                                //style: TextStyle(fontWeight: FontWeight.w600),
+                              ),
+                            ),
+                          ],
                         ),
+                        if (lista.descricao != null)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 2),
+                            child: Text(
+                              lista.descricao!,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: Theme.of(context).textTheme.bodySmall
+                                  ?.copyWith(color: corConteudoSecundario),
+                            ),
+                          ),
                       ],
                     ),
-                    if (lista.descricao != null)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 2),
+                  ),
+                  PopupMenuButton<_AcaoLista>(
+                    tooltip: 'Ações da lista',
+                    iconColor: lista.cor,
+                    icon: Icon(PhosphorIcons.sliders),
+                    //iconSize: 22,
+                    onSelected: aoAcionar,
+                    itemBuilder: (_) => [
+                      const PopupMenuItem(
+                        value: _AcaoLista.editar,
+                        child: Text('Editar'),
+                      ),
+                      PopupMenuItem(
+                        value: _AcaoLista.fixar,
                         child: Text(
-                          lista.descricao!,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context).textTheme.bodySmall
-                              ?.copyWith(color: corConteudoSecundario),
+                          lista.fixada ? 'Desfixar' : 'Fixar no topo',
                         ),
                       ),
-                    if (lista.orcamento != null)
-                      Text(
-                        'Orçamento: ${MonetarioUtils.formatarIntToMoeda(lista.orcamento!)}',
-                        style: Theme.of(context).textTheme.bodySmall,
+                      const PopupMenuItem(
+                        value: _AcaoLista.copiar,
+                        child: Text('Criar cópia'),
                       ),
-                  ],
-                ),
-              ),
-              PopupMenuButton<_AcaoLista>(
-                tooltip: 'Ações da lista',
-                iconColor: lista.cor,
-                icon: Icon(PhosphorIcons.slidersBold),
-                //iconSize: 22,
-                onSelected: aoAcionar,
-                itemBuilder: (_) => [
-                  const PopupMenuItem(
-                    value: _AcaoLista.editar,
-                    child: Text('Editar'),
-                  ),
-                  PopupMenuItem(
-                    value: _AcaoLista.fixar,
-                    child: Text(lista.fixada ? 'Desfixar' : 'Fixar no topo'),
-                  ),
-                  const PopupMenuItem(
-                    value: _AcaoLista.copiar,
-                    child: Text('Criar cópia'),
-                  ),
-                  const PopupMenuItem(
-                    value: _AcaoLista.compartilhar,
-                    child: Text('Compartilhar'),
-                  ),
-                  const PopupMenuDivider(),
-                  const PopupMenuItem(
-                    value: _AcaoLista.excluir,
-                    child: Text('Excluir'),
+                      const PopupMenuItem(
+                        value: _AcaoLista.compartilhar,
+                        child: Text('Compartilhar'),
+                      ),
+                      const PopupMenuDivider(),
+                      const PopupMenuItem(
+                        value: _AcaoLista.excluir,
+                        child: Text('Excluir'),
+                      ),
+                    ],
                   ),
                 ],
               ),
+
+              if (lista.orcamento != null)
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+
+                  children: [
+                    Text(
+                      'Orçamento: ${MonetarioUtils.formatarIntToMoeda(lista.orcamento!)}',
+                      // textAlign: TextAlign.right,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.onSurface.withAlpha(170),
+
+                        fontStyle: FontStyle.italic,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
             ],
           ),
         ),
