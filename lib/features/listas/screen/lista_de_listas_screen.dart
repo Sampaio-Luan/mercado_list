@@ -563,7 +563,7 @@ class _CartaoLista extends StatelessWidget {
       decoration: BoxDecoration(
         color: selecionada ? lista.cor.withAlpha(28) : null,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: lista.cor, width: 0.2),
+        border: Border.all(color: lista.cor, width: 0.5),
       ),
       child: InkWell(
         borderRadius: BorderRadius.circular(12),

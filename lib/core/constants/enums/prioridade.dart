@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+
 enum Prioridade {
   neutra,
   baixa,
@@ -29,4 +31,12 @@ enum Prioridade {
         return Prioridade.neutra;
     }
   }
+
+  static Color obterCor({required Prioridade prioridade}) =>
+      switch (prioridade) {
+        Prioridade.neutra => Colors.blue,
+        Prioridade.baixa => Colors.green,
+        Prioridade.media => Colors.orange,
+        Prioridade.alta => Colors.red,
+      };
 }

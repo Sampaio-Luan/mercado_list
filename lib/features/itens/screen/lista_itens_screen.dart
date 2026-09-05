@@ -43,9 +43,8 @@ class ListaItensScreen extends StatefulWidget {
       PageRouteBuilder<void>(
         transitionDuration: const Duration(milliseconds: 650),
         reverseTransitionDuration: const Duration(milliseconds: 550),
-        pageBuilder: (_, _, _) => _PesquisaItensScreen(
-          aoConcluirLista: aoConcluirLista,
-        ),
+        pageBuilder: (_, _, _) =>
+            _PesquisaItensScreen(aoConcluirLista: aoConcluirLista),
         transitionsBuilder: (context, animacao, animacaoSecundaria, child) {
           return FadeTransition(
             opacity: CurvedAnimation(
@@ -230,8 +229,8 @@ class _ListaItensScreenState extends State<ListaItensScreen> {
   Future<void> _alternarVisualizacao(ItensController controller) {
     final proxima =
         controller.tipoVisualizacao == TipoVisualizacaoItens.categorias
-            ? TipoVisualizacaoItens.tabela
-            : TipoVisualizacaoItens.categorias;
+        ? TipoVisualizacaoItens.tabela
+        : TipoVisualizacaoItens.categorias;
     return controller.alterarVisualizacao(proxima);
   }
 }
@@ -258,14 +257,15 @@ class _ConteudoListaItens extends StatelessWidget {
     final controller = context.watch<ItensController>();
 
     return switch (controller.estado) {
-      EstadoDeTela.carregando =>
-        const Center(child: CircularProgressIndicator()),
+      EstadoDeTela.carregando => const Center(
+        child: CircularProgressIndicator(),
+      ),
       EstadoDeTela.erro => _EstadoItens(
-          icone: PhosphorIcons.warningCircle,
-          mensagem: 'Não foi possível carregar os itens desta lista.',
-          textoAcao: 'Tentar novamente',
-          aoAcionar: controller.recarregar,
-        ),
+        icone: PhosphorIcons.warningCircle,
+        mensagem: 'Não foi possível carregar os itens desta lista.',
+        textoAcao: 'Tentar novamente',
+        aoAcionar: controller.recarregar,
+      ),
       EstadoDeTela.carregadaSemDados => const ListaVazia(),
       EstadoDeTela.carregadaComDados when controller.itensVisiveis.isEmpty =>
         const _EstadoItens(
@@ -285,18 +285,18 @@ class _ConteudoListaItens extends StatelessWidget {
           aoEditar: aoEditar,
         ),
       EstadoDeTela.carregadaComDados => Padding(
-          padding: const EdgeInsets.fromLTRB(8, 8, 8, 4),
-          child: _TabelaItensCompacta(
-            itens: controller.itensVisiveis,
-            categorias: {
-              for (final categoria in controller.categorias)
-                categoria.id: categoria,
-            },
-            corLista: controller.listaSelecionada!.cor,
-            aoAlterarMarcacao: aoAlterarMarcacao,
-            aoEditar: aoEditar,
-          ),
+        padding: const EdgeInsets.fromLTRB(8, 8, 8, 4),
+        child: _TabelaItensCompacta(
+          itens: controller.itensVisiveis,
+          categorias: {
+            for (final categoria in controller.categorias)
+              categoria.id: categoria,
+          },
+          corLista: controller.listaSelecionada!.cor,
+          aoAlterarMarcacao: aoAlterarMarcacao,
+          aoEditar: aoEditar,
         ),
+      ),
     };
   }
 }
@@ -336,11 +336,10 @@ class _VisualizacaoCategoriasItens extends StatelessWidget {
         final chaveExpansao = '${controller.idListaSelecionada}-$idCategoria';
 
         return GrupoCategoriaItensWidget(
-          key: ValueKey(
-            'categoria-$idCategoria-$versaoExpansaoCategorias',
-          ),
+          key: ValueKey('categoria-$idCategoria-$versaoExpansaoCategorias'),
           grupo: grupo,
-          chaveEstado: 'estado-expansao-v2-lista-'
+          chaveEstado:
+              'estado-expansao-v2-lista-'
               '${controller.idListaSelecionada}-categoria-$idCategoria-'
               'versao-$versaoExpansaoCategorias',
           inicialmenteExpandido:
@@ -500,102 +499,54 @@ class _TabelaItensCompacta extends StatelessWidget {
     final tema = Theme.of(context);
     return LayoutBuilder(
       builder: (context, restricoes) {
-        final mostrarTotalSeparado = restricoes.maxWidth >= 430;
-        return Column(
-          children: [
-            Container(
-              color: tema.colorScheme.surfaceContainer,
-              padding: const EdgeInsets.symmetric(vertical: 7),
-              child: Row(
-                children: [
-                  const SizedBox(width: 48),
-                  const Expanded(
-                    flex: 5,
-                    child: Text(
-                      'Item',
-                      style: TextStyle(fontWeight: FontWeight.w700),
-                    ),
-                  ),
-                  const Expanded(
-                    flex: 3,
-                    child: Text(
-                      'Qtd. / preço',
-                      style: TextStyle(fontWeight: FontWeight.w700),
-                    ),
-                  ),
-                  if (mostrarTotalSeparado)
-                    const Expanded(
-                      flex: 2,
-                      child: Text(
-                        'Total',
-                        textAlign: TextAlign.end,
-                        style: TextStyle(fontWeight: FontWeight.w700),
+        //final mostrarTotalSeparado = restricoes.maxWidth >= 430;
+        return Expanded(
+          child: ListView.separated(
+            itemCount: itens.length,
+            separatorBuilder: (_, _) => const Divider(height: 0, thickness: .5),
+            itemBuilder: (context, indice) {
+              final item = itens[indice];
+              final categoria = categorias[item.idCategoria];
+              final total = item.valorTotal;
+              final corCategoria = categoria?.cor ?? tema.colorScheme.outline;
+              return Container(
+                
+                color: item.obtido
+                    ? corLista.withAlpha(28)
+                    : Colors.transparent,
+                child: InkWell(
+                  onTap: () => aoAlterarMarcacao(item, !item.obtido),
+                  child: Row(
+                    
+                    children: [
+                      Container(
+                        height: 45,
+                        width: 5,
+                        color: Prioridade.obterCor(prioridade: item.prioridade),
                       ),
-                    ),
-                  const SizedBox(width: 48),
-                ],
-              ),
-            ),
-            const Divider(height: 0, thickness: .5),
-            Expanded(
-              child: ListView.separated(
-                itemCount: itens.length,
-                separatorBuilder: (_, _) =>
-                    const Divider(height: 0, thickness: .5),
-                itemBuilder: (context, indice) {
-                  final item = itens[indice];
-                  final categoria = categorias[item.idCategoria];
-                  final total = item.valorTotal;
-                  final corCategoria =
-                      categoria?.cor ?? tema.colorScheme.outline;
-                  return Material(
-                    color: item.obtido
-                        ? corLista.withAlpha(28)
-                        : Colors.transparent,
-                    child: InkWell(
-                      onTap: () => aoAlterarMarcacao(item, !item.obtido),
-                      child: IntrinsicHeight(
-                        child: Row(
-                          children: [
-                            Container(
-                              width: 7,
-                              color: _corPrioridadeTabela(
-                                context,
-                                item.prioridade,
-                              ),
-                            ),
-                            SizedBox(
-                              width: 45,
-                              child: Checkbox(
-                                value: item.obtido,
-                                activeColor: corLista,
-                                side: BorderSide(
-                                  color: corLista,
-                                  width: 2,
-                                ),
-                                checkColor:
-                                    ThemeData.estimateBrightnessForColor(
-                                              corLista,
-                                            ) ==
-                                            Brightness.dark
-                                        ? Colors.white
-                                        : Colors.black,
-                                visualDensity: VisualDensity.compact,
-                                onChanged: (valor) => aoAlterarMarcacao(
-                                  item,
-                                  valor ?? false,
-                                ),
-                              ),
-                            ),
-                            Expanded(
-                              flex: 5,
-                              child: Padding(
-                                padding:
-                                    const EdgeInsets.symmetric(vertical: 3),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
+                      Checkbox(
+                        value: item.obtido,
+                        activeColor: corLista,
+                        side: BorderSide(color: corLista, width: 2),
+                        checkColor:
+                            ThemeData.estimateBrightnessForColor(corLista) ==
+                                Brightness.dark
+                            ? Colors.white
+                            : Colors.black,
+                        visualDensity: VisualDensity.compact,
+                        onChanged: (valor) =>
+                            aoAlterarMarcacao(item, valor ?? false),
+                      ),
+                      Expanded(
+                        child: Padding(
+                          padding: const EdgeInsets.only(left: 4, right: 0),
+                          child: Column(
+                            children: [
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  Expanded(
+                                    child: Text(
                                       item.titulo,
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
@@ -603,113 +554,93 @@ class _TabelaItensCompacta extends StatelessWidget {
                                         decoration: item.obtido
                                             ? TextDecoration.lineThrough
                                             : null,
+                                        color: item.obtido
+                                            ? tema.colorScheme.onSurface
+                                                  .withAlpha(150)
+                                            : null,
                                       ),
                                     ),
-                                    Row(
-                                      children: [
-                                        Container(
-                                          width: 6,
-                                          height: 6,
-                                          margin:
-                                              const EdgeInsets.only(right: 4),
-                                          decoration: BoxDecoration(
-                                            shape: BoxShape.circle,
-                                            color: corCategoria,
-                                          ),
-                                        ),
-                                        Expanded(
-                                          child: Text(
-                                            categoria?.titulo ??
-                                                'Sem categoria',
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                            style: tema.textTheme.labelSmall,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                            Expanded(
-                              flex: 3,
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Opacity(
-                                    opacity: .6,
-                                    child: Text(_quantidadeTabela(item)),
                                   ),
-                                  Opacity(
-                                    opacity: .6,
+                          
+                                  Container(
+                                    decoration: BoxDecoration(
+                                      color: corCategoria.withAlpha(45),
+                                      borderRadius: BorderRadius.circular(5),
+                                    ),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 5,
+                                      vertical: 1,
+                                    ),
                                     child: Text(
-                                      item.preco == null
-                                          ? 'Sem preço'
-                                          : MonetarioUtils.formatarIntToMoeda(
-                                              item.preco!,
-                                            ),
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .labelSmall,
-                                    ),
-                                  ),
-                                  if (!mostrarTotalSeparado && total != null)
-                                    Opacity(
-                                      opacity: .9,
-                                      child: Text(
-                                        MonetarioUtils.formatarIntToMoeda(
-                                          total,
-                                        ),
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.w700,
-                                        ),
+                                      categoria?.titulo ?? 'Sem categoria',
+                                      maxLines: 1,
+                          
+                                      style: TextStyle(
+                                        fontSize:
+                                            (Theme.of(
+                                              context,
+                                            ).textTheme.labelSmall!.fontSize! -
+                                            2),
+                                        fontStyle: FontStyle.italic,
                                       ),
                                     ),
+                                  ),
                                 ],
                               ),
-                            ),
-                            if (mostrarTotalSeparado)
-                              Expanded(
-                                flex: 2,
-                                child: Opacity(
-                                  opacity: .9,
-                                  child: Text(
-                                    total == null
-                                        ? '—'
-                                        : MonetarioUtils.formatarIntToMoeda(
-                                            total,
-                                          ),
-                                    textAlign: TextAlign.end,
-                                    maxLines: 1,
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.w700,
+                          
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      '${_quantidadeTabela(item)} ${(item.preco == null) ? "" : "× ${MonetarioUtils.formatarIntToMoeda(item.preco!)}"}',
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        color: Theme.of(
+                                          context,
+                                        ).colorScheme.onSurface.withAlpha(190),
+                                        fontSize: Theme.of(
+                                          context,
+                                        ).textTheme.labelSmall?.fontSize,
+                                      ),
                                     ),
                                   ),
-                                ),
+                                  (item.preco == null)
+                                      ? Text('👀 ')
+                                      : Text(
+                                          MonetarioUtils.formatarIntToMoeda(
+                                            total!,
+                                          ),
+                                          overflow: TextOverflow.ellipsis,
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.w700,
+                                            fontSize: Theme.of(
+                                              context,
+                                            ).textTheme.labelSmall?.fontSize,
+                                          ),
+                                        ),
+                                ],
                               ),
-                            SizedBox(
-                              width: 48,
-                              child: IconButton(
-                                tooltip: 'Editar item',
-                                onPressed: () => aoEditar(item),
-                                icon: Icon(
-                                  PhosphorIcons.pencilSimple,
-                                  size: 20,
-                                  color: corLista,
-                                ),
-                              ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
-                    ),
-                  );
-                },
-              ),
-            ),
-          ],
+
+                      IconButton(
+                        tooltip: 'Editar item',
+                        onPressed: () => aoEditar(item),
+                        icon: Icon(
+                          PhosphorIcons.pencilSimple,
+                          size: 20,
+                          color: corLista,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
         );
       },
     );
@@ -726,13 +657,12 @@ class _TabelaItensCompacta extends StatelessWidget {
   static Color _corPrioridadeTabela(
     BuildContext context,
     Prioridade prioridade,
-  ) =>
-      switch (prioridade) {
-        Prioridade.neutra => Theme.of(context).colorScheme.outlineVariant,
-        Prioridade.baixa => Colors.green,
-        Prioridade.media => Colors.orange,
-        Prioridade.alta => Theme.of(context).colorScheme.error,
-      };
+  ) => switch (prioridade) {
+    Prioridade.neutra => Theme.of(context).colorScheme.outlineVariant,
+    Prioridade.baixa => Colors.green,
+    Prioridade.media => Colors.orange,
+    Prioridade.alta => Theme.of(context).colorScheme.error,
+  };
 }
 
 class ListaVazia extends StatelessWidget {
@@ -782,10 +712,7 @@ class _EstadoItens extends StatelessWidget {
             Icon(icone, size: 48),
             Text(mensagem, textAlign: TextAlign.center),
             if (aoAcionar != null)
-              OutlinedButton(
-                onPressed: aoAcionar,
-                child: Text(textoAcao!),
-              ),
+              OutlinedButton(onPressed: aoAcionar, child: Text(textoAcao!)),
           ],
         ),
       ),

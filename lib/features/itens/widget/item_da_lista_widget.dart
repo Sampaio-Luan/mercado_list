@@ -47,7 +47,7 @@ class ItemDaListaWidget extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(vertical: 3),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    spacing: 3,
+                   // spacing: 3,
                     children: [
                       Text(
                         item.titulo,
