@@ -49,6 +49,7 @@ class CompositorItemState extends State<CompositorItemWidget> {
   final _preco = TextEditingController();
   final _observacao = TextEditingController();
   final _focoTitulo = FocusNode();
+  final _controladorPortalSugestoes = OverlayPortalController();
   TipoMedida _medida = TipoMedida.und;
   Prioridade _prioridade = Prioridade.neutra;
   int? _idCategoria;
@@ -56,13 +57,23 @@ class CompositorItemState extends State<CompositorItemWidget> {
   bool _expandido = false;
   bool _salvando = false;
   bool _ocultarSugestoes = false;
+  bool _portalSugestoesVisivel = false;
 
   bool get editando => _itemEmEdicao != null;
 
   @override
+  void initState() {
+    super.initState();
+    _focoTitulo.addListener(_aoAlterarFocoTitulo);
+  }
+
+  @override
   void didUpdateWidget(covariant CompositorItemWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.idLista != widget.idLista) _limparCampos();
+    if (oldWidget.idLista != widget.idLista) {
+      _limparCampos();
+      _atualizarVisibilidadeSugestoes();
+    }
   }
 
   @override
@@ -71,8 +82,30 @@ class CompositorItemState extends State<CompositorItemWidget> {
     _quantidade.dispose();
     _preco.dispose();
     _observacao.dispose();
+    _focoTitulo.removeListener(_aoAlterarFocoTitulo);
     _focoTitulo.dispose();
     super.dispose();
+  }
+
+  void _aoAlterarFocoTitulo() {
+    if (!mounted) return;
+    setState(() {});
+    _atualizarVisibilidadeSugestoes();
+  }
+
+  void _atualizarVisibilidadeSugestoes() {
+    final deveExibir = _focoTitulo.hasFocus &&
+        !editando &&
+        !_ocultarSugestoes &&
+        _titulo.text.trim().isNotEmpty &&
+        context.read<ItensController>().sugerirItens(_titulo.text).isNotEmpty;
+    if (_portalSugestoesVisivel == deveExibir) return;
+    _portalSugestoesVisivel = deveExibir;
+    if (deveExibir) {
+      _controladorPortalSugestoes.show();
+    } else {
+      _controladorPortalSugestoes.hide();
+    }
   }
 
   void editar(Item item) {
@@ -106,6 +139,12 @@ class CompositorItemState extends State<CompositorItemWidget> {
     final sugestoes = editando || _ocultarSugestoes
         ? const <SugestaoItemRecorrente>[]
         : controller.sugerirItens(_titulo.text);
+    final exibirSugestoes = sugestoes.isNotEmpty && _focoTitulo.hasFocus;
+    if (_portalSugestoesVisivel != exibirSugestoes) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _atualizarVisibilidadeSugestoes();
+      });
+    }
     final tema = Theme.of(context);
     final corLista = controller.listaSelecionada!.cor;
     return Material(
@@ -148,68 +187,6 @@ class CompositorItemState extends State<CompositorItemWidget> {
                 const Divider(height: 1, thickness: .7),
                 const SizedBox(height: 10),
               ],
-              if (sugestoes.isNotEmpty)
-                ConstrainedBox(
-                  constraints: const BoxConstraints(maxHeight: 184),
-                  child: Card(
-                    margin: const EdgeInsets.only(bottom: 5),
-                    child: ListView.builder(
-                      shrinkWrap: true,
-                      itemCount: sugestoes.length,
-                      itemBuilder: (context, indice) {
-                        final sugestao = sugestoes[indice];
-                        return InkWell(
-                          onTap: () => _aplicarSugestao(sugestao),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 7,
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                TextoDestacadoPesquisa(
-                                  texto: sugestao.item.titulo,
-                                  textoPesquisa: _titulo.text,
-                                  estiloDestaque: TextStyle(
-                                    color: sugestao.categoria.cor,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                                const SizedBox(height: 2),
-                                Row(
-                                  children: [
-                                    Container(
-                                      width: 7,
-                                      height: 7,
-                                      decoration: BoxDecoration(
-                                        shape: BoxShape.circle,
-                                        color: sugestao.categoria.cor,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 5),
-                                    Flexible(
-                                      child: Text(
-                                        sugestao.categoria.titulo,
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: tema.textTheme.labelSmall,
-                                      ),
-                                    ),
-                                    Text(
-                                      '  •  ${sugestao.item.tipoMedida.name}',
-                                      style: tema.textTheme.labelSmall,
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                ),
               if (_expandido) ...[
                 SizedBox(
                   height: 44,
@@ -394,19 +371,135 @@ class CompositorItemState extends State<CompositorItemWidget> {
                       ),
                     ),
                   Expanded(
-                    child: TextField(
-                      key: const ValueKey('titulo-item-rapido'),
-                      controller: _titulo,
-                      focusNode: _focoTitulo,
-                      textInputAction: TextInputAction.done,
-                      decoration: const InputDecoration(
-                        labelText: 'Título do item',
-                        isDense: true,
+                    child: OverlayPortal.overlayChildLayoutBuilder(
+                      controller: _controladorPortalSugestoes,
+                      overlayChildBuilder: (context, info) {
+                        if (!exibirSugestoes) return const SizedBox.shrink();
+                        final retanguloCampo = MatrixUtils.transformRect(
+                          info.childPaintTransform,
+                          Offset.zero & info.childSize,
+                        );
+                        final media = MediaQuery.of(context);
+                        final limiteInferior = info.overlaySize.height -
+                            media.viewInsets.bottom -
+                            media.padding.bottom;
+                        final espacoAcima =
+                            (retanguloCampo.top - media.padding.top)
+                                .clamp(0.0, info.overlaySize.height)
+                                .toDouble();
+                        final espacoAbaixo =
+                            (limiteInferior - retanguloCampo.bottom)
+                                .clamp(0.0, info.overlaySize.height)
+                                .toDouble();
+                        final alturaDesejada = (sugestoes.length * 64.0)
+                            .clamp(0.0, 184.0)
+                            .toDouble();
+                        final exibirAcima = espacoAcima >= alturaDesejada;
+                        final espacoDisponivel =
+                            exibirAcima ? espacoAcima : espacoAbaixo;
+                        final alturaMaxima =
+                            (espacoDisponivel - 6).clamp(0.0, 184.0).toDouble();
+
+                        return CustomSingleChildLayout(
+                          delegate: _PosicionarSugestoesDelegate(
+                            retanguloCampo: retanguloCampo,
+                            exibirAcima: exibirAcima,
+                            alturaMaxima: alturaMaxima,
+                            limiteSuperior: media.padding.top,
+                            limiteInferior: limiteInferior,
+                          ),
+                          child: Material(
+                            elevation: 8,
+                            clipBehavior: Clip.antiAlias,
+                            borderRadius: BorderRadius.circular(12),
+                            color: tema.colorScheme.surfaceContainerHigh,
+                            child: SizedBox(
+                              width: retanguloCampo.width,
+                              child: ConstrainedBox(
+                                constraints: BoxConstraints(
+                                  maxHeight: alturaMaxima,
+                                ),
+                                child: ListView.builder(
+                                  padding: EdgeInsets.zero,
+                                  shrinkWrap: true,
+                                  itemCount: sugestoes.length,
+                                  itemBuilder: (context, indice) {
+                                    final sugestao = sugestoes[indice];
+                                    return InkWell(
+                                      onTap: () => _aplicarSugestao(sugestao),
+                                      child: Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 12,
+                                          vertical: 7,
+                                        ),
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            TextoDestacadoPesquisa(
+                                              texto: sugestao.item.titulo,
+                                              textoPesquisa: _titulo.text,
+                                              estiloDestaque: TextStyle(
+                                                color: sugestao.categoria.cor,
+                                                fontWeight: FontWeight.w700,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 2),
+                                            Row(
+                                              children: [
+                                                Container(
+                                                  width: 7,
+                                                  height: 7,
+                                                  decoration: BoxDecoration(
+                                                    shape: BoxShape.circle,
+                                                    color:
+                                                        sugestao.categoria.cor,
+                                                  ),
+                                                ),
+                                                const SizedBox(width: 5),
+                                                Flexible(
+                                                  child: Text(
+                                                    sugestao.categoria.titulo,
+                                                    maxLines: 1,
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                    style: tema
+                                                        .textTheme.labelSmall,
+                                                  ),
+                                                ),
+                                                Text(
+                                                  '  •  ${sugestao.item.tipoMedida.name}',
+                                                  style:
+                                                      tema.textTheme.labelSmall,
+                                                ),
+                                              ],
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                      child: TextField(
+                        key: const ValueKey('titulo-item-rapido'),
+                        controller: _titulo,
+                        focusNode: _focoTitulo,
+                        textInputAction: TextInputAction.done,
+                        decoration: const InputDecoration(
+                          labelText: 'Título do item',
+                          isDense: true,
+                        ),
+                        onChanged: (_) {
+                          setState(() => _ocultarSugestoes = false);
+                          _atualizarVisibilidadeSugestoes();
+                        },
+                        onSubmitted: (_) => _salvar(),
                       ),
-                      onChanged: (_) => setState(() {
-                        _ocultarSugestoes = false;
-                      }),
-                      onSubmitted: (_) => _salvar(),
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -471,6 +564,7 @@ class CompositorItemState extends State<CompositorItemWidget> {
       _ocultarSugestoes = true;
       _expandido = true;
     });
+    _atualizarVisibilidadeSugestoes();
     _focoTitulo.requestFocus();
   }
 
@@ -676,6 +770,7 @@ class CompositorItemState extends State<CompositorItemWidget> {
     setState(() {
       _limparCampos();
     });
+    _atualizarVisibilidadeSugestoes();
   }
 
   void _limparCampos() {
@@ -689,6 +784,54 @@ class CompositorItemState extends State<CompositorItemWidget> {
     _idCategoria = null;
     _expandido = false;
     _ocultarSugestoes = false;
+  }
+}
+
+class _PosicionarSugestoesDelegate extends SingleChildLayoutDelegate {
+  const _PosicionarSugestoesDelegate({
+    required this.retanguloCampo,
+    required this.exibirAcima,
+    required this.alturaMaxima,
+    required this.limiteSuperior,
+    required this.limiteInferior,
+  });
+
+  final Rect retanguloCampo;
+  final bool exibirAcima;
+  final double alturaMaxima;
+  final double limiteSuperior;
+  final double limiteInferior;
+
+  @override
+  BoxConstraints getConstraintsForChild(BoxConstraints constraints) {
+    return BoxConstraints(
+      maxWidth: retanguloCampo.width.clamp(0.0, constraints.maxWidth),
+      maxHeight: alturaMaxima,
+    );
+  }
+
+  @override
+  Offset getPositionForChild(Size size, Size childSize) {
+    final esquerda = retanguloCampo.left
+        .clamp(0.0, (size.width - childSize.width).clamp(0.0, size.width))
+        .toDouble();
+    final topoDesejado = exibirAcima
+        ? retanguloCampo.top - childSize.height - 6
+        : retanguloCampo.bottom + 6;
+    final topoMaximo = (limiteInferior - childSize.height)
+        .clamp(limiteSuperior, size.height)
+        .toDouble();
+    final topo = topoDesejado.clamp(limiteSuperior, topoMaximo).toDouble();
+    return Offset(esquerda, topo);
+  }
+
+  @override
+  bool shouldRelayout(_PosicionarSugestoesDelegate oldDelegate) {
+    return retanguloCampo != oldDelegate.retanguloCampo ||
+        exibirAcima != oldDelegate.exibirAcima ||
+        alturaMaxima != oldDelegate.alturaMaxima ||
+        limiteSuperior != oldDelegate.limiteSuperior ||
+        limiteInferior != oldDelegate.limiteInferior;
   }
 }
 

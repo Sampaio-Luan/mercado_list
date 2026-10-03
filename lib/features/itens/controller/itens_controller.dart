@@ -9,6 +9,7 @@ import 'package:flutter/material.dart' show Color;
 import '../../../core/constants/enums/estado_de_tela.dart';
 import '../../../core/constants/enums/ordem.dart';
 import '../../../core/constants/enums/ordenar_por.dart';
+import '../../../core/constants/enums/tipo_medida.dart';
 import '../../../core/constants/enums/tipo_visualizacao_itens.dart';
 import '../../../core/constants/logs/logs.dart';
 import '../../../core/model/progresso_operacao.dart';
@@ -171,7 +172,8 @@ class ItensController extends ChangeNotifier {
     final categoriasPorId = {
       for (final categoria in _categorias) categoria.id!: categoria,
     };
-    final sugestoes = <SugestaoItemRecorrente>[];
+    final sugestoesPorIdentidade =
+        <(int, TipoMedida, String), SugestaoItemRecorrente>{};
     for (final recorrente in _itensRecorrentes) {
       final categoria = categoriasPorId[recorrente.idCategoria];
       if (categoria == null) continue;
@@ -180,13 +182,23 @@ class ItensController extends ChangeNotifier {
         textoPesquisa: termo,
       );
       if (relevancia > 0) {
-        sugestoes.add(SugestaoItemRecorrente(
+        final identidade = (
+          recorrente.idCategoria,
+          recorrente.tipoMedida,
+          TextoUtils.normalizarParaOrdenacao(recorrente.titulo),
+        );
+        final sugestaoAtual = sugestoesPorIdentidade[identidade];
+        if (sugestaoAtual != null && sugestaoAtual.relevancia >= relevancia) {
+          continue;
+        }
+        sugestoesPorIdentidade[identidade] = SugestaoItemRecorrente(
           item: recorrente,
           categoria: categoria,
           relevancia: relevancia,
-        ));
+        );
       }
     }
+    final sugestoes = sugestoesPorIdentidade.values.toList();
     sugestoes.sort((a, b) => b.relevancia.compareTo(a.relevancia));
     return List.unmodifiable(sugestoes.take(4));
   }
