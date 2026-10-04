@@ -606,7 +606,7 @@ class _TabelaItensCompacta extends StatelessWidget {
                                     ),
                                   ),
                                   (item.preco == null)
-                                      ? Text('👀 ')
+                                      ? Text('...')
                                       : Text(
                                           MonetarioUtils.formatarIntToMoeda(
                                             total!,
